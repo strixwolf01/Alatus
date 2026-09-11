@@ -1,6 +1,5 @@
 # Alatus Hardware Orchestration Suite - ITE5570 LampArray HID Permissions
-# Grants access to the alatus-rgb group for unprivileged RGB feature report control
-# Hardware protocol reference: ITE5570 LampArray implementation
+# Grants access to the alatus-rgb group for unprivileged LampArray feature report control
 #
 # Matches i2c-hid devices where parent i2c bus name identifies the controller:
 SUBSYSTEM=="hidraw", KERNELS=="i2c-ITE5570*", MODE="0660", GROUP="alatus-rgb"

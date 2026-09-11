@@ -193,7 +193,8 @@ Installs the generated `.deb` from `target/debian/` via `sudo dpkg -i target/deb
 
 ## Acknowledgments
 
-- **[vrgb](https://github.com/vrgb-dev/vrgb)**: For the foundational research, hardware analysis, and HID protocol documentation for the ITE5570 LampArray controller used across ASUS Vivobook and Zenbook laptops.
+- **[vrgb](https://github.com/vrgb-dev/vrgb)**: For foundational hardware research, reverse engineering, and documentation of the ITE5570 LampArray USB HID protocol.
+- **[asus-5606-fan-state](https://github.com/ThatOneCalculator/asus-5606-fan-state)**: For early research and reference implementation of direct ACPI WMI DebugFS fan register sequencing.
 
 ---
 
