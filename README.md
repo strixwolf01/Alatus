@@ -191,6 +191,12 @@ Installs the generated `.deb` from `target/debian/` via `sudo dpkg -i target/deb
 
 ---
 
+## Acknowledgments
+
+- **[vrgb](https://github.com/vrgb-dev/vrgb)**: For the foundational research, hardware analysis, and HID protocol documentation for the ITE5570 LampArray controller used across ASUS Vivobook and Zenbook laptops.
+
+---
+
 ## License
 
 Alatus is free software released under the [GNU General Public License v3.0 or later](LICENSE).

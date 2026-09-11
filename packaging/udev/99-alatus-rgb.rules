@@ -1,13 +1,10 @@
-# ASUS S5506MA / ITE5570 HID LampArray keyboard  (VRGB backend)
+# Alatus Hardware Orchestration Suite - ITE5570 LampArray HID Permissions
+# Grants access to the alatus-rgb group for unprivileged RGB feature report control
+# Hardware protocol reference: ITE5570 LampArray implementation
 #
-# Grants the `alatus-rgb` group unprivileged read/write access to the /dev/hidraw
-# node behind the ITE5570 controller so Alatus can drive static RGB without
-# sudo. Install automatically via Alatus's deb/rpm packaging.
-#
-# Matches the validated upstream vrgb rule (i2c-hid devices expose no
-# idVendor/idProduct on the hidraw node; the parent i2c name is reliable):
+# Matches i2c-hid devices where parent i2c bus name identifies the controller:
 SUBSYSTEM=="hidraw", KERNELS=="i2c-ITE5570*", MODE="0660", GROUP="alatus-rgb"
 
-# VID/PID matches for controllers that do expose the USB descriptors:
+# VID/PID matches for controllers that expose USB descriptors:
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0b05", ATTRS{idProduct}=="19b6", MODE="0660", GROUP="alatus-rgb"
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0b05", ATTRS{idProduct}=="5570", MODE="0660", GROUP="alatus-rgb"
