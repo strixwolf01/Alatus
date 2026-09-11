@@ -35,8 +35,8 @@ To enable Alatus to orchestrate hardware registers, you must allow DebugFS acces
 ## Verified & Supported Hardware
 
 > [!IMPORTANT]
-> **Hardware Support Scope as of v1.0.0**:
-> Official hardware verification, continuous benchmarking, and active hardware testing for Alatus `v1.0.0` is strictly scoped to:
+> **Hardware Support Scope as of v1.1.0**:
+> Official hardware verification, continuous benchmarking, and active hardware testing for Alatus `v1.1.0` is strictly scoped to:
 >
 > **`ASUS Vivobook S 15 OLED (S5506MA)`**
 >
