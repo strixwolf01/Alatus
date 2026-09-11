@@ -6,7 +6,7 @@
 //! Provides minimal, rock-solid static color control via the LampArray HID interface
 //! and physical brightness management via the Linux sysfs LED subsystem.
 
-use crate::services::alatus_rgb_wrapper::{self as ascend_rgb_wrapper, RgbDevice};
+use crate::services::alatus_rgb_wrapper::{self, RgbDevice};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::sync::Mutex;
@@ -126,7 +126,7 @@ impl Default for RgbService {
 
 impl RgbService {
     pub fn new() -> Self {
-        let dev = ascend_rgb_wrapper::discover().ok();
+        let dev = alatus_rgb_wrapper::discover().ok();
         let _ = wmi_unlock();
 
         let initial_brightness = if let Some((cur, max)) = read_sysfs_brightness() {
@@ -152,7 +152,7 @@ impl RgbService {
         {
             return Ok(dev.clone());
         }
-        let dev = ascend_rgb_wrapper::discover()?;
+        let dev = alatus_rgb_wrapper::discover()?;
         state.device = Some(dev.clone());
         Ok(dev)
     }
@@ -192,8 +192,8 @@ impl RgbService {
         state.blue = b;
 
         let _ = wmi_unlock();
-        ascend_rgb_wrapper::set_firmware_mode(&dev, false)?;
-        ascend_rgb_wrapper::set_color(&dev, r, g, b, 255)?;
+        alatus_rgb_wrapper::set_firmware_mode(&dev, false)?;
+        alatus_rgb_wrapper::set_color(&dev, r, g, b, 255)?;
 
         if let Some((cur, max)) = read_sysfs_brightness()
             && cur == 0
@@ -235,11 +235,11 @@ impl RgbService {
         }
 
         if brightness == 0 {
-            let _ = ascend_rgb_wrapper::off(&dev, state.red, state.green, state.blue);
+            let _ = alatus_rgb_wrapper::off(&dev, state.red, state.green, state.blue);
         } else {
             let _ = wmi_unlock();
-            let _ = ascend_rgb_wrapper::set_firmware_mode(&dev, false);
-            let _ = ascend_rgb_wrapper::set_color(&dev, state.red, state.green, state.blue, 255);
+            let _ = alatus_rgb_wrapper::set_firmware_mode(&dev, false);
+            let _ = alatus_rgb_wrapper::set_color(&dev, state.red, state.green, state.blue, 255);
         }
 
         Ok(())
@@ -257,13 +257,13 @@ impl RgbService {
         let mut state = self.state.lock().unwrap();
         let dev = Self::ensure_device(&mut state)?;
         let _ = wmi_unlock();
-        ascend_rgb_wrapper::set_firmware_mode(&dev, false)?;
+        alatus_rgb_wrapper::set_firmware_mode(&dev, false)?;
 
         if state.brightness == 0 {
-            let _ = ascend_rgb_wrapper::off(&dev, state.red, state.green, state.blue);
+            let _ = alatus_rgb_wrapper::off(&dev, state.red, state.green, state.blue);
             let _ = write_sysfs_brightness(0);
         } else {
-            ascend_rgb_wrapper::set_color(&dev, state.red, state.green, state.blue, 255)?;
+            alatus_rgb_wrapper::set_color(&dev, state.red, state.green, state.blue, 255)?;
             if let Some((_, max)) = read_sysfs_brightness() {
                 let sysfs_val = percent_to_sysfs(state.brightness, max);
                 let _ = write_sysfs_brightness(sysfs_val);

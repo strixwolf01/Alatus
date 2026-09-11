@@ -41,12 +41,12 @@ To enable Alatus to orchestrate hardware registers, you must allow DebugFS acces
 > **`ASUS Vivobook S 15 OLED (S5506MA)`**
 >
 > **Upcoming Multi-Device Roadmap**:
-> Generic fallback hardware providers and broader ASUS ROG/TUF gaming laptop integration (`asusd` / `asusctl`) are actively architected and scheduled for subsequent minor releases. Other manufacturers' laptops (Lenovo, Dell, HP, Framework) are detected via DMI and safely rejected.
+> Generic fallback hardware providers and broader ASUS ROG/TUF gaming laptop integration are planned for subsequent minor releases. This future work may use an `asusd` / `asusctl` D-Bus bridge; Alatus does not currently depend on either project. Other manufacturers' laptops (Lenovo, Dell, HP, Framework) are detected via DMI and safely rejected.
 
 | Target Platform | Validation Status | Validated Models | Feature Support |
 | :--- | :--- | :--- | :--- |
 | **ASUS Vivobook S / Zenbook OLED** | **Officially Verified** | `S5506MA` (Vivobook S 15 OLED) | 4 ACPI Thermal Modes (incl. Full Speed 8100 RPM), Battery Thresholds, ITE5570 LampArray RGB, OLED Care, Auto Refresh, Hardware Fn+F Hotkey |
-| **ASUS ROG & TUF Gaming** | *Scheduled (v1.1+)* | Zephyrus, Strix, TUF Gaming | *Requires external `asusctl`/`asusd` D-Bus bridge integration* |
+| **ASUS ROG & TUF Gaming** | *Planned roadmap integration* | Zephyrus, Strix, TUF Gaming | *Future integration may use an external `asusctl`/`asusd` D-Bus bridge; no current dependency* |
 | **Non-ASUS Hardware** | *Unsupported* | Generic PC hardware | Safely rejected on initialization |
 
 ---
@@ -85,9 +85,10 @@ To enable Alatus to orchestrate hardware registers, you must allow DebugFS acces
                     │ (io.strixwolf.alatus.Session)  │ (io.strixwolf.alatus.Daemon)
 ┌───────────────────▼────────────────────────────┐   │
 │         alatus-session (User Agent)            │   │
-│  Zero-Polling Event Loops (tokio::select!)     │   │
+│  Event-Driven Architecture with Periodic       │   │
+│  State Reconciliation (tokio::select!)          │   │
 ├────────────────────────────────────────────────┤   │
-│ • Netlink Kernel Uevents (Instant Power Sync)  │   │
+│ • Udev Netlink Hooks + Fail-Safe State Ticker  │   │
 │ • GNOME Mutter & KDE Display Refresh Switching │   │
 │ • Flicker-Free OLED Dimming & Pixel Refresh    │   │
 │ • XDG Desktop Portal Accent Color Sync         │   │

@@ -3,8 +3,8 @@
 
 //! User-space desktop session integration agent.
 //!
-//! Provides zero-polling synchronization between the active desktop environment (KDE Plasma & GNOME)
-//! and Alatus hardware controllers:
+//! Provides event-driven synchronization with periodic reconciliation between the active desktop
+//! environment (KDE Plasma & GNOME) and Alatus hardware controllers:
 //! 1. XDG Desktop Portal Accent Color -> Keyboard RGB Backlight.
 //! 2. Power Source (AC vs Battery) -> Display Panel Refresh Rate (e.g. 120Hz vs 60Hz).
 

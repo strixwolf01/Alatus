@@ -62,6 +62,8 @@ jobs:
           mkdir -p dist
           cp target/debian/*.deb dist/
           cp target/generate-rpm/*.rpm dist/
+          sha256sum target/generate-rpm/*.rpm target/debian/*.deb > SHA256SUMS
+          cp SHA256SUMS dist/
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2

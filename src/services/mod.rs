@@ -2,7 +2,6 @@
 // Copyright (C) 2026 Alatus Contributors
 
 pub mod alatus_rgb_wrapper;
-pub use alatus_rgb_wrapper as ascend_rgb_wrapper;
 pub mod config;
 pub mod daemon_client;
 pub mod dbus;

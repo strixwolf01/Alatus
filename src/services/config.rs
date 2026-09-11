@@ -24,8 +24,6 @@ pub struct AlatusConfig {
     pub refresh_rate: u32,
 }
 
-pub type AscendConfig = AlatusConfig;
-
 impl Default for AlatusConfig {
     fn default() -> Self {
         Self {
