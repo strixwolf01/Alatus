@@ -26,10 +26,11 @@ jobs:
       - name: Enable Rust compilation caching
         uses: Swatinem/rust-cache@v2
 
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@cargo-audit
+
       - name: Security audit for vulnerabilities
-        uses: rustsec/audit-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+        run: cargo audit
 
       - name: Install System Dependencies
         run: |
