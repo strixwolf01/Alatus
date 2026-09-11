@@ -1,7 +1,7 @@
 # Alatus
 
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](LICENSE)
-[![Release: 1.1.0](https://img.shields.io/badge/release-1.0.0-blue.svg)](https://github.com/strixwolf01/Alatus/releases)
+[![Release: 1.1.0](https://img.shields.io/badge/release-1.1.0-blue.svg)](https://github.com/strixwolf01/Alatus/releases)
 [![Rust: 2024 Edition](https://img.shields.io/badge/rust-2024%20edition-orange.svg)](https://www.rust-lang.org)
 
 **Alatus** is an authoritative, memory-safe hardware orchestration suite engineered in Rust for ASUS laptops running Linux. It unifies low-level ACPI WMI DebugFS thermal management, ITE5570 LampArray keyboard backlighting, OLED Flicker-Free dimming, battery charge thresholds, and an intuitive Material 3 desktop application into a cohesive, zero-overhead architecture.
