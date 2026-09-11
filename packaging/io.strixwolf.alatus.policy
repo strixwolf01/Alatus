@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1.0/policyconfig.dtd">
+<policyconfig>
+  <vendor>Alatus</vendor>
+  <vendor_url>https://github.com/strixwolf01/Alatus</vendor_url>
+  <action id="io.strixwolf.alatus.set-firmware-mode">
+    <description>Set ASUS firmware fan thermal mode</description>
+    <message>Authentication is required to set the ASUS fan thermal mode</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+  <action id="io.strixwolf.alatus.set-charge-limit">
+    <description>Set battery charge limit threshold</description>
+    <message>Authentication is required to set the battery charge limit</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+  <action id="io.strixwolf.alatus.set-deep-sleep">
+    <description>Set memory deep sleep active state</description>
+    <message>Authentication is required to set deep sleep state</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+  <action id="io.strixwolf.alatus.set-rgb">
+    <description>Set keyboard RGB backlight settings</description>
+    <message>Authentication is required to set keyboard RGB settings</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+</policyconfig>

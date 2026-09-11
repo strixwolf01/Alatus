@@ -1,0 +1,50 @@
+/* Waybar styling for Alatus hardware module */
+
+#custom-alatus {
+    padding: 0 10px;
+    margin: 3px 4px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.25s ease-in-out;
+}
+
+/* Quiet Profile: Eco Green */
+#custom-alatus.quiet {
+    color: #a6e3a1;
+    background-color: rgba(166, 227, 161, 0.15);
+    border: 1px solid rgba(166, 227, 161, 0.35);
+}
+
+/* Balanced Profile: Standard Blue/Cyan */
+#custom-alatus.balanced {
+    color: #89b4fa;
+    background-color: rgba(137, 180, 250, 0.15);
+    border: 1px solid rgba(137, 180, 250, 0.35);
+}
+
+/* Performance Profile: Boost Orange/Amber */
+#custom-alatus.performance {
+    color: #fab387;
+    background-color: rgba(250, 179, 135, 0.2);
+    border: 1px solid rgba(250, 179, 135, 0.45);
+}
+
+/* Full Profile: Extreme Red/Crimson with Glow */
+#custom-alatus.full {
+    color: #ff5555;
+    background-color: rgba(255, 85, 85, 0.25);
+    border: 1px solid rgba(255, 85, 85, 0.7);
+    animation: full-pulse 2s infinite ease-in-out;
+}
+
+@keyframes full-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 85, 85, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(255, 85, 85, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 85, 85, 0);
+    }
+}

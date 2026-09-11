@@ -1,0 +1,2522 @@
+#compdef alatus
+
+autoload -U is-at-least
+
+_alatus() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'-V[Print version]' \
+'--version[Print version]' \
+":: :_alatus_commands" \
+"*::: :->alatus" \
+&& ret=0
+    case $state in
+    (alatus)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-command-$line[1]:"
+        case $line[1] in
+            (status)
+_arguments "${_arguments_options[@]}" : \
+'-j[Output status formatted as JSON for scripting and Waybar integration]' \
+'--json[Output status formatted as JSON for scripting and Waybar integration]' \
+'-w[Stream live JSON status line-by-line on events / ticker (ideal for Waybar)]' \
+'--watch[Stream live JSON status line-by-line on events / ticker (ideal for Waybar)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(watch)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(monitor)
+_arguments "${_arguments_options[@]}" : \
+'-i+[Polling interval in milliseconds]:INTERVAL_MS:_default' \
+'--interval-ms=[Polling interval in milliseconds]:INTERVAL_MS:_default' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(mode)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_alatus__subcmd__mode_commands" \
+"*::: :->mode" \
+&& ret=0
+
+    case $state in
+    (mode)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-mode-command-$line[1]:"
+        case $line[1] in
+            (get)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+':name -- Mode profile name:((balanced\:"Balanced standard performance"
+quiet\:"Quiet / silent operation"
+performance\:"High performance boost"
+full\:"Maximum fan speed"))' \
+&& ret=0
+;;
+(balanced)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(quiet)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(performance)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(full)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(cycle)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(auto)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'::enable -- Enable or disable auto switching (on/off, true/false):_default' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__mode__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-mode-help-command-$line[1]:"
+        case $line[1] in
+            (get)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(balanced)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(quiet)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(performance)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(full)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(cycle)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(auto)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(fan)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_alatus__subcmd__fan_commands" \
+"*::: :->fan" \
+&& ret=0
+
+    case $state in
+    (fan)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-fan-command-$line[1]:"
+        case $line[1] in
+            (get)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+':profile -- Fan profile name:((balanced\:"Balanced standard performance"
+quiet\:"Quiet / silent operation"
+performance\:"High performance boost"
+full\:"Maximum fan speed"))' \
+&& ret=0
+;;
+(balanced)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(quiet)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(performance)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(full)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(cycle)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__fan__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-fan-help-command-$line[1]:"
+        case $line[1] in
+            (get)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(balanced)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(quiet)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(performance)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(full)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(cycle)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(cycle)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(quiet)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(balanced)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(perf)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(full)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(oled)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_alatus__subcmd__oled_commands" \
+"*::: :->oled" \
+&& ret=0
+
+    case $state in
+    (oled)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-oled-command-$line[1]:"
+        case $line[1] in
+            (status)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(dim)
+_arguments "${_arguments_options[@]}" : \
+'--dim=[Alternative flag to enable or disable idle dimming]:DIM:_default' \
+'--level=[Target dimming percentage level (10-100)]:LEVEL:_default' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::state -- Enable or disable idle dimming (on/off, true/false):_default' \
+&& ret=0
+;;
+(refresh)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__oled__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-oled-help-command-$line[1]:"
+        case $line[1] in
+            (status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(dim)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(refresh)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(display)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_alatus__subcmd__display_commands" \
+"*::: :->display" \
+&& ret=0
+
+    case $state in
+    (display)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-display-command-$line[1]:"
+        case $line[1] in
+            (status)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(rate)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':target -- Target rate in Hz (e.g. 60, 120) or '\''auto'\'':_default' \
+'::enable -- When target is '\''auto'\'', optional state\: '\''on'\'' or '\''off'\'' (default\: on):_default' \
+&& ret=0
+;;
+(dim)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':level -- Luminance percentage (10 to 100):_default' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__display__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-display-help-command-$line[1]:"
+        case $line[1] in
+            (status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(rate)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(dim)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(charge-limit)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':percentage -- Battery charge threshold percentage (0-100):_default' \
+&& ret=0
+;;
+(rgb)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_alatus__subcmd__rgb_commands" \
+"*::: :->rgb" \
+&& ret=0
+
+    case $state in
+    (rgb)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-rgb-command-$line[1]:"
+        case $line[1] in
+            (status)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(set-color)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':color -- Color code, e.g. '\''#FF5500'\'', '\''FF5500'\'', or '\''255,85,0'\'':_default' \
+&& ret=0
+;;
+(set-brightness)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':brightness -- Brightness level (0-100% or 0-3):_default' \
+&& ret=0
+;;
+(off)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(on)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(sync)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'::enable -- Enable or disable accent sync (on/off, true/false):_default' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__rgb__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-rgb-help-command-$line[1]:"
+        case $line[1] in
+            (status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(set-color)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(set-brightness)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(off)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(on)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(sync)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(daemon)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_alatus__subcmd__daemon_commands" \
+"*::: :->daemon" \
+&& ret=0
+
+    case $state in
+    (daemon)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-daemon-command-$line[1]:"
+        case $line[1] in
+            (session)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_alatus__subcmd__daemon__subcmd__session_commands" \
+"*::: :->session" \
+&& ret=0
+
+    case $state in
+    (session)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-daemon-session-command-$line[1]:"
+        case $line[1] in
+            (start)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(stop)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(restart)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(run)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__daemon__subcmd__session__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-daemon-session-help-command-$line[1]:"
+        case $line[1] in
+            (start)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(stop)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(restart)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(run)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(system)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_alatus__subcmd__daemon__subcmd__system_commands" \
+"*::: :->system" \
+&& ret=0
+
+    case $state in
+    (system)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-daemon-system-command-$line[1]:"
+        case $line[1] in
+            (start)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(stop)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(restart)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(run)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__daemon__subcmd__system__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-daemon-system-help-command-$line[1]:"
+        case $line[1] in
+            (start)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(stop)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(restart)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(run)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__daemon__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-daemon-help-command-$line[1]:"
+        case $line[1] in
+            (session)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__daemon__subcmd__help__subcmd__session_commands" \
+"*::: :->session" \
+&& ret=0
+
+    case $state in
+    (session)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-daemon-help-session-command-$line[1]:"
+        case $line[1] in
+            (start)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(stop)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(restart)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(run)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(system)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__daemon__subcmd__help__subcmd__system_commands" \
+"*::: :->system" \
+&& ret=0
+
+    case $state in
+    (system)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-daemon-help-system-command-$line[1]:"
+        case $line[1] in
+            (start)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(stop)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(restart)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(run)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(completions)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':shell -- Target shell:(bash elvish fish powershell zsh)' \
+&& ret=0
+;;
+(session)
+_arguments "${_arguments_options[@]}" : \
+'--sync-accent[Enable XDG desktop accent color sync (default\: true)]' \
+'--no-accent[Disable XDG desktop accent color sync]' \
+'--auto-refresh[Enable auto display panel refresh rate switching (default\: true)]' \
+'--no-refresh[Disable auto display panel refresh rate switching]' \
+'--oled-care[Enable OLED Care and idle dimming (default\: true)]' \
+'--no-oled-care[Disable OLED Care and idle dimming]' \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_alatus__subcmd__session_commands" \
+"*::: :->session" \
+&& ret=0
+
+    case $state in
+    (session)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-session-command-$line[1]:"
+        case $line[1] in
+            (status)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+'--accent=[Configure accent color sync (on/off, true/false)]:ACCENT:_default' \
+'--refresh=[Configure auto panel refresh rate switching (on/off, true/false)]:REFRESH:_default' \
+'--oled-care=[Configure OLED Care and idle dimming (on/off, true/false)]:OLED_CARE:_default' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(pixel-refresh)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__session__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-session-help-command-$line[1]:"
+        case $line[1] in
+            (status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(pixel-refresh)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-help-command-$line[1]:"
+        case $line[1] in
+            (status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(watch)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(monitor)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(mode)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__help__subcmd__mode_commands" \
+"*::: :->mode" \
+&& ret=0
+
+    case $state in
+    (mode)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-help-mode-command-$line[1]:"
+        case $line[1] in
+            (get)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(balanced)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(quiet)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(performance)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(full)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(cycle)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(auto)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(fan)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__help__subcmd__fan_commands" \
+"*::: :->fan" \
+&& ret=0
+
+    case $state in
+    (fan)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-help-fan-command-$line[1]:"
+        case $line[1] in
+            (get)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(balanced)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(quiet)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(performance)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(full)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(cycle)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(cycle)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(quiet)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(balanced)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(perf)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(full)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(oled)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__help__subcmd__oled_commands" \
+"*::: :->oled" \
+&& ret=0
+
+    case $state in
+    (oled)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-help-oled-command-$line[1]:"
+        case $line[1] in
+            (status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(dim)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(refresh)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(display)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__help__subcmd__display_commands" \
+"*::: :->display" \
+&& ret=0
+
+    case $state in
+    (display)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-help-display-command-$line[1]:"
+        case $line[1] in
+            (status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(rate)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(dim)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(charge-limit)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(rgb)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__help__subcmd__rgb_commands" \
+"*::: :->rgb" \
+&& ret=0
+
+    case $state in
+    (rgb)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-help-rgb-command-$line[1]:"
+        case $line[1] in
+            (status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(set-color)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(set-brightness)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(off)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(on)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(sync)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(daemon)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__help__subcmd__daemon_commands" \
+"*::: :->daemon" \
+&& ret=0
+
+    case $state in
+    (daemon)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-help-daemon-command-$line[1]:"
+        case $line[1] in
+            (session)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__help__subcmd__daemon__subcmd__session_commands" \
+"*::: :->session" \
+&& ret=0
+
+    case $state in
+    (session)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-help-daemon-session-command-$line[1]:"
+        case $line[1] in
+            (start)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(stop)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(restart)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(run)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(system)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__help__subcmd__daemon__subcmd__system_commands" \
+"*::: :->system" \
+&& ret=0
+
+    case $state in
+    (system)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-help-daemon-system-command-$line[1]:"
+        case $line[1] in
+            (start)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(stop)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(restart)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(run)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(completions)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(session)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__help__subcmd__session_commands" \
+"*::: :->session" \
+&& ret=0
+
+    case $state in
+    (session)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-help-session-command-$line[1]:"
+        case $line[1] in
+            (status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(pixel-refresh)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+}
+
+(( $+functions[_alatus_commands] )) ||
+_alatus_commands() {
+    local commands; commands=(
+'status:Show system, firmware, battery, and lighting status' \
+'watch:Stream live JSON status line-by-line (alias for '\''alatus status -j -w'\'')' \
+'monitor:Live real-time hardware telemetry monitor' \
+'mode:Query or set firmware power/fan mode' \
+'fan:Query or set fan profile' \
+'cycle:Cycle through thermal profiles\: Quiet -> Balanced -> Performance -> Full -> Quiet' \
+'quiet:Shortcut\: Switch directly to Quiet thermal profile' \
+'balanced:Shortcut\: Switch directly to Balanced thermal profile' \
+'perf:Shortcut\: Switch directly to Performance thermal profile' \
+'full:Shortcut\: Switch directly to Full speed thermal profile' \
+'oled:OLED panel care, cumulative usage hours, idle dimming, and pixel refresh' \
+'display:Display panel resolution, refresh rate switching, and auto power-matching' \
+'charge-limit:Set battery charge limit threshold (0-100%)' \
+'rgb:Control keyboard RGB backlight and desktop accent color sync' \
+'daemon:Manage system hardware daemon and user desktop session background services' \
+'completions:Generate shell auto-completion scripts for Bash, Zsh, or Fish' \
+'session:Run desktop session integration agent (hidden/legacy compatibility)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__balanced_commands] )) ||
+_alatus__subcmd__balanced_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus balanced commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__charge-limit_commands] )) ||
+_alatus__subcmd__charge-limit_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus charge-limit commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__completions_commands] )) ||
+_alatus__subcmd__completions_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus completions commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__cycle_commands] )) ||
+_alatus__subcmd__cycle_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus cycle commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon_commands] )) ||
+_alatus__subcmd__daemon_commands() {
+    local commands; commands=(
+'session:Manage the desktop session background agent (alatus-session.service)' \
+'system:Manage the system hardware daemon (alatusd.service)' \
+'status:Show status of both background daemons' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus daemon commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__help_commands] )) ||
+_alatus__subcmd__daemon__subcmd__help_commands() {
+    local commands; commands=(
+'session:Manage the desktop session background agent (alatus-session.service)' \
+'system:Manage the system hardware daemon (alatusd.service)' \
+'status:Show status of both background daemons' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus daemon help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__help__subcmd__help_commands] )) ||
+_alatus__subcmd__daemon__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon help help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__help__subcmd__session_commands] )) ||
+_alatus__subcmd__daemon__subcmd__help__subcmd__session_commands() {
+    local commands; commands=(
+'start:Start the service' \
+'stop:Stop the service' \
+'restart:Restart the service' \
+'status:Query service status' \
+'run:Run the daemon in foreground (used by systemd user unit)' \
+    )
+    _describe -t commands 'alatus daemon help session commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__help__subcmd__session__subcmd__restart_commands] )) ||
+_alatus__subcmd__daemon__subcmd__help__subcmd__session__subcmd__restart_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon help session restart commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__help__subcmd__session__subcmd__run_commands] )) ||
+_alatus__subcmd__daemon__subcmd__help__subcmd__session__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon help session run commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__help__subcmd__session__subcmd__start_commands] )) ||
+_alatus__subcmd__daemon__subcmd__help__subcmd__session__subcmd__start_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon help session start commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__help__subcmd__session__subcmd__status_commands] )) ||
+_alatus__subcmd__daemon__subcmd__help__subcmd__session__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon help session status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__help__subcmd__session__subcmd__stop_commands] )) ||
+_alatus__subcmd__daemon__subcmd__help__subcmd__session__subcmd__stop_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon help session stop commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__help__subcmd__status_commands] )) ||
+_alatus__subcmd__daemon__subcmd__help__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon help status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__help__subcmd__system_commands] )) ||
+_alatus__subcmd__daemon__subcmd__help__subcmd__system_commands() {
+    local commands; commands=(
+'start:Start the service' \
+'stop:Stop the service' \
+'restart:Restart the service' \
+'status:Query service status' \
+'run:Run the daemon in foreground (used by systemd user unit)' \
+    )
+    _describe -t commands 'alatus daemon help system commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__help__subcmd__system__subcmd__restart_commands] )) ||
+_alatus__subcmd__daemon__subcmd__help__subcmd__system__subcmd__restart_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon help system restart commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__help__subcmd__system__subcmd__run_commands] )) ||
+_alatus__subcmd__daemon__subcmd__help__subcmd__system__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon help system run commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__help__subcmd__system__subcmd__start_commands] )) ||
+_alatus__subcmd__daemon__subcmd__help__subcmd__system__subcmd__start_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon help system start commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__help__subcmd__system__subcmd__status_commands] )) ||
+_alatus__subcmd__daemon__subcmd__help__subcmd__system__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon help system status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__help__subcmd__system__subcmd__stop_commands] )) ||
+_alatus__subcmd__daemon__subcmd__help__subcmd__system__subcmd__stop_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon help system stop commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__session_commands] )) ||
+_alatus__subcmd__daemon__subcmd__session_commands() {
+    local commands; commands=(
+'start:Start the service' \
+'stop:Stop the service' \
+'restart:Restart the service' \
+'status:Query service status' \
+'run:Run the daemon in foreground (used by systemd user unit)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus daemon session commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__session__subcmd__help_commands] )) ||
+_alatus__subcmd__daemon__subcmd__session__subcmd__help_commands() {
+    local commands; commands=(
+'start:Start the service' \
+'stop:Stop the service' \
+'restart:Restart the service' \
+'status:Query service status' \
+'run:Run the daemon in foreground (used by systemd user unit)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus daemon session help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__session__subcmd__help__subcmd__help_commands] )) ||
+_alatus__subcmd__daemon__subcmd__session__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon session help help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__session__subcmd__help__subcmd__restart_commands] )) ||
+_alatus__subcmd__daemon__subcmd__session__subcmd__help__subcmd__restart_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon session help restart commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__session__subcmd__help__subcmd__run_commands] )) ||
+_alatus__subcmd__daemon__subcmd__session__subcmd__help__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon session help run commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__session__subcmd__help__subcmd__start_commands] )) ||
+_alatus__subcmd__daemon__subcmd__session__subcmd__help__subcmd__start_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon session help start commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__session__subcmd__help__subcmd__status_commands] )) ||
+_alatus__subcmd__daemon__subcmd__session__subcmd__help__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon session help status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__session__subcmd__help__subcmd__stop_commands] )) ||
+_alatus__subcmd__daemon__subcmd__session__subcmd__help__subcmd__stop_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon session help stop commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__session__subcmd__restart_commands] )) ||
+_alatus__subcmd__daemon__subcmd__session__subcmd__restart_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon session restart commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__session__subcmd__run_commands] )) ||
+_alatus__subcmd__daemon__subcmd__session__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon session run commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__session__subcmd__start_commands] )) ||
+_alatus__subcmd__daemon__subcmd__session__subcmd__start_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon session start commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__session__subcmd__status_commands] )) ||
+_alatus__subcmd__daemon__subcmd__session__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon session status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__session__subcmd__stop_commands] )) ||
+_alatus__subcmd__daemon__subcmd__session__subcmd__stop_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon session stop commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__status_commands] )) ||
+_alatus__subcmd__daemon__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__system_commands] )) ||
+_alatus__subcmd__daemon__subcmd__system_commands() {
+    local commands; commands=(
+'start:Start the service' \
+'stop:Stop the service' \
+'restart:Restart the service' \
+'status:Query service status' \
+'run:Run the daemon in foreground (used by systemd user unit)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus daemon system commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__system__subcmd__help_commands] )) ||
+_alatus__subcmd__daemon__subcmd__system__subcmd__help_commands() {
+    local commands; commands=(
+'start:Start the service' \
+'stop:Stop the service' \
+'restart:Restart the service' \
+'status:Query service status' \
+'run:Run the daemon in foreground (used by systemd user unit)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus daemon system help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__system__subcmd__help__subcmd__help_commands] )) ||
+_alatus__subcmd__daemon__subcmd__system__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon system help help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__system__subcmd__help__subcmd__restart_commands] )) ||
+_alatus__subcmd__daemon__subcmd__system__subcmd__help__subcmd__restart_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon system help restart commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__system__subcmd__help__subcmd__run_commands] )) ||
+_alatus__subcmd__daemon__subcmd__system__subcmd__help__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon system help run commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__system__subcmd__help__subcmd__start_commands] )) ||
+_alatus__subcmd__daemon__subcmd__system__subcmd__help__subcmd__start_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon system help start commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__system__subcmd__help__subcmd__status_commands] )) ||
+_alatus__subcmd__daemon__subcmd__system__subcmd__help__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon system help status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__system__subcmd__help__subcmd__stop_commands] )) ||
+_alatus__subcmd__daemon__subcmd__system__subcmd__help__subcmd__stop_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon system help stop commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__system__subcmd__restart_commands] )) ||
+_alatus__subcmd__daemon__subcmd__system__subcmd__restart_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon system restart commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__system__subcmd__run_commands] )) ||
+_alatus__subcmd__daemon__subcmd__system__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon system run commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__system__subcmd__start_commands] )) ||
+_alatus__subcmd__daemon__subcmd__system__subcmd__start_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon system start commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__system__subcmd__status_commands] )) ||
+_alatus__subcmd__daemon__subcmd__system__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon system status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__daemon__subcmd__system__subcmd__stop_commands] )) ||
+_alatus__subcmd__daemon__subcmd__system__subcmd__stop_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus daemon system stop commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__display_commands] )) ||
+_alatus__subcmd__display_commands() {
+    local commands; commands=(
+'status:Show active panel connector, current refresh rate, resolution, and auto-refresh state' \
+'rate:Switch refresh rate in Hz (e.g. 60, 120) or toggle auto power-matching (auto \[on|off\])' \
+'dim:Scale flicker-free luminance level at compositor level (10-100%)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus display commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__display__subcmd__dim_commands] )) ||
+_alatus__subcmd__display__subcmd__dim_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus display dim commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__display__subcmd__help_commands] )) ||
+_alatus__subcmd__display__subcmd__help_commands() {
+    local commands; commands=(
+'status:Show active panel connector, current refresh rate, resolution, and auto-refresh state' \
+'rate:Switch refresh rate in Hz (e.g. 60, 120) or toggle auto power-matching (auto \[on|off\])' \
+'dim:Scale flicker-free luminance level at compositor level (10-100%)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus display help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__display__subcmd__help__subcmd__dim_commands] )) ||
+_alatus__subcmd__display__subcmd__help__subcmd__dim_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus display help dim commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__display__subcmd__help__subcmd__help_commands] )) ||
+_alatus__subcmd__display__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus display help help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__display__subcmd__help__subcmd__rate_commands] )) ||
+_alatus__subcmd__display__subcmd__help__subcmd__rate_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus display help rate commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__display__subcmd__help__subcmd__status_commands] )) ||
+_alatus__subcmd__display__subcmd__help__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus display help status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__display__subcmd__rate_commands] )) ||
+_alatus__subcmd__display__subcmd__rate_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus display rate commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__display__subcmd__status_commands] )) ||
+_alatus__subcmd__display__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus display status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan_commands] )) ||
+_alatus__subcmd__fan_commands() {
+    local commands; commands=(
+'get:Get current fan profile' \
+'set:Set fan profile (balanced, quiet, performance, full)' \
+'balanced:Switch to Balanced profile' \
+'quiet:Switch to Quiet profile' \
+'performance:Switch to Performance profile' \
+'full:Switch to Full speed profile' \
+'cycle:Cycle through fan profiles\: Quiet -> Balanced -> Performance -> Full -> Quiet' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus fan commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__balanced_commands] )) ||
+_alatus__subcmd__fan__subcmd__balanced_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus fan balanced commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__cycle_commands] )) ||
+_alatus__subcmd__fan__subcmd__cycle_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus fan cycle commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__full_commands] )) ||
+_alatus__subcmd__fan__subcmd__full_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus fan full commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__get_commands] )) ||
+_alatus__subcmd__fan__subcmd__get_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus fan get commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__help_commands] )) ||
+_alatus__subcmd__fan__subcmd__help_commands() {
+    local commands; commands=(
+'get:Get current fan profile' \
+'set:Set fan profile (balanced, quiet, performance, full)' \
+'balanced:Switch to Balanced profile' \
+'quiet:Switch to Quiet profile' \
+'performance:Switch to Performance profile' \
+'full:Switch to Full speed profile' \
+'cycle:Cycle through fan profiles\: Quiet -> Balanced -> Performance -> Full -> Quiet' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus fan help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__help__subcmd__balanced_commands] )) ||
+_alatus__subcmd__fan__subcmd__help__subcmd__balanced_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus fan help balanced commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__help__subcmd__cycle_commands] )) ||
+_alatus__subcmd__fan__subcmd__help__subcmd__cycle_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus fan help cycle commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__help__subcmd__full_commands] )) ||
+_alatus__subcmd__fan__subcmd__help__subcmd__full_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus fan help full commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__help__subcmd__get_commands] )) ||
+_alatus__subcmd__fan__subcmd__help__subcmd__get_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus fan help get commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__help__subcmd__help_commands] )) ||
+_alatus__subcmd__fan__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus fan help help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__help__subcmd__performance_commands] )) ||
+_alatus__subcmd__fan__subcmd__help__subcmd__performance_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus fan help performance commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__help__subcmd__quiet_commands] )) ||
+_alatus__subcmd__fan__subcmd__help__subcmd__quiet_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus fan help quiet commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__help__subcmd__set_commands] )) ||
+_alatus__subcmd__fan__subcmd__help__subcmd__set_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus fan help set commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__performance_commands] )) ||
+_alatus__subcmd__fan__subcmd__performance_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus fan performance commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__quiet_commands] )) ||
+_alatus__subcmd__fan__subcmd__quiet_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus fan quiet commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__fan__subcmd__set_commands] )) ||
+_alatus__subcmd__fan__subcmd__set_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus fan set commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__full_commands] )) ||
+_alatus__subcmd__full_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus full commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help_commands] )) ||
+_alatus__subcmd__help_commands() {
+    local commands; commands=(
+'status:Show system, firmware, battery, and lighting status' \
+'watch:Stream live JSON status line-by-line (alias for '\''alatus status -j -w'\'')' \
+'monitor:Live real-time hardware telemetry monitor' \
+'mode:Query or set firmware power/fan mode' \
+'fan:Query or set fan profile' \
+'cycle:Cycle through thermal profiles\: Quiet -> Balanced -> Performance -> Full -> Quiet' \
+'quiet:Shortcut\: Switch directly to Quiet thermal profile' \
+'balanced:Shortcut\: Switch directly to Balanced thermal profile' \
+'perf:Shortcut\: Switch directly to Performance thermal profile' \
+'full:Shortcut\: Switch directly to Full speed thermal profile' \
+'oled:OLED panel care, cumulative usage hours, idle dimming, and pixel refresh' \
+'display:Display panel resolution, refresh rate switching, and auto power-matching' \
+'charge-limit:Set battery charge limit threshold (0-100%)' \
+'rgb:Control keyboard RGB backlight and desktop accent color sync' \
+'daemon:Manage system hardware daemon and user desktop session background services' \
+'completions:Generate shell auto-completion scripts for Bash, Zsh, or Fish' \
+'session:Run desktop session integration agent (hidden/legacy compatibility)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__balanced_commands] )) ||
+_alatus__subcmd__help__subcmd__balanced_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help balanced commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__charge-limit_commands] )) ||
+_alatus__subcmd__help__subcmd__charge-limit_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help charge-limit commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__completions_commands] )) ||
+_alatus__subcmd__help__subcmd__completions_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help completions commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__cycle_commands] )) ||
+_alatus__subcmd__help__subcmd__cycle_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help cycle commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__daemon_commands] )) ||
+_alatus__subcmd__help__subcmd__daemon_commands() {
+    local commands; commands=(
+'session:Manage the desktop session background agent (alatus-session.service)' \
+'system:Manage the system hardware daemon (alatusd.service)' \
+'status:Show status of both background daemons' \
+    )
+    _describe -t commands 'alatus help daemon commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__daemon__subcmd__session_commands] )) ||
+_alatus__subcmd__help__subcmd__daemon__subcmd__session_commands() {
+    local commands; commands=(
+'start:Start the service' \
+'stop:Stop the service' \
+'restart:Restart the service' \
+'status:Query service status' \
+'run:Run the daemon in foreground (used by systemd user unit)' \
+    )
+    _describe -t commands 'alatus help daemon session commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__daemon__subcmd__session__subcmd__restart_commands] )) ||
+_alatus__subcmd__help__subcmd__daemon__subcmd__session__subcmd__restart_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help daemon session restart commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__daemon__subcmd__session__subcmd__run_commands] )) ||
+_alatus__subcmd__help__subcmd__daemon__subcmd__session__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help daemon session run commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__daemon__subcmd__session__subcmd__start_commands] )) ||
+_alatus__subcmd__help__subcmd__daemon__subcmd__session__subcmd__start_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help daemon session start commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__daemon__subcmd__session__subcmd__status_commands] )) ||
+_alatus__subcmd__help__subcmd__daemon__subcmd__session__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help daemon session status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__daemon__subcmd__session__subcmd__stop_commands] )) ||
+_alatus__subcmd__help__subcmd__daemon__subcmd__session__subcmd__stop_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help daemon session stop commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__daemon__subcmd__status_commands] )) ||
+_alatus__subcmd__help__subcmd__daemon__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help daemon status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__daemon__subcmd__system_commands] )) ||
+_alatus__subcmd__help__subcmd__daemon__subcmd__system_commands() {
+    local commands; commands=(
+'start:Start the service' \
+'stop:Stop the service' \
+'restart:Restart the service' \
+'status:Query service status' \
+'run:Run the daemon in foreground (used by systemd user unit)' \
+    )
+    _describe -t commands 'alatus help daemon system commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__daemon__subcmd__system__subcmd__restart_commands] )) ||
+_alatus__subcmd__help__subcmd__daemon__subcmd__system__subcmd__restart_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help daemon system restart commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__daemon__subcmd__system__subcmd__run_commands] )) ||
+_alatus__subcmd__help__subcmd__daemon__subcmd__system__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help daemon system run commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__daemon__subcmd__system__subcmd__start_commands] )) ||
+_alatus__subcmd__help__subcmd__daemon__subcmd__system__subcmd__start_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help daemon system start commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__daemon__subcmd__system__subcmd__status_commands] )) ||
+_alatus__subcmd__help__subcmd__daemon__subcmd__system__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help daemon system status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__daemon__subcmd__system__subcmd__stop_commands] )) ||
+_alatus__subcmd__help__subcmd__daemon__subcmd__system__subcmd__stop_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help daemon system stop commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__display_commands] )) ||
+_alatus__subcmd__help__subcmd__display_commands() {
+    local commands; commands=(
+'status:Show active panel connector, current refresh rate, resolution, and auto-refresh state' \
+'rate:Switch refresh rate in Hz (e.g. 60, 120) or toggle auto power-matching (auto \[on|off\])' \
+'dim:Scale flicker-free luminance level at compositor level (10-100%)' \
+    )
+    _describe -t commands 'alatus help display commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__display__subcmd__dim_commands] )) ||
+_alatus__subcmd__help__subcmd__display__subcmd__dim_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help display dim commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__display__subcmd__rate_commands] )) ||
+_alatus__subcmd__help__subcmd__display__subcmd__rate_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help display rate commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__display__subcmd__status_commands] )) ||
+_alatus__subcmd__help__subcmd__display__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help display status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__fan_commands] )) ||
+_alatus__subcmd__help__subcmd__fan_commands() {
+    local commands; commands=(
+'get:Get current fan profile' \
+'set:Set fan profile (balanced, quiet, performance, full)' \
+'balanced:Switch to Balanced profile' \
+'quiet:Switch to Quiet profile' \
+'performance:Switch to Performance profile' \
+'full:Switch to Full speed profile' \
+'cycle:Cycle through fan profiles\: Quiet -> Balanced -> Performance -> Full -> Quiet' \
+    )
+    _describe -t commands 'alatus help fan commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__fan__subcmd__balanced_commands] )) ||
+_alatus__subcmd__help__subcmd__fan__subcmd__balanced_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help fan balanced commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__fan__subcmd__cycle_commands] )) ||
+_alatus__subcmd__help__subcmd__fan__subcmd__cycle_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help fan cycle commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__fan__subcmd__full_commands] )) ||
+_alatus__subcmd__help__subcmd__fan__subcmd__full_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help fan full commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__fan__subcmd__get_commands] )) ||
+_alatus__subcmd__help__subcmd__fan__subcmd__get_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help fan get commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__fan__subcmd__performance_commands] )) ||
+_alatus__subcmd__help__subcmd__fan__subcmd__performance_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help fan performance commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__fan__subcmd__quiet_commands] )) ||
+_alatus__subcmd__help__subcmd__fan__subcmd__quiet_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help fan quiet commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__fan__subcmd__set_commands] )) ||
+_alatus__subcmd__help__subcmd__fan__subcmd__set_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help fan set commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__full_commands] )) ||
+_alatus__subcmd__help__subcmd__full_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help full commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__help_commands] )) ||
+_alatus__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__mode_commands] )) ||
+_alatus__subcmd__help__subcmd__mode_commands() {
+    local commands; commands=(
+'get:Get current firmware mode' \
+'set:Set firmware mode (balanced, quiet, performance, full)' \
+'balanced:Switch to Balanced profile' \
+'quiet:Switch to Quiet profile' \
+'performance:Switch to Performance profile' \
+'full:Switch to Full speed profile' \
+'cycle:Cycle through profiles\: Quiet -> Balanced -> Performance -> Full -> Quiet' \
+'auto:Query or configure auto-switching thermal profile on power changes' \
+    )
+    _describe -t commands 'alatus help mode commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__mode__subcmd__auto_commands] )) ||
+_alatus__subcmd__help__subcmd__mode__subcmd__auto_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help mode auto commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__mode__subcmd__balanced_commands] )) ||
+_alatus__subcmd__help__subcmd__mode__subcmd__balanced_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help mode balanced commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__mode__subcmd__cycle_commands] )) ||
+_alatus__subcmd__help__subcmd__mode__subcmd__cycle_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help mode cycle commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__mode__subcmd__full_commands] )) ||
+_alatus__subcmd__help__subcmd__mode__subcmd__full_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help mode full commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__mode__subcmd__get_commands] )) ||
+_alatus__subcmd__help__subcmd__mode__subcmd__get_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help mode get commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__mode__subcmd__performance_commands] )) ||
+_alatus__subcmd__help__subcmd__mode__subcmd__performance_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help mode performance commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__mode__subcmd__quiet_commands] )) ||
+_alatus__subcmd__help__subcmd__mode__subcmd__quiet_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help mode quiet commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__mode__subcmd__set_commands] )) ||
+_alatus__subcmd__help__subcmd__mode__subcmd__set_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help mode set commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__monitor_commands] )) ||
+_alatus__subcmd__help__subcmd__monitor_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help monitor commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__oled_commands] )) ||
+_alatus__subcmd__help__subcmd__oled_commands() {
+    local commands; commands=(
+'status:Show OLED care status, cumulative panel hours, cycle counts, and idle dimming state' \
+'dim:Toggle OLED idle dimming or specify target dimming percentage level' \
+'refresh:Trigger an immediate OLED pixel refresh conditioning cycle' \
+    )
+    _describe -t commands 'alatus help oled commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__oled__subcmd__dim_commands] )) ||
+_alatus__subcmd__help__subcmd__oled__subcmd__dim_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help oled dim commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__oled__subcmd__refresh_commands] )) ||
+_alatus__subcmd__help__subcmd__oled__subcmd__refresh_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help oled refresh commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__oled__subcmd__status_commands] )) ||
+_alatus__subcmd__help__subcmd__oled__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help oled status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__perf_commands] )) ||
+_alatus__subcmd__help__subcmd__perf_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help perf commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__quiet_commands] )) ||
+_alatus__subcmd__help__subcmd__quiet_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help quiet commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__rgb_commands] )) ||
+_alatus__subcmd__help__subcmd__rgb_commands() {
+    local commands; commands=(
+'status:Show current RGB status' \
+'set-color:Set static RGB color via HEX (#RRGGBB, RRGGBB) or RGB values (R,G,B)' \
+'set-brightness:Set RGB brightness level (0-100% or 0-3)' \
+'off:Turn off keyboard RGB backlight' \
+'on:Turn on keyboard RGB backlight' \
+'sync:Toggle desktop accent color synchronization with keyboard backlighting' \
+    )
+    _describe -t commands 'alatus help rgb commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__rgb__subcmd__off_commands] )) ||
+_alatus__subcmd__help__subcmd__rgb__subcmd__off_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help rgb off commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__rgb__subcmd__on_commands] )) ||
+_alatus__subcmd__help__subcmd__rgb__subcmd__on_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help rgb on commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__rgb__subcmd__set-brightness_commands] )) ||
+_alatus__subcmd__help__subcmd__rgb__subcmd__set-brightness_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help rgb set-brightness commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__rgb__subcmd__set-color_commands] )) ||
+_alatus__subcmd__help__subcmd__rgb__subcmd__set-color_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help rgb set-color commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__rgb__subcmd__status_commands] )) ||
+_alatus__subcmd__help__subcmd__rgb__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help rgb status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__rgb__subcmd__sync_commands] )) ||
+_alatus__subcmd__help__subcmd__rgb__subcmd__sync_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help rgb sync commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__session_commands] )) ||
+_alatus__subcmd__help__subcmd__session_commands() {
+    local commands; commands=(
+'status:Show active session agent status and configuration' \
+'set:Dynamically configure session subsystems on the running agent' \
+'pixel-refresh:Trigger an immediate OLED pixel refresh conditioning cycle' \
+    )
+    _describe -t commands 'alatus help session commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__session__subcmd__pixel-refresh_commands] )) ||
+_alatus__subcmd__help__subcmd__session__subcmd__pixel-refresh_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help session pixel-refresh commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__session__subcmd__set_commands] )) ||
+_alatus__subcmd__help__subcmd__session__subcmd__set_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help session set commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__session__subcmd__status_commands] )) ||
+_alatus__subcmd__help__subcmd__session__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help session status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__status_commands] )) ||
+_alatus__subcmd__help__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__watch_commands] )) ||
+_alatus__subcmd__help__subcmd__watch_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help watch commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode_commands] )) ||
+_alatus__subcmd__mode_commands() {
+    local commands; commands=(
+'get:Get current firmware mode' \
+'set:Set firmware mode (balanced, quiet, performance, full)' \
+'balanced:Switch to Balanced profile' \
+'quiet:Switch to Quiet profile' \
+'performance:Switch to Performance profile' \
+'full:Switch to Full speed profile' \
+'cycle:Cycle through profiles\: Quiet -> Balanced -> Performance -> Full -> Quiet' \
+'auto:Query or configure auto-switching thermal profile on power changes' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus mode commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__auto_commands] )) ||
+_alatus__subcmd__mode__subcmd__auto_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode auto commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__balanced_commands] )) ||
+_alatus__subcmd__mode__subcmd__balanced_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode balanced commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__cycle_commands] )) ||
+_alatus__subcmd__mode__subcmd__cycle_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode cycle commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__full_commands] )) ||
+_alatus__subcmd__mode__subcmd__full_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode full commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__get_commands] )) ||
+_alatus__subcmd__mode__subcmd__get_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode get commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__help_commands] )) ||
+_alatus__subcmd__mode__subcmd__help_commands() {
+    local commands; commands=(
+'get:Get current firmware mode' \
+'set:Set firmware mode (balanced, quiet, performance, full)' \
+'balanced:Switch to Balanced profile' \
+'quiet:Switch to Quiet profile' \
+'performance:Switch to Performance profile' \
+'full:Switch to Full speed profile' \
+'cycle:Cycle through profiles\: Quiet -> Balanced -> Performance -> Full -> Quiet' \
+'auto:Query or configure auto-switching thermal profile on power changes' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus mode help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__help__subcmd__auto_commands] )) ||
+_alatus__subcmd__mode__subcmd__help__subcmd__auto_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode help auto commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__help__subcmd__balanced_commands] )) ||
+_alatus__subcmd__mode__subcmd__help__subcmd__balanced_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode help balanced commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__help__subcmd__cycle_commands] )) ||
+_alatus__subcmd__mode__subcmd__help__subcmd__cycle_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode help cycle commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__help__subcmd__full_commands] )) ||
+_alatus__subcmd__mode__subcmd__help__subcmd__full_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode help full commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__help__subcmd__get_commands] )) ||
+_alatus__subcmd__mode__subcmd__help__subcmd__get_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode help get commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__help__subcmd__help_commands] )) ||
+_alatus__subcmd__mode__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode help help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__help__subcmd__performance_commands] )) ||
+_alatus__subcmd__mode__subcmd__help__subcmd__performance_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode help performance commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__help__subcmd__quiet_commands] )) ||
+_alatus__subcmd__mode__subcmd__help__subcmd__quiet_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode help quiet commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__help__subcmd__set_commands] )) ||
+_alatus__subcmd__mode__subcmd__help__subcmd__set_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode help set commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__performance_commands] )) ||
+_alatus__subcmd__mode__subcmd__performance_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode performance commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__quiet_commands] )) ||
+_alatus__subcmd__mode__subcmd__quiet_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode quiet commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__mode__subcmd__set_commands] )) ||
+_alatus__subcmd__mode__subcmd__set_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus mode set commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__monitor_commands] )) ||
+_alatus__subcmd__monitor_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus monitor commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__oled_commands] )) ||
+_alatus__subcmd__oled_commands() {
+    local commands; commands=(
+'status:Show OLED care status, cumulative panel hours, cycle counts, and idle dimming state' \
+'dim:Toggle OLED idle dimming or specify target dimming percentage level' \
+'refresh:Trigger an immediate OLED pixel refresh conditioning cycle' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus oled commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__oled__subcmd__dim_commands] )) ||
+_alatus__subcmd__oled__subcmd__dim_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus oled dim commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__oled__subcmd__help_commands] )) ||
+_alatus__subcmd__oled__subcmd__help_commands() {
+    local commands; commands=(
+'status:Show OLED care status, cumulative panel hours, cycle counts, and idle dimming state' \
+'dim:Toggle OLED idle dimming or specify target dimming percentage level' \
+'refresh:Trigger an immediate OLED pixel refresh conditioning cycle' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus oled help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__oled__subcmd__help__subcmd__dim_commands] )) ||
+_alatus__subcmd__oled__subcmd__help__subcmd__dim_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus oled help dim commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__oled__subcmd__help__subcmd__help_commands] )) ||
+_alatus__subcmd__oled__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus oled help help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__oled__subcmd__help__subcmd__refresh_commands] )) ||
+_alatus__subcmd__oled__subcmd__help__subcmd__refresh_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus oled help refresh commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__oled__subcmd__help__subcmd__status_commands] )) ||
+_alatus__subcmd__oled__subcmd__help__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus oled help status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__oled__subcmd__refresh_commands] )) ||
+_alatus__subcmd__oled__subcmd__refresh_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus oled refresh commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__oled__subcmd__status_commands] )) ||
+_alatus__subcmd__oled__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus oled status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__perf_commands] )) ||
+_alatus__subcmd__perf_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus perf commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__quiet_commands] )) ||
+_alatus__subcmd__quiet_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus quiet commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb_commands] )) ||
+_alatus__subcmd__rgb_commands() {
+    local commands; commands=(
+'status:Show current RGB status' \
+'set-color:Set static RGB color via HEX (#RRGGBB, RRGGBB) or RGB values (R,G,B)' \
+'set-brightness:Set RGB brightness level (0-100% or 0-3)' \
+'off:Turn off keyboard RGB backlight' \
+'on:Turn on keyboard RGB backlight' \
+'sync:Toggle desktop accent color synchronization with keyboard backlighting' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus rgb commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__help_commands] )) ||
+_alatus__subcmd__rgb__subcmd__help_commands() {
+    local commands; commands=(
+'status:Show current RGB status' \
+'set-color:Set static RGB color via HEX (#RRGGBB, RRGGBB) or RGB values (R,G,B)' \
+'set-brightness:Set RGB brightness level (0-100% or 0-3)' \
+'off:Turn off keyboard RGB backlight' \
+'on:Turn on keyboard RGB backlight' \
+'sync:Toggle desktop accent color synchronization with keyboard backlighting' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus rgb help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__help__subcmd__help_commands] )) ||
+_alatus__subcmd__rgb__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb help help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__help__subcmd__off_commands] )) ||
+_alatus__subcmd__rgb__subcmd__help__subcmd__off_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb help off commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__help__subcmd__on_commands] )) ||
+_alatus__subcmd__rgb__subcmd__help__subcmd__on_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb help on commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__help__subcmd__set-brightness_commands] )) ||
+_alatus__subcmd__rgb__subcmd__help__subcmd__set-brightness_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb help set-brightness commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__help__subcmd__set-color_commands] )) ||
+_alatus__subcmd__rgb__subcmd__help__subcmd__set-color_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb help set-color commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__help__subcmd__status_commands] )) ||
+_alatus__subcmd__rgb__subcmd__help__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb help status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__help__subcmd__sync_commands] )) ||
+_alatus__subcmd__rgb__subcmd__help__subcmd__sync_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb help sync commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__off_commands] )) ||
+_alatus__subcmd__rgb__subcmd__off_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb off commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__on_commands] )) ||
+_alatus__subcmd__rgb__subcmd__on_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb on commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__set-brightness_commands] )) ||
+_alatus__subcmd__rgb__subcmd__set-brightness_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb set-brightness commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__set-color_commands] )) ||
+_alatus__subcmd__rgb__subcmd__set-color_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb set-color commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__status_commands] )) ||
+_alatus__subcmd__rgb__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__sync_commands] )) ||
+_alatus__subcmd__rgb__subcmd__sync_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb sync commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__session_commands] )) ||
+_alatus__subcmd__session_commands() {
+    local commands; commands=(
+'status:Show active session agent status and configuration' \
+'set:Dynamically configure session subsystems on the running agent' \
+'pixel-refresh:Trigger an immediate OLED pixel refresh conditioning cycle' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus session commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__session__subcmd__help_commands] )) ||
+_alatus__subcmd__session__subcmd__help_commands() {
+    local commands; commands=(
+'status:Show active session agent status and configuration' \
+'set:Dynamically configure session subsystems on the running agent' \
+'pixel-refresh:Trigger an immediate OLED pixel refresh conditioning cycle' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus session help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__session__subcmd__help__subcmd__help_commands] )) ||
+_alatus__subcmd__session__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus session help help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__session__subcmd__help__subcmd__pixel-refresh_commands] )) ||
+_alatus__subcmd__session__subcmd__help__subcmd__pixel-refresh_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus session help pixel-refresh commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__session__subcmd__help__subcmd__set_commands] )) ||
+_alatus__subcmd__session__subcmd__help__subcmd__set_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus session help set commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__session__subcmd__help__subcmd__status_commands] )) ||
+_alatus__subcmd__session__subcmd__help__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus session help status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__session__subcmd__pixel-refresh_commands] )) ||
+_alatus__subcmd__session__subcmd__pixel-refresh_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus session pixel-refresh commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__session__subcmd__set_commands] )) ||
+_alatus__subcmd__session__subcmd__set_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus session set commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__session__subcmd__status_commands] )) ||
+_alatus__subcmd__session__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus session status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__status_commands] )) ||
+_alatus__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__watch_commands] )) ||
+_alatus__subcmd__watch_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus watch commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_alatus" ]; then
+    _alatus "$@"
+else
+    compdef _alatus alatus
+fi

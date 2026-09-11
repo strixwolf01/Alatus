@@ -1,0 +1,161 @@
+[package]
+name = "alatus"
+version = "1.0.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/strixwolf01/Alatus"
+description = "ASUS Hardware Orchestration Suite for Linux"
+authors = ["Alatus Contributors"]
+
+[lib]
+name = "alatus"
+path = "src/lib.rs"
+
+[[bin]]
+name = "alatus"
+path = "src/bin/alatus.rs"
+
+[[bin]]
+name = "alatusd"
+path = "src/bin/alatusd.rs"
+
+[[bin]]
+name = "alatus-session"
+path = "src/bin/alatus_session.rs"
+
+[[bin]]
+name = "alatus-gui"
+path = "src/bin/alatus_gui.rs"
+required-features = ["gui"]
+
+[features]
+gui = ["dep:slint", "dep:slint-build"]
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
+zbus = { version = "5", default-features = false, features = ["tokio"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync", "process", "signal"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+futures-util = "0.3"
+libc = "0.2"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+slint = { version = "1.9", default-features = false, features = ["compat-1-2", "backend-winit", "renderer-femtovg"], optional = true }
+
+[build-dependencies]
+slint-build = { version = "1.9", optional = true }
+
+[dev-dependencies]
+tempfile = "3"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+[package.metadata.deb]
+section = "utils"
+maintainer = "Alatus Contributors"
+maintainer-scripts = "packaging/deb"
+assets = [
+    ["target/release/alatus", "usr/bin/alatus", "755"],
+    ["target/release/alatusd", "usr/bin/alatusd", "755"],
+    ["target/release/alatus-session", "usr/bin/alatus-session", "755"],
+    ["target/release/alatus-gui", "usr/bin/alatus-gui", "755"],
+    ["packaging/io.strixwolf.alatus.desktop", "usr/share/applications/io.strixwolf.alatus.desktop", "644"],
+    ["packaging/alatus-gui.desktop", "usr/share/applications/alatus-gui.desktop", "644"],
+    ["packaging/io.strixwolf.alatus.svg", "usr/share/icons/hicolor/scalable/apps/io.strixwolf.alatus.svg", "644"],
+    ["packaging/alatus-gui.svg", "usr/share/icons/hicolor/scalable/apps/alatus-gui.svg", "644"],
+    ["packaging/icons/32x32/apps/io.strixwolf.alatus.png", "usr/share/icons/hicolor/32x32/apps/io.strixwolf.alatus.png", "644"],
+    ["packaging/icons/32x32/apps/alatus-gui.png", "usr/share/icons/hicolor/32x32/apps/alatus-gui.png", "644"],
+    ["packaging/icons/48x48/apps/io.strixwolf.alatus.png", "usr/share/icons/hicolor/48x48/apps/io.strixwolf.alatus.png", "644"],
+    ["packaging/icons/48x48/apps/alatus-gui.png", "usr/share/icons/hicolor/48x48/apps/alatus-gui.png", "644"],
+    ["packaging/icons/64x64/apps/io.strixwolf.alatus.png", "usr/share/icons/hicolor/64x64/apps/io.strixwolf.alatus.png", "644"],
+    ["packaging/icons/64x64/apps/alatus-gui.png", "usr/share/icons/hicolor/64x64/apps/alatus-gui.png", "644"],
+    ["packaging/icons/128x128/apps/io.strixwolf.alatus.png", "usr/share/icons/hicolor/128x128/apps/io.strixwolf.alatus.png", "644"],
+    ["packaging/icons/128x128/apps/alatus-gui.png", "usr/share/icons/hicolor/128x128/apps/alatus-gui.png", "644"],
+    ["packaging/icons/256x256/apps/io.strixwolf.alatus.png", "usr/share/icons/hicolor/256x256/apps/io.strixwolf.alatus.png", "644"],
+    ["packaging/icons/256x256/apps/alatus-gui.png", "usr/share/icons/hicolor/256x256/apps/alatus-gui.png", "644"],
+    ["packaging/io.strixwolf.alatus.svg", "usr/share/pixmaps/io.strixwolf.alatus.svg", "644"],
+    ["packaging/alatus-gui.svg", "usr/share/pixmaps/alatus-gui.svg", "644"],
+    ["packaging/completions/alatus.bash", "usr/share/bash-completion/completions/alatus", "644"],
+    ["packaging/completions/_alatus", "usr/share/zsh/site-functions/_alatus", "644"],
+    ["packaging/completions/alatus.fish", "usr/share/fish/vendor_completions.d/alatus.fish", "644"],
+    ["packaging/io.strixwolf.alatus.metainfo.xml", "usr/share/metainfo/", "644"],
+    ["packaging/io.strixwolf.alatus.policy", "usr/share/polkit-1/actions/io.strixwolf.alatus.policy", "644"],
+    ["packaging/alatusd.service", "usr/lib/systemd/system/alatusd.service", "644"],
+    ["packaging/alatus-session.service", "usr/lib/systemd/user/alatus-session.service", "644"],
+    ["packaging/io.strixwolf.alatus.conf", "usr/share/dbus-1/system.d/io.strixwolf.alatus.Daemon.conf", "644"],
+    ["packaging/udev/99-alatus-rgb.rules", "usr/lib/udev/rules.d/99-alatus-rgb.rules", "644"],
+]
+
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/alatus", dest = "/usr/bin/alatus", mode = "755" },
+    { source = "target/release/alatusd", dest = "/usr/bin/alatusd", mode = "755" },
+    { source = "target/release/alatus-session", dest = "/usr/bin/alatus-session", mode = "755" },
+    { source = "target/release/alatus-gui", dest = "/usr/bin/alatus-gui", mode = "755" },
+    { source = "packaging/io.strixwolf.alatus.desktop", dest = "/usr/share/applications/io.strixwolf.alatus.desktop", mode = "644" },
+    { source = "packaging/alatus-gui.desktop", dest = "/usr/share/applications/alatus-gui.desktop", mode = "644" },
+    { source = "packaging/io.strixwolf.alatus.svg", dest = "/usr/share/icons/hicolor/scalable/apps/io.strixwolf.alatus.svg", mode = "644" },
+    { source = "packaging/alatus-gui.svg", dest = "/usr/share/icons/hicolor/scalable/apps/alatus-gui.svg", mode = "644" },
+    { source = "packaging/icons/32x32/apps/io.strixwolf.alatus.png", dest = "/usr/share/icons/hicolor/32x32/apps/io.strixwolf.alatus.png", mode = "644" },
+    { source = "packaging/icons/32x32/apps/alatus-gui.png", dest = "/usr/share/icons/hicolor/32x32/apps/alatus-gui.png", mode = "644" },
+    { source = "packaging/icons/48x48/apps/io.strixwolf.alatus.png", dest = "/usr/share/icons/hicolor/48x48/apps/io.strixwolf.alatus.png", mode = "644" },
+    { source = "packaging/icons/48x48/apps/alatus-gui.png", dest = "/usr/share/icons/hicolor/48x48/apps/alatus-gui.png", mode = "644" },
+    { source = "packaging/icons/64x64/apps/io.strixwolf.alatus.png", dest = "/usr/share/icons/hicolor/64x64/apps/io.strixwolf.alatus.png", mode = "644" },
+    { source = "packaging/icons/64x64/apps/alatus-gui.png", dest = "/usr/share/icons/hicolor/64x64/apps/alatus-gui.png", mode = "644" },
+    { source = "packaging/icons/128x128/apps/io.strixwolf.alatus.png", dest = "/usr/share/icons/hicolor/128x128/apps/io.strixwolf.alatus.png", mode = "644" },
+    { source = "packaging/icons/128x128/apps/alatus-gui.png", dest = "/usr/share/icons/hicolor/128x128/apps/alatus-gui.png", mode = "644" },
+    { source = "packaging/icons/256x256/apps/io.strixwolf.alatus.png", dest = "/usr/share/icons/hicolor/256x256/apps/io.strixwolf.alatus.png", mode = "644" },
+    { source = "packaging/icons/256x256/apps/alatus-gui.png", dest = "/usr/share/icons/hicolor/256x256/apps/alatus-gui.png", mode = "644" },
+    { source = "packaging/io.strixwolf.alatus.svg", dest = "/usr/share/pixmaps/io.strixwolf.alatus.svg", mode = "644" },
+    { source = "packaging/alatus-gui.svg", dest = "/usr/share/pixmaps/alatus-gui.svg", mode = "644" },
+    { source = "packaging/completions/alatus.bash", dest = "/usr/share/bash-completion/completions/alatus", mode = "644" },
+    { source = "packaging/completions/_alatus", dest = "/usr/share/zsh/site-functions/_alatus", mode = "644" },
+    { source = "packaging/completions/alatus.fish", dest = "/usr/share/fish/vendor_completions.d/alatus.fish", mode = "644" },
+    { source = "packaging/io.strixwolf.alatus.metainfo.xml", dest = "/usr/share/metainfo/io.strixwolf.alatus.metainfo.xml", mode = "644" },
+    { source = "packaging/io.strixwolf.alatus.policy", dest = "/usr/share/polkit-1/actions/io.strixwolf.alatus.policy", mode = "644" },
+    { source = "packaging/alatusd.service", dest = "/usr/lib/systemd/system/alatusd.service", mode = "644" },
+    { source = "packaging/alatus-session.service", dest = "/usr/lib/systemd/user/alatus-session.service", mode = "644" },
+    { source = "packaging/io.strixwolf.alatus.conf", dest = "/usr/share/dbus-1/system.d/io.strixwolf.alatus.Daemon.conf", mode = "644" },
+    { source = "packaging/udev/99-alatus-rgb.rules", dest = "/usr/lib/udev/rules.d/99-alatus-rgb.rules", mode = "644" }
+]
+post_install_script = """
+if ! getent group alatus-rgb >/dev/null; then
+    groupadd -r alatus-rgb 2>/dev/null || true
+fi
+if [ -x /usr/bin/udevadm ]; then
+    udevadm control --reload-rules || true
+    udevadm trigger --subsystem-match=hidraw || true
+fi
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload || true
+    systemctl try-restart alatusd.service 2>/dev/null || true
+fi
+/bin/systemctl enable --now alatusd.service >/dev/null 2>&1 || :
+mkdir -p /usr/lib/systemd/user/default.target.wants 2>/dev/null || true
+ln -sf /usr/lib/systemd/user/alatus-session.service /usr/lib/systemd/user/default.target.wants/alatus-session.service 2>/dev/null || true
+if [ -x /usr/bin/systemctl ]; then
+    systemctl --global enable alatus-session.service >/dev/null 2>&1 || true
+fi
+ln -sf io.strixwolf.alatus.svg /usr/share/icons/hicolor/scalable/apps/alatus-gui.svg 2>/dev/null || true
+mkdir -p /usr/share/pixmaps 2>/dev/null || true
+ln -sf /usr/share/icons/hicolor/scalable/apps/io.strixwolf.alatus.svg /usr/share/pixmaps/io.strixwolf.alatus.svg 2>/dev/null || true
+ln -sf /usr/share/icons/hicolor/scalable/apps/io.strixwolf.alatus.svg /usr/share/pixmaps/alatus-gui.svg 2>/dev/null || true
+for size in 32 48 64 128 256; do
+    mkdir -p "/usr/share/icons/hicolor/${size}x${size}/apps" 2>/dev/null || true
+    ln -sf "io.strixwolf.alatus.png" "/usr/share/icons/hicolor/${size}x${size}/apps/alatus-gui.png" 2>/dev/null || true
+done
+if [ -x /usr/bin/update-desktop-database ]; then
+    /usr/bin/update-desktop-database /usr/share/applications 2>/dev/null || true
+fi
+if [ -x /usr/bin/gtk-update-icon-cache ]; then
+    /usr/bin/gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
+fi
+if [ -x /usr/bin/kbuildsycoca6 ]; then
+    /usr/bin/kbuildsycoca6 --noincremental 2>/dev/null || true
+fi
+"""

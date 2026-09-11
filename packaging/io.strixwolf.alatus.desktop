@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Alatus
+GenericName=ASUS Hardware Control Center
+Comment=ASUS Vivobook & Zenbook Hardware Control
+Exec=alatus-gui %U
+Icon=io.strixwolf.alatus
+Terminal=false
+Type=Application
+Categories=Utility;Settings;HardwareSettings;
+Keywords=asus;hardware;battery;fan;rgb;oled;thermal;vivobook;zenbook;alatus;
+StartupWMClass=alatus-gui
+StartupNotify=true

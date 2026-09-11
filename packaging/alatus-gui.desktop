@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Alatus
+Comment=Control center for ASUS Vivobook & Zenbook laptops
+Exec=alatus-gui %U
+Icon=alatus-gui
+Terminal=false
+Type=Application
+Categories=Utility;Settings;HardwareSettings;
+Keywords=asus;hardware;battery;fan;rgb;oled;thermal;vivobook;zenbook;alatus;
+StartupWMClass=alatus-gui
+StartupNotify=true
+NoDisplay=true

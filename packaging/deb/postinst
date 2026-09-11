@@ -1,0 +1,45 @@
+#!/bin/sh
+set -e
+
+# Create alatus-rgb group if it does not exist
+if ! getent group alatus-rgb >/dev/null; then
+    groupadd -r alatus-rgb 2>/dev/null || true
+fi
+
+# Reload udev rules
+if [ -x /usr/bin/udevadm ]; then
+    udevadm control --reload-rules || true
+    udevadm trigger --subsystem-match=hidraw || true
+fi
+
+# Reload systemd and restart daemon if running
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload || true
+    systemctl try-restart alatusd.service 2>/dev/null || true
+fi
+
+/bin/systemctl enable --now alatusd.service >/dev/null 2>&1 || :
+mkdir -p /usr/lib/systemd/user/default.target.wants 2>/dev/null || true
+ln -sf /usr/lib/systemd/user/alatus-session.service /usr/lib/systemd/user/default.target.wants/alatus-session.service 2>/dev/null || true
+if [ -x /usr/bin/systemctl ]; then
+    systemctl --global enable alatus-session.service >/dev/null 2>&1 || true
+fi
+ln -sf io.strixwolf.alatus.svg /usr/share/icons/hicolor/scalable/apps/alatus-gui.svg 2>/dev/null || true
+mkdir -p /usr/share/pixmaps 2>/dev/null || true
+ln -sf /usr/share/icons/hicolor/scalable/apps/io.strixwolf.alatus.svg /usr/share/pixmaps/io.strixwolf.alatus.svg 2>/dev/null || true
+ln -sf /usr/share/icons/hicolor/scalable/apps/io.strixwolf.alatus.svg /usr/share/pixmaps/alatus-gui.svg 2>/dev/null || true
+for size in 32 48 64 128 256; do
+    mkdir -p "/usr/share/icons/hicolor/${size}x${size}/apps" 2>/dev/null || true
+    ln -sf "io.strixwolf.alatus.png" "/usr/share/icons/hicolor/${size}x${size}/apps/alatus-gui.png" 2>/dev/null || true
+done
+if [ -x /usr/bin/update-desktop-database ]; then
+    /usr/bin/update-desktop-database /usr/share/applications 2>/dev/null || true
+fi
+if [ -x /usr/bin/gtk-update-icon-cache ]; then
+    /usr/bin/gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
+fi
+if [ -x /usr/bin/kbuildsycoca6 ]; then
+    /usr/bin/kbuildsycoca6 --noincremental 2>/dev/null || true
+fi
+
+exit 0

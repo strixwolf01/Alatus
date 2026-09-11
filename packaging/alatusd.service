@@ -1,0 +1,22 @@
+[Unit]
+Description=Alatus System Daemon
+After=dbus.service
+Before=display-manager.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/alatusd
+Restart=always
+RestartSec=5
+
+# Production security sandbox hardening
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/sys /dev
+PrivateTmp=true
+ProtectKernelLogs=true
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_SYS_RAWIO
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

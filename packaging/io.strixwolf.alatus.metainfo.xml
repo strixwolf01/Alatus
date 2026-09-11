@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<component type="desktop-application">
+  <id>io.strixwolf.alatus</id>
+  <name>Alatus</name>
+  <summary>ASUS Control for Linux</summary>
+
+  <metadata_license>FSFAP</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer id="strixwolf01">
+    <name>Alatus Contributors</name>
+  </developer>
+
+  <description>
+    <p>
+      Alatus is a lightweight, native Linux control center for modern ASUS Vivobook and Zenbook laptops.
+      It allows you to tweak deep hardware settings that are usually only available on Windows.
+    </p>
+    <p>
+      This is a community package and is not officially supported by ASUS.
+    </p>
+    <ul>
+      <li>Battery Care: Set charging limits to 80% to prolong battery lifespan.</li>
+      <li>Fan Profiles: Switch between Quiet, Balanced, Performance, and Full Speed modes.</li>
+      <li>OLED Care: Manage flicker-free dimming and pixel refresh conditioning.</li>
+      <li>Keyboard Backlight: Single-zone RGB and desktop accent color sync.</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">io.strixwolf.alatus.desktop</launchable>
+  <icon type="stock">io.strixwolf.alatus</icon>
+
+  <url type="homepage">https://github.com/strixwolf01/Alatus</url>
+  <url type="bugtracker">https://github.com/strixwolf01/Alatus/issues</url>
+
+  <content_rating type="oars-1.1" />
+
+  <releases>
+    <release version="1.0.0" date="2026-09-11">
+      <description>
+        <p>Alatus v1.0.0 Genesis Release: Definitive initial stable release of the native ASUS hardware orchestration suite in Rust, featuring ACPI WMI DebugFS thermal management, Full Speed fan profile, ITE5570 LampArray RGB, Flicker-Free OLED Care, single-instance D-Bus desktop integration, and Material 3 Slint interface.</p>
+      </description>
+    </release>
+    <release version="0.3.10" date="2026-09-11">
+      <description>
+        <p>Hotfix release: implement FreeDesktop D-Bus single-instance application guard to prevent duplicate tray icons and raise existing windows, hide duplicate launcher in application menus via NoDisplay desktop entry alignment, and install multi-resolution raster PNG window icons for KDE Plasma Wayland decorations.</p>
+      </description>
+    </release>
+    <release version="0.3.9" date="2026-09-11">
+      <description>
+        <p>Wayland and UI refinement: dynamically discover and inject Wayland environment variables for kscreen-doctor child processes with resilient D-Bus fallback via org.kde.Solid.PowerManagement, sanitize verbose GPU device specifications, and align System Specifications into a balanced symmetrical 2-column grid.</p>
+      </description>
+    </release>
+    <release version="0.3.8" date="2026-09-11">
+      <description>
+        <p>Architectural overhaul: fixed Wayland compositor dimming and kscreen-doctor integration, eliminated taskbar ghost window on minimized startup, implemented atomic configuration persistence, fixed Wayland titlebar icon association, and expanded System Specifications with a dedicated Battery Health telemetry breakdown.</p>
+      </description>
+    </release>
+    <release version="0.3.7" date="2026-09-09">
+      <description>
+        <p>Added universal FreeDesktop StatusNotifierItem system tray icon, minimize-to-tray window management, autostart toggle, and routed ASUS WMI DebugFS diagnostics through alatusd over D-Bus.</p>
+      </description>
+    </release>
+    <release version="0.3.6" date="2026-09-07">
+      <description>
+        <p>Redesigned Slint GUI Home view with minimalist layout, added dedicated System Info page, and introduced interactive Hardware Compatibility Test Suite.</p>
+      </description>
+    </release>
+  </releases>
+</component>

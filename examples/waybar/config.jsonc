@@ -1,0 +1,13 @@
+{
+    // Waybar custom module configuration for Alatus hardware management
+    // Include "custom/alatus" in your "modules-left", "modules-center", or "modules-right".
+    "custom/alatus": {
+        "exec": "alatus status --json --watch",
+        "return-type": "json",
+        "format": "{text}",
+        "tooltip": true,
+        "on-click": "alatus mode cycle",
+        "on-click-right": "alatus monitor",
+        "restart-interval": 5
+    }
+}

@@ -1,0 +1,28 @@
+# Project-specific
+context/
+.agents/
+staging_analysis/*
+!staging_analysis/.gitkeep
+
+# Rust / Cargo
+/target
+/libs
+**/*.rs.bk
+
+# Editor: VS Code
+.vscode/
+*.code-workspace
+
+# Editor: JetBrains / RustRover
+.idea/
+
+# Editor: Vim / Neovim
+*.swp
+*.swo
+*~
+
+# OS: macOS
+.DS_Store
+
+# OS: Linux
+.Trash-*
