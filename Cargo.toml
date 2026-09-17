@@ -36,8 +36,11 @@ serde_json = "1"
 futures-util = "0.3"
 libc = "0.2"
 tracing = "0.1"
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 slint = { version = "1.9", default-features = false, features = ["compat-1-2", "backend-winit", "renderer-femtovg"], optional = true }
+
+thiserror = "2"
+toml = "0.8"
 
 [build-dependencies]
 slint-build = { version = "1.9", optional = true }

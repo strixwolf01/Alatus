@@ -288,7 +288,11 @@ pub fn parse_devs(response: &str) -> Result<u32, FirmwareModeError> {
 /// mounted. Restores the `dev_id` selector afterwards so the query is
 /// side-effect free.
 pub fn read_firmware_mode() -> Result<FirmwareMode, FirmwareModeError> {
-    let base = Path::new(DEBUGFS_BASE);
+    read_firmware_mode_at(Path::new(DEBUGFS_BASE))
+}
+
+/// Reads the actual firmware thermal/fan mode from a specified debugfs base directory.
+pub fn read_firmware_mode_at(base: &Path) -> Result<FirmwareMode, FirmwareModeError> {
     if base.exists() {
         return read_firmware_mode_from(
             &base.join("dev_id"),
@@ -400,7 +404,10 @@ fn interpret_debugfs_write(
 /// 2. Write state value (`0..=3`) to `ctrl_param`.
 /// 3. Read `devs` to trigger the operation and verify acceptance.
 /// 4. Read `dsts` (or `ctrl_param`) to check readback status.
-fn set_firmware_mode_at(base: &Path, mode: FirmwareMode) -> Result<WriteResult, FirmwareModeError> {
+pub fn set_firmware_mode_at(
+    base: &Path,
+    mode: FirmwareMode,
+) -> Result<WriteResult, FirmwareModeError> {
     let Some(param) = mode.write_param() else {
         return Err(FirmwareModeError::Unsupported(
             "cannot write an unknown/ambiguous firmware mode",

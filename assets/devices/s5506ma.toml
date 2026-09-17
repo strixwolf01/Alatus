@@ -1,0 +1,25 @@
+[device]
+name = "ASUS Vivobook S 15 OLED"
+vendor = "ASUSTeK COMPUTER INC."
+match_product = ["S5506MA", "Vivobook_ASUSLaptop_S5506MA"]
+match_board = ["S5506MA"]
+
+[capabilities.rgb]
+driver = "ite5570"
+zones = 1
+supports_timeout = true
+default_timeout_policy = "Always"
+
+[capabilities.thermal]
+driver = "asus_wmi_debugfs"
+profiles = ["quiet", "balanced", "performance", "full_speed"]
+has_fan_curve = false
+
+[capabilities.display]
+has_oled = true
+supports_flicker_free = true
+refresh_rates = [60, 120]
+
+[capabilities.battery]
+driver = "asus_charge_control"
+
