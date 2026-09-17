@@ -21,6 +21,15 @@ all: build
 build:
 	$(CARGO) build --release --bins --features gui
 
+rpm:
+	bash scripts/build_rpm.sh
+
+deb:
+	bash scripts/build_deb.sh
+
+deploy:
+	bash scripts/deploy_local.sh
+
 install:
 	$(INSTALL) -d $(DESTDIR)$(BINDIR)
 	$(INSTALL) -m 755 target/release/alatus $(DESTDIR)$(BINDIR)/alatus
@@ -43,6 +52,10 @@ install:
 	$(INSTALL) -m 644 packaging/alatusd.service $(DESTDIR)$(SYSTEMDUNITDIR)/alatusd.service
 	$(INSTALL) -d $(DESTDIR)$(SYSTEMDUSERDIR)
 	$(INSTALL) -m 644 packaging/alatus-session.service $(DESTDIR)$(SYSTEMDUSERDIR)/alatus-session.service
+	$(INSTALL) -d $(DESTDIR)$(SYSTEMDUSERDIR)/graphical-session.target.wants
+	ln -sf ../alatus-session.service $(DESTDIR)$(SYSTEMDUSERDIR)/graphical-session.target.wants/alatus-session.service
+	$(INSTALL) -d $(DESTDIR)/etc/xdg/autostart
+	$(INSTALL) -m 644 packaging/autostart/io.strixwolf.alatus.desktop $(DESTDIR)/etc/xdg/autostart/io.strixwolf.alatus.desktop
 	$(INSTALL) -d $(DESTDIR)$(DBUSCONFDIR)
 	$(INSTALL) -m 644 packaging/io.strixwolf.alatus.conf $(DESTDIR)$(DBUSCONFDIR)/io.strixwolf.alatus.Daemon.conf
 	$(INSTALL) -d $(DESTDIR)$(POLKITDIR)
@@ -75,6 +88,9 @@ uninstall:
 	rm -f $(DESTDIR)$(DATADIR)/pixmaps/alatus-gui.svg
 	rm -f $(DESTDIR)$(SYSTEMDUNITDIR)/alatusd.service
 	rm -f $(DESTDIR)$(SYSTEMDUSERDIR)/alatus-session.service
+	rm -f $(DESTDIR)$(SYSTEMDUSERDIR)/graphical-session.target.wants/alatus-session.service
+	rm -f $(DESTDIR)/etc/xdg/autostart/io.strixwolf.alatus.desktop
+	rm -f $(DESTDIR)/etc/xdg/autostart/io.strixwolf.alatus.autostart.desktop
 	rm -f $(DESTDIR)$(DBUSCONFDIR)/io.strixwolf.alatus.Daemon.conf
 	rm -f $(DESTDIR)$(POLKITDIR)/io.strixwolf.alatus.policy
 	rm -f $(DESTDIR)$(UDEVDIR)/99-alatus-rgb.rules
@@ -86,4 +102,4 @@ uninstall:
 clean:
 	$(CARGO) clean
 
-.PHONY: all build install uninstall clean
+.PHONY: all build install uninstall clean rpm deb deploy

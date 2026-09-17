@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Alatus
+GenericName=Hardware Control
+Comment=ASUS Vivobook Hardware Orchestration Suite
+Exec=alatus gui --tray
+Icon=io.strixwolf.alatus
+Terminal=false
+Categories=Settings;HardwareSettings;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+X-KDE-autostart-after=panel
+

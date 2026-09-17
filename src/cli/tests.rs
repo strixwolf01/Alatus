@@ -18,8 +18,17 @@ fn test_cli_parse_gui() {
         Some(Commands::Gui { minimized: true })
     ));
 
+    let cli_gui_tray = Cli::try_parse_from(["alatus", "gui", "--tray"]).unwrap();
+    assert!(matches!(
+        cli_gui_tray.command,
+        Some(Commands::Gui { minimized: true })
+    ));
+
     let cli_gui_flag = Cli::try_parse_from(["alatus", "--gui"]).unwrap();
     assert!(cli_gui_flag.gui);
+
+    let cli_tray_flag = Cli::try_parse_from(["alatus", "--tray"]).unwrap();
+    assert!(cli_tray_flag.tray);
 }
 
 #[test]

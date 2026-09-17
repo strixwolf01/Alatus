@@ -29,9 +29,63 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
 use tracing::{error, info, warn};
 
-pub async fn run_gui() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run_gui(minimized: bool) -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
     info!("Starting Alatus Hardware Control Center GUI...");
+
+    let args: Vec<String> = std::env::args().collect();
+    let start_minimized = minimized
+        || args
+            .iter()
+            .any(|a| a == "--minimized" || a == "-m" || a == "--tray");
+
+    // Single-Instance File Lock: Guard against concurrent execution at kernel level
+    let runtime_dir = std::env::var("XDG_RUNTIME_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|_| {
+            let tmp = std::env::temp_dir();
+            let uid = unsafe { libc::getuid() };
+            tmp.join(format!("alatus-runtime-{uid}"))
+        });
+    let _ = std::fs::create_dir_all(&runtime_dir);
+    let lock_path = runtime_dir.join("alatus-gui.lock");
+
+    let lock_file = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(&lock_path);
+
+    let _lock_guard = match lock_file {
+        Ok(file) => {
+            use std::os::unix::io::AsRawFd;
+            let res = unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) };
+            if res == 0 { Some(file) } else { None }
+        }
+        Err(_) => None,
+    };
+
+    if _lock_guard.is_none() {
+        if start_minimized {
+            info!("Another Alatus GUI instance is already running; exiting tray launch.");
+            std::process::exit(0);
+        } else {
+            info!("Alatus GUI is already running. Raising active window.");
+            if let Ok(conn) = zbus::Connection::session().await
+                && let Ok(proxy) = zbus::Proxy::new(
+                    &conn,
+                    "io.strixwolf.alatus.Gui",
+                    "/io/strixwolf/alatus/Gui",
+                    "io.strixwolf.alatus.Gui",
+                )
+                .await
+            {
+                let _ = proxy.call::<_, _, ()>("ShowWindow", &()).await;
+            }
+            std::process::exit(0);
+        }
+    }
 
     // Associate Wayland window with desktop entry and scalable SVG icon
     let _ = slint::set_xdg_app_id("io.strixwolf.alatus");
@@ -115,9 +169,6 @@ pub async fn run_gui() -> Result<(), Box<dyn std::error::Error>> {
             None
         }
     };
-
-    let args: Vec<String> = std::env::args().collect();
-    let start_minimized = args.iter().any(|a| a == "--minimized" || a == "-m");
 
     // Unified configuration persistence
     let config = load_config();

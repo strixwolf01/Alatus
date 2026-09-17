@@ -52,6 +52,7 @@ pub struct AlatusConfig {
     pub thermal_mode: u32,
     pub charge_limit: u32,
     pub tray_enabled: bool,
+    #[serde(alias = "autostart_tray")]
     pub autostart_enabled: bool,
     pub rgb_preset: i32,
     pub rgb_brightness: u32,

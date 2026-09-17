@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "remove" ]; then
+    if [ -x /usr/bin/systemctl ]; then
+        systemctl disable --now alatusd.service 2>/dev/null || true
+        systemctl --global disable alatus-session.service 2>/dev/null || true
+    fi
+fi
+
+exit 0
+

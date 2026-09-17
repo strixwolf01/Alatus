@@ -32,6 +32,10 @@ pub struct Cli {
     #[arg(long, default_value_t = false)]
     pub gui: bool,
 
+    /// Start GUI minimized to system tray
+    #[arg(long, default_value_t = false)]
+    pub tray: bool,
+
     #[command(subcommand)]
     pub command: Option<Commands>,
 }
@@ -41,7 +45,7 @@ pub enum Commands {
     /// Launch the Slint graphical user interface dashboard
     Gui {
         /// Start GUI minimized to system tray
-        #[arg(short = 'm', long, default_value_t = false)]
+        #[arg(short = 'm', long, visible_alias = "tray", default_value_t = false)]
         minimized: bool,
     },
 
@@ -173,11 +177,16 @@ pub enum Commands {
 pub async fn run() {
     let cli = Cli::parse();
 
-    // Check for GUI launch via subcommand 'gui' or flag '--gui'
-    if cli.gui || matches!(cli.command, Some(Commands::Gui { .. })) {
+    // Check for GUI launch via subcommand 'gui' or flag '--gui' or '--tray'
+    if cli.gui || cli.tray || matches!(cli.command, Some(Commands::Gui { .. })) {
         #[cfg(feature = "gui")]
         {
-            if let Err(e) = crate::gui::run_gui().await {
+            let minimized = cli.tray
+                || match &cli.command {
+                    Some(Commands::Gui { minimized, .. }) => *minimized,
+                    _ => false,
+                };
+            if let Err(e) = crate::gui::run_gui(minimized).await {
                 eprintln!("Error executing GUI: {e}");
                 process::exit(1);
             }

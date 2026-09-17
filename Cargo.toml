@@ -54,6 +54,7 @@ lto = "thin"
 section = "utils"
 maintainer = "Alatus Contributors"
 maintainer-scripts = "packaging/deb"
+features = ["gui"]
 assets = [
     ["target/release/alatus", "usr/bin/alatus", "755"],
     ["target/release/alatusd", "usr/bin/alatusd", "755"],
@@ -80,6 +81,8 @@ assets = [
     ["packaging/io.strixwolf.alatus.policy", "usr/share/polkit-1/actions/io.strixwolf.alatus.policy", "644"],
     ["packaging/alatusd.service", "usr/lib/systemd/system/alatusd.service", "644"],
     ["packaging/alatus-session.service", "usr/lib/systemd/user/alatus-session.service", "644"],
+    ["packaging/graphical-session.target.wants/alatus-session.service", "usr/lib/systemd/user/graphical-session.target.wants/alatus-session.service", "644"],
+    ["packaging/autostart/io.strixwolf.alatus.desktop", "etc/xdg/autostart/io.strixwolf.alatus.desktop", "644"],
     ["packaging/io.strixwolf.alatus.conf", "usr/share/dbus-1/system.d/io.strixwolf.alatus.Daemon.conf", "644"],
     ["packaging/udev/99-alatus-rgb.rules", "usr/lib/udev/rules.d/99-alatus-rgb.rules", "644"],
 ]
@@ -111,6 +114,8 @@ assets = [
     { source = "packaging/io.strixwolf.alatus.policy", dest = "/usr/share/polkit-1/actions/io.strixwolf.alatus.policy", mode = "644" },
     { source = "packaging/alatusd.service", dest = "/usr/lib/systemd/system/alatusd.service", mode = "644" },
     { source = "packaging/alatus-session.service", dest = "/usr/lib/systemd/user/alatus-session.service", mode = "644" },
+    { source = "packaging/graphical-session.target.wants/alatus-session.service", dest = "/usr/lib/systemd/user/graphical-session.target.wants/alatus-session.service", mode = "644" },
+    { source = "packaging/autostart/io.strixwolf.alatus.desktop", dest = "/etc/xdg/autostart/io.strixwolf.alatus.desktop", mode = "644" },
     { source = "packaging/io.strixwolf.alatus.conf", dest = "/usr/share/dbus-1/system.d/io.strixwolf.alatus.Daemon.conf", mode = "644" },
     { source = "packaging/udev/99-alatus-rgb.rules", dest = "/usr/lib/udev/rules.d/99-alatus-rgb.rules", mode = "644" }
 ]
@@ -129,6 +134,8 @@ fi
 /bin/systemctl enable --now alatusd.service >/dev/null 2>&1 || :
 mkdir -p /usr/lib/systemd/user/default.target.wants 2>/dev/null || true
 ln -sf /usr/lib/systemd/user/alatus-session.service /usr/lib/systemd/user/default.target.wants/alatus-session.service 2>/dev/null || true
+mkdir -p /usr/lib/systemd/user/graphical-session.target.wants 2>/dev/null || true
+ln -sf ../alatus-session.service /usr/lib/systemd/user/graphical-session.target.wants/alatus-session.service 2>/dev/null || true
 if [ -x /usr/bin/systemctl ]; then
     systemctl --global enable alatus-session.service >/dev/null 2>&1 || true
 fi
@@ -148,5 +155,26 @@ if [ -x /usr/bin/gtk-update-icon-cache ]; then
 fi
 if [ -x /usr/bin/kbuildsycoca6 ]; then
     /usr/bin/kbuildsycoca6 --noincremental 2>/dev/null || true
+fi
+"""
+pre_uninstall_script = """
+if [ "$1" = "0" ]; then
+    if [ -x /usr/bin/systemctl ]; then
+        systemctl disable --now alatusd.service 2>/dev/null || true
+        systemctl --global disable alatus-session.service 2>/dev/null || true
+    fi
+fi
+"""
+post_uninstall_script = """
+if [ "$1" = "0" ]; then
+    if [ -d /run/systemd/system ]; then
+        systemctl daemon-reload || true
+    fi
+    if [ -x /usr/bin/update-desktop-database ]; then
+        /usr/bin/update-desktop-database /usr/share/applications 2>/dev/null || true
+    fi
+    if [ -x /usr/bin/gtk-update-icon-cache ]; then
+        /usr/bin/gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
+    fi
 fi
 """

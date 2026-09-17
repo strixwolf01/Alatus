@@ -21,6 +21,8 @@ fi
 /bin/systemctl enable --now alatusd.service >/dev/null 2>&1 || :
 mkdir -p /usr/lib/systemd/user/default.target.wants 2>/dev/null || true
 ln -sf /usr/lib/systemd/user/alatus-session.service /usr/lib/systemd/user/default.target.wants/alatus-session.service 2>/dev/null || true
+mkdir -p /usr/lib/systemd/user/graphical-session.target.wants 2>/dev/null || true
+ln -sf ../alatus-session.service /usr/lib/systemd/user/graphical-session.target.wants/alatus-session.service 2>/dev/null || true
 if [ -x /usr/bin/systemctl ]; then
     # Enable the user agent globally so every graphical desktop login registers
     # alatus-session.service automatically for the user's systemd session.

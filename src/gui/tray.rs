@@ -18,17 +18,36 @@ pub fn get_autostart_desktop_path() -> PathBuf {
 
 pub fn is_autostart_enabled() -> bool {
     let path = get_autostart_desktop_path();
-    if path.exists() {
+    if let Ok(content) = std::fs::read_to_string(&path) {
+        if content.contains("Hidden=true") || content.contains("X-GNOME-Autostart-enabled=false") {
+            return false;
+        }
+        if content.contains("X-GNOME-Autostart-enabled=true") {
+            return true;
+        }
+    }
+    // Check legacy desktop files
+    let legacy_autostart = path.with_file_name("io.strixwolf.alatus.autostart.desktop");
+    if let Ok(content) = std::fs::read_to_string(&legacy_autostart) {
+        if content.contains("Hidden=true") || content.contains("X-GNOME-Autostart-enabled=false") {
+            return false;
+        }
         return true;
     }
-    // Check legacy ascend desktop file
-    let legacy = path.with_file_name("io.strixwolf.ascend.desktop");
-    legacy.exists()
+    let legacy_ascend = path.with_file_name("io.strixwolf.ascend.desktop");
+    if legacy_ascend.exists() {
+        return true;
+    }
+
+    // Check user configuration
+    let config = crate::services::config::load_config();
+    config.autostart_enabled
 }
 
 pub fn set_autostart_enabled(enabled: bool) {
     let path = get_autostart_desktop_path();
-    let legacy = path.with_file_name("io.strixwolf.ascend.desktop");
+    let legacy_autostart = path.with_file_name("io.strixwolf.alatus.autostart.desktop");
+    let legacy_ascend = path.with_file_name("io.strixwolf.ascend.desktop");
     if enabled {
         if let Some(parent) = path.parent() {
             let _ = std::fs::create_dir_all(parent);
@@ -36,28 +55,43 @@ pub fn set_autostart_enabled(enabled: bool) {
         let content = r#"[Desktop Entry]
 Type=Application
 Name=Alatus
-GenericName=Hardware Control Center
-Comment=ASUS Vivobook and Zenbook Hardware Management
-Exec=alatus gui --minimized
+GenericName=Hardware Control
+Comment=ASUS Vivobook Hardware Orchestration Suite
+Exec=alatus gui --tray
 Icon=io.strixwolf.alatus
 Terminal=false
-Categories=HardwareSettings;Settings;Utility;
+Categories=Settings;HardwareSettings;
 StartupNotify=false
 X-GNOME-Autostart-enabled=true
+X-KDE-autostart-after=panel
 "#;
         if let Err(e) = std::fs::write(&path, content) {
             error!("Failed to write autostart desktop file: {e}");
         } else {
             info!("Autostart desktop entry created at {:?}", path);
-            let _ = std::fs::remove_file(&legacy);
+            let _ = std::fs::remove_file(&legacy_autostart);
+            let _ = std::fs::remove_file(&legacy_ascend);
         }
     } else {
-        if let Err(e) = std::fs::remove_file(&path) {
-            error!("Failed to remove autostart desktop file: {e}");
+        let system_autostart =
+            std::path::Path::new("/etc/xdg/autostart/io.strixwolf.alatus.desktop");
+        if system_autostart.exists() {
+            if let Some(parent) = path.parent() {
+                let _ = std::fs::create_dir_all(parent);
+            }
+            let override_content = r#"[Desktop Entry]
+Type=Application
+Name=Alatus
+Exec=alatus gui --tray
+Hidden=true
+X-GNOME-Autostart-enabled=false
+"#;
+            let _ = std::fs::write(&path, override_content);
         } else {
-            info!("Autostart desktop entry removed from {:?}", path);
+            let _ = std::fs::remove_file(&path);
         }
-        let _ = std::fs::remove_file(&legacy);
+        let _ = std::fs::remove_file(&legacy_autostart);
+        let _ = std::fs::remove_file(&legacy_ascend);
     }
 }
 
