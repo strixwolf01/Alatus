@@ -4,7 +4,9 @@
 use super::AppWindow;
 use super::state_sync::*;
 use super::tray::is_autostart_enabled;
+use crate::hardware::CapabilityState;
 use crate::services::config::{AlatusConfig, RgbTimeoutPolicy};
+use crate::services::daemon_client::get_daemon_client;
 use slint::ComponentHandle;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -215,4 +217,94 @@ pub fn setup_window(
             }
         });
     }
+
+    // Query hardware capabilities from daemon and adapt UI dynamically
+    tokio::spawn(sync_capabilities(w.as_weak()));
+}
+
+/// Dynamically syncs hardware subsystem capabilities from daemon and updates AppWindow.
+pub async fn sync_capabilities(w_weak: slint::Weak<AppWindow>) {
+    let client = match get_daemon_client().await {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::debug!("Daemon client not available for capability sync: {e}");
+            return;
+        }
+    };
+
+    let caps = match client.get_capabilities().await {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!("Failed to query daemon capabilities: {e}");
+            return;
+        }
+    };
+
+    let _ = slint::invoke_from_event_loop(move || {
+        if let Some(w) = w_weak.upgrade() {
+            // RGB
+            match &caps.rgb {
+                CapabilityState::Supported(_) => {
+                    w.set_rgb_capability("supported".into());
+                    w.set_rgb_unavailable_reason("".into());
+                }
+                CapabilityState::Unsupported => {
+                    w.set_rgb_capability("unsupported".into());
+                    w.set_rgb_unavailable_reason("".into());
+                }
+                CapabilityState::Unavailable(reason) => {
+                    w.set_rgb_capability("unavailable".into());
+                    w.set_rgb_unavailable_reason(reason.to_string().into());
+                }
+            }
+
+            // Thermal
+            match &caps.thermal {
+                CapabilityState::Supported(_) => {
+                    w.set_thermal_capability("supported".into());
+                    w.set_thermal_unavailable_reason("".into());
+                }
+                CapabilityState::Unsupported => {
+                    w.set_thermal_capability("unsupported".into());
+                    w.set_thermal_unavailable_reason("".into());
+                }
+                CapabilityState::Unavailable(reason) => {
+                    w.set_thermal_capability("unavailable".into());
+                    w.set_thermal_unavailable_reason(reason.to_string().into());
+                }
+            }
+
+            // Battery
+            match &caps.battery {
+                CapabilityState::Supported(_) => {
+                    w.set_battery_capability("supported".into());
+                    w.set_battery_unavailable_reason("".into());
+                }
+                CapabilityState::Unsupported => {
+                    w.set_battery_capability("unsupported".into());
+                    w.set_battery_unavailable_reason("".into());
+                }
+                CapabilityState::Unavailable(reason) => {
+                    w.set_battery_capability("unavailable".into());
+                    w.set_battery_unavailable_reason(reason.to_string().into());
+                }
+            }
+
+            // Display
+            match &caps.display {
+                CapabilityState::Supported(_) => {
+                    w.set_display_capability("supported".into());
+                    w.set_display_unavailable_reason("".into());
+                }
+                CapabilityState::Unsupported => {
+                    w.set_display_capability("unsupported".into());
+                    w.set_display_unavailable_reason("".into());
+                }
+                CapabilityState::Unavailable(reason) => {
+                    w.set_display_capability("unavailable".into());
+                    w.set_display_unavailable_reason(reason.to_string().into());
+                }
+            }
+        }
+    });
 }

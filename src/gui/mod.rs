@@ -769,6 +769,7 @@ pub async fn run_gui(minimized: bool) -> Result<(), Box<dyn std::error::Error>> 
                                 w.set_diag_charge_desc(diags.charge.desc.into());
 
                                 w.set_is_diagnosing(false);
+                                tokio::spawn(sync_capabilities(w.as_weak()));
                             });
                         });
                     });
@@ -806,6 +807,13 @@ pub async fn run_gui(minimized: bool) -> Result<(), Box<dyn std::error::Error>> 
             // Reconnect daemon client if necessary
             if daemon_client_opt.is_none() {
                 daemon_client_opt = get_daemon_client().await.ok();
+                if daemon_client_opt.is_some() {
+                    let _ = slint::invoke_from_event_loop(|| {
+                        with_app_window(|w| {
+                            tokio::spawn(sync_capabilities(w.as_weak()));
+                        });
+                    });
+                }
             }
 
             // Read sensors

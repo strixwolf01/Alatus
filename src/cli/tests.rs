@@ -71,6 +71,21 @@ fn test_cli_parse_status() {
 }
 
 #[test]
+fn test_cli_parse_capabilities() {
+    let cli = Cli::try_parse_from(["alatus", "capabilities"]).unwrap();
+    assert!(matches!(
+        cli.command,
+        Some(Commands::Capabilities { json: false })
+    ));
+
+    let cli_json = Cli::try_parse_from(["alatus", "capabilities", "--json"]).unwrap();
+    assert!(matches!(
+        cli_json.command,
+        Some(Commands::Capabilities { json: true })
+    ));
+}
+
+#[test]
 fn test_cli_parse_monitor() {
     let cli = Cli::try_parse_from(["alatus", "monitor"]).unwrap();
     match cli.command {

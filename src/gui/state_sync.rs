@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Alatus Contributors
 
+use crate::hardware::CapabilityState;
 use crate::services::daemon_client::get_daemon_client;
 use slint::Color;
 
@@ -149,50 +150,93 @@ pub struct HardwareDiagnostics {
 }
 
 pub async fn run_hardware_diagnostics() -> HardwareDiagnostics {
-    // 1. ASUS WMI DebugFS (Queried via root daemon to avoid unprivileged user permission restrictions)
-    let wmi = {
-        if let Ok(client) = get_daemon_client().await {
-            match client.get_hardware_diagnostics().await {
-                Ok((true, desc)) => DiagResult {
-                    status: "Supported",
-                    desc,
-                },
-                Ok((false, desc)) => DiagResult {
-                    status: "Degraded",
-                    desc,
-                },
-                Err(e) => DiagResult {
-                    status: "Degraded",
-                    desc: format!("Daemon diagnostic query failed: {e}"),
-                },
+    let client_res = get_daemon_client().await;
+    let caps_opt = if let Ok(ref client) = client_res {
+        client.get_capabilities().await.ok()
+    } else {
+        None
+    };
+
+    // 1. ASUS WMI DebugFS / ACPI Platform Thermal
+    let wmi = if let Some(ref caps) = caps_opt {
+        match &caps.thermal {
+            CapabilityState::Supported(_) => DiagResult {
+                status: "Supported",
+                desc: "ASUS ACPI / WMI platform profile active".to_string(),
+            },
+            CapabilityState::Unavailable(reason) => DiagResult {
+                status: "Degraded",
+                desc: format!("Thermal driver unavailable: {reason}"),
+            },
+            CapabilityState::Unsupported => DiagResult {
+                status: "Missing",
+                desc: "Thermal profile switching not supported on this profile".to_string(),
+            },
+        }
+    } else if let Ok(ref client) = client_res {
+        match client.get_hardware_diagnostics().await {
+            Ok((true, desc)) => DiagResult {
+                status: "Supported",
+                desc,
+            },
+            Ok((false, desc)) => DiagResult {
+                status: "Degraded",
+                desc,
+            },
+            Err(e) => DiagResult {
+                status: "Degraded",
+                desc: format!("Daemon diagnostic query failed: {e}"),
+            },
+        }
+    } else {
+        let debugfs_path = std::path::Path::new("/sys/kernel/debug/asus-nb-wmi/dev_id");
+        if debugfs_path.exists() {
+            DiagResult {
+                status: "Supported",
+                desc: "ASUS WMI DebugFS active (/sys/kernel/debug/asus-nb-wmi)".to_string(),
+            }
+        } else if std::path::Path::new("/sys/devices/platform/asus-nb-wmi").exists() {
+            DiagResult {
+                status: "Degraded",
+                desc: "Daemon offline; DebugFS requires root daemon permissions".to_string(),
             }
         } else {
-            let debugfs_path = std::path::Path::new("/sys/kernel/debug/asus-nb-wmi/dev_id");
-            if debugfs_path.exists() {
-                DiagResult {
-                    status: "Supported",
-                    desc: "ASUS WMI DebugFS active (/sys/kernel/debug/asus-nb-wmi)".to_string(),
-                }
-            } else if std::path::Path::new("/sys/devices/platform/asus-nb-wmi").exists() {
-                DiagResult {
-                    status: "Degraded",
-                    desc: "Daemon offline; DebugFS requires root daemon permissions".to_string(),
-                }
-            } else {
-                DiagResult {
-                    status: "Missing",
-                    desc: "No ASUS WMI platform or DebugFS endpoints detected".to_string(),
-                }
+            DiagResult {
+                status: "Missing",
+                desc: "No ASUS WMI platform or DebugFS endpoints detected".to_string(),
             }
         }
     };
 
-    // 2. ITE5570 LampArray
-    let rgb = {
+    // 2. Keyboard RGB Backlight
+    let rgb = if let Some(ref caps) = caps_opt {
+        match &caps.rgb {
+            CapabilityState::Supported(details) => DiagResult {
+                status: "Supported",
+                desc: format!(
+                    "Keyboard RGB controller active ({} zone{})",
+                    details.supported_zones.len(),
+                    if details.supported_zones.len() == 1 {
+                        ""
+                    } else {
+                        "s"
+                    }
+                ),
+            },
+            CapabilityState::Unavailable(reason) => DiagResult {
+                status: "Degraded",
+                desc: format!("Keyboard RGB unavailable: {reason}"),
+            },
+            CapabilityState::Unsupported => DiagResult {
+                status: "Missing",
+                desc: "Keyboard RGB backlighting not equipped on this profile".to_string(),
+            },
+        }
+    } else {
         let ite_driver = std::path::Path::new("/sys/bus/hid/drivers/ite5570");
         let has_lamparray = if ite_driver.exists() {
             true
-        } else if let Ok(client) = get_daemon_client().await {
+        } else if let Ok(ref client) = client_res {
             client
                 .get_rgb_status()
                 .await
@@ -264,7 +308,25 @@ pub async fn run_hardware_diagnostics() -> HardwareDiagnostics {
     };
 
     // 5. Battery Charge Limit
-    let charge = {
+    let charge = if let Some(ref caps) = caps_opt {
+        match &caps.battery {
+            CapabilityState::Supported(details) => DiagResult {
+                status: "Supported",
+                desc: format!(
+                    "charge_control_end_threshold active ({}-{}%)",
+                    details.min_threshold, details.max_threshold
+                ),
+            },
+            CapabilityState::Unavailable(reason) => DiagResult {
+                status: "Degraded",
+                desc: format!("Battery charge controller unavailable: {reason}"),
+            },
+            CapabilityState::Unsupported => DiagResult {
+                status: "Missing",
+                desc: "Battery charge threshold control not supported on this profile".to_string(),
+            },
+        }
+    } else {
         let mut supported = false;
         let mut path_str = String::new();
         if let Ok(entries) = std::fs::read_dir("/sys/class/power_supply") {

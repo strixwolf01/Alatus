@@ -14,11 +14,19 @@ use crate::hardware::traits::{BatteryDriver, DisplayDriver, RgbDriver, ThermalDr
 use std::path::Path;
 
 const S5506MA_TOML: &str = include_str!("../../assets/devices/s5506ma.toml");
+const ZENBOOK_UM5302_TOML: &str = include_str!("../../assets/devices/zenbook_um5302.toml");
+const ROG_G14_TOML: &str = include_str!("../../assets/devices/rog_g14.toml");
 
 /// Returns the compiled-in device profiles.
 pub fn builtin_profiles() -> Vec<DeviceProfile> {
     let mut profiles = Vec::new();
     if let Ok(p) = DeviceProfile::from_toml_str(S5506MA_TOML) {
+        profiles.push(p);
+    }
+    if let Ok(p) = DeviceProfile::from_toml_str(ZENBOOK_UM5302_TOML) {
+        profiles.push(p);
+    }
+    if let Ok(p) = DeviceProfile::from_toml_str(ROG_G14_TOML) {
         profiles.push(p);
     }
     profiles

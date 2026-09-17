@@ -30,7 +30,10 @@ fn test_ac_debounce_flapping_suppression() {
         "First AC transition must produce a decision"
     );
     let d0 = decision_0.unwrap();
-    assert_eq!(d0.action, PolicyAction::SetThermalMode(ThermalMode::Balanced));
+    assert_eq!(
+        d0.action,
+        PolicyAction::SetThermalMode(ThermalMode::Balanced)
+    );
     assert_eq!(d0.reason, "ac-disconnected");
 
     // Rapid flapping: 10 toggles within 100ms.
@@ -57,7 +60,10 @@ fn test_ac_debounce_flapping_suppression() {
         "Transition after debounce window expires must be accepted"
     );
     let dl = decision_later.unwrap();
-    assert_eq!(dl.action, PolicyAction::SetThermalMode(ThermalMode::Balanced));
+    assert_eq!(
+        dl.action,
+        PolicyAction::SetThermalMode(ThermalMode::Balanced)
+    );
     assert_eq!(dl.reason, "ac-connected");
 }
 
@@ -301,4 +307,3 @@ fn test_end_to_end_startup_reconciliation_dispatch() {
         ThermalMode::Quiet
     );
 }
-

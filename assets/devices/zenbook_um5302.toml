@@ -1,0 +1,21 @@
+[device]
+name = "ASUS Zenbook S 13 OLED"
+vendor = "ASUSTeK COMPUTER INC."
+match_product = ["UM5302TA", "Zenbook_ASUSLaptop_UM5302TA"]
+match_board = ["UM5302TA"]
+
+# RGB capability is intentionally omitted; Zenbook S 13 OLED does not have ITE5570 RGB
+
+[capabilities.thermal]
+driver = "asus_wmi_debugfs"
+profiles = ["quiet", "balanced", "performance"]
+has_fan_curve = false
+
+[capabilities.display]
+has_oled = true
+supports_flicker_free = true
+refresh_rates = [60]
+
+[capabilities.battery]
+driver = "asus_charge_control"
+

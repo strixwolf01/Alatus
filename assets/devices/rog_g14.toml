@@ -1,0 +1,25 @@
+[device]
+name = "ROG Zephyrus G14"
+vendor = "ASUSTeK COMPUTER INC."
+match_product = ["GA401", "GA402", "ROG Zephyrus G14"]
+match_board = ["GA401", "GA402"]
+
+[capabilities.rgb]
+driver = "asus_aura_hid"
+zones = 4
+supports_timeout = true
+default_timeout_policy = "Always"
+
+[capabilities.thermal]
+driver = "asus_wmi_debugfs"
+profiles = ["quiet", "balanced", "performance", "full_speed"]
+has_fan_curve = true
+
+[capabilities.display]
+has_oled = false
+supports_flicker_free = false
+refresh_rates = [60, 120, 144]
+
+[capabilities.battery]
+driver = "asus_charge_control"
+

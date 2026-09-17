@@ -60,6 +60,13 @@ pub enum Commands {
         watch: bool,
     },
 
+    /// Display tri-state runtime hardware capabilities
+    Capabilities {
+        /// Output capabilities formatted as JSON
+        #[arg(short = 'j', long, default_value_t = false)]
+        json: bool,
+    },
+
     /// Stream live JSON status line-by-line (alias for 'alatus status -j -w')
     Watch,
 
@@ -304,6 +311,7 @@ pub async fn run() {
         watch: false,
     }) {
         Commands::Status { json, watch } => handle_status(&client, json, watch).await,
+        Commands::Capabilities { json } => handle_capabilities(&client, json).await,
         Commands::Watch => handle_status(&client, true, true).await,
         Commands::Monitor { interval_ms } => handle_monitor(&client, interval_ms).await,
         Commands::Mode { action } => handle_mode(&client, action).await,
@@ -324,9 +332,22 @@ pub async fn run() {
     };
 
     if let Err(e) = result {
-        eprintln!("Error executing command: {}", e);
-        if matches!(e, DaemonClientError::ServiceNotRunning(_)) {
-            eprintln!("Remediation: Start it with: sudo systemctl start alatusd.service");
+        match &e {
+            DaemonClientError::CapabilityUnsupported(subsystem) => {
+                eprintln!("Feature '{subsystem}' is not supported on this device profile.");
+            }
+            DaemonClientError::CapabilityUnavailable(reason) => {
+                eprintln!(
+                    "Feature is currently unavailable: {reason}. Check kernel modules or permissions."
+                );
+            }
+            DaemonClientError::ServiceNotRunning(_) => {
+                eprintln!("Error executing command: {e}");
+                eprintln!("Remediation: Start it with: sudo systemctl start alatusd.service");
+            }
+            _ => {
+                eprintln!("Error executing command: {e}");
+            }
         }
         process::exit(1);
     }

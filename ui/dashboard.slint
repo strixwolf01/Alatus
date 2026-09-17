@@ -634,6 +634,16 @@ export component AppWindow inherits Window {
     in-out property <string> refresh_status_text: "";
     in-out property <string> version_text: "v1.2.0";
 
+    // Tri-State Subsystem Hardware Capabilities ("supported", "unavailable", "unsupported")
+    in-out property <string> rgb_capability: "supported";
+    in-out property <string> rgb_unavailable_reason: "";
+    in-out property <string> thermal_capability: "supported";
+    in-out property <string> thermal_unavailable_reason: "";
+    in-out property <string> battery_capability: "supported";
+    in-out property <string> battery_unavailable_reason: "";
+    in-out property <string> display_capability: "supported";
+    in-out property <string> display_unavailable_reason: "";
+
     // Application Preferences & Tray Integration
     in-out property <bool> tray_enabled: true;
     in-out property <bool> autostart_enabled: false;
@@ -1045,6 +1055,35 @@ export component AppWindow inherits Window {
                                 }
                             }
 
+                            if root.thermal_capability == "unavailable": Rectangle {
+                                background: #2a2015;
+                                border-radius: 8px;
+                                HorizontalLayout {
+                                    padding: 8px;
+                                    spacing: 8px;
+                                    alignment: start;
+                                    Text {
+                                        text: "⚠️ Thermal controls unavailable: " + (root.thermal_unavailable_reason != "" ? root.thermal_unavailable_reason : "Kernel interface missing");
+                                        color: #fab387;
+                                        font-size: 11px;
+                                    }
+                                }
+                            }
+                            if root.thermal_capability == "unsupported": Rectangle {
+                                background: #1c1a22;
+                                border-radius: 8px;
+                                HorizontalLayout {
+                                    padding: 8px;
+                                    spacing: 8px;
+                                    alignment: center;
+                                    Text {
+                                        text: "Thermal mode switching not supported on this profile";
+                                        color: #94a3b8;
+                                        font-size: 12px;
+                                    }
+                                }
+                            }
+
                             // 4 Mode Segment Selector
                             Rectangle {
                                 background: #18171d;
@@ -1114,8 +1153,51 @@ export component AppWindow inherits Window {
                         font-weight: 700;
                     }
 
-                    // OLED Health Card
-                    M3Card {
+                    if root.display_capability == "unsupported": M3Card {
+                        VerticalLayout {
+                            padding: 28px;
+                            alignment: center;
+                            spacing: 8px;
+                            Text {
+                                text: "Display Controls Not Supported";
+                                color: #94a3b8;
+                                font-size: 16px;
+                                font-weight: 600;
+                                horizontal-alignment: center;
+                            }
+                            Text {
+                                text: "This hardware profile does not declare software-controllable display or OLED features.";
+                                color: #64748b;
+                                font-size: 12px;
+                                horizontal-alignment: center;
+                            }
+                        }
+                    }
+
+                    if root.display_capability == "unavailable": M3Card {
+                        background: #2a2015;
+                        VerticalLayout {
+                            padding: 14px;
+                            spacing: 4px;
+                            Text {
+                                text: "Display Controller Unavailable";
+                                color: #fab387;
+                                font-size: 14px;
+                                font-weight: 600;
+                            }
+                            Text {
+                                text: root.display_unavailable_reason != "" ? root.display_unavailable_reason : "Compositor or kernel driver interface missing.";
+                                color: #e2cca8;
+                                font-size: 12px;
+                            }
+                        }
+                    }
+
+                    if root.display_capability != "unsupported": VerticalLayout {
+                        spacing: 14px;
+
+                        // OLED Health Card
+                        M3Card {
                         VerticalLayout {
                             padding: 16px;
                             spacing: 12px;
@@ -1329,6 +1411,7 @@ export component AppWindow inherits Window {
                             }
                         }
                     }
+                    }
                 }
 
                 // PAGE 2: KEYBOARD & RGB
@@ -1344,8 +1427,51 @@ export component AppWindow inherits Window {
                         font-weight: 700;
                     }
 
-                    // Brightness & Presets Card
-                    M3Card {
+                    if root.rgb_capability == "unsupported": M3Card {
+                        VerticalLayout {
+                            padding: 28px;
+                            alignment: center;
+                            spacing: 8px;
+                            Text {
+                                text: "Keyboard RGB Not Equipped";
+                                color: #94a3b8;
+                                font-size: 16px;
+                                font-weight: 600;
+                                horizontal-alignment: center;
+                            }
+                            Text {
+                                text: "This hardware profile does not include customizable RGB backlighting.";
+                                color: #64748b;
+                                font-size: 12px;
+                                horizontal-alignment: center;
+                            }
+                        }
+                    }
+
+                    if root.rgb_capability == "unavailable": M3Card {
+                        background: #2a2015;
+                        VerticalLayout {
+                            padding: 14px;
+                            spacing: 4px;
+                            Text {
+                                text: "Keyboard RGB Controller Unavailable";
+                                color: #fab387;
+                                font-size: 14px;
+                                font-weight: 600;
+                            }
+                            Text {
+                                text: root.rgb_unavailable_reason != "" ? root.rgb_unavailable_reason : "Driver interface or kernel module missing.";
+                                color: #e2cca8;
+                                font-size: 12px;
+                            }
+                        }
+                    }
+
+                    if root.rgb_capability != "unsupported": VerticalLayout {
+                        spacing: 14px;
+
+                        // Brightness & Presets Card
+                        M3Card {
                         VerticalLayout {
                             padding: 16px;
                             spacing: 12px;
@@ -1731,6 +1857,7 @@ export component AppWindow inherits Window {
                             }
                         }
                     }
+                    }
                 }
 
                 // PAGE 3: SYSTEM & THERMAL
@@ -1746,8 +1873,48 @@ export component AppWindow inherits Window {
                         font-weight: 700;
                     }
 
+                    if root.thermal_capability == "unsupported": M3Card {
+                        VerticalLayout {
+                            padding: 28px;
+                            alignment: center;
+                            spacing: 8px;
+                            Text {
+                                text: "Thermal Modes Not Supported";
+                                color: #94a3b8;
+                                font-size: 16px;
+                                font-weight: 600;
+                                horizontal-alignment: center;
+                            }
+                            Text {
+                                text: "This hardware profile does not declare platform thermal profile control.";
+                                color: #64748b;
+                                font-size: 12px;
+                                horizontal-alignment: center;
+                            }
+                        }
+                    }
+
+                    if root.thermal_capability == "unavailable": M3Card {
+                        background: #2a2015;
+                        VerticalLayout {
+                            padding: 14px;
+                            spacing: 4px;
+                            Text {
+                                text: "Thermal Driver Unavailable";
+                                color: #fab387;
+                                font-size: 14px;
+                                font-weight: 600;
+                            }
+                            Text {
+                                text: root.thermal_unavailable_reason != "" ? root.thermal_unavailable_reason : "ACPI / WMI platform profile interface unavailable.";
+                                color: #e2cca8;
+                                font-size: 12px;
+                            }
+                        }
+                    }
+
                     // ASUS Thermal Modes
-                    VerticalLayout {
+                    if root.thermal_capability != "unsupported": VerticalLayout {
                         spacing: 8px;
 
                         ProfileCard {
@@ -1812,8 +1979,48 @@ export component AppWindow inherits Window {
                         }
                     }
 
+                    if root.battery_capability == "unsupported": M3Card {
+                        VerticalLayout {
+                            padding: 28px;
+                            alignment: center;
+                            spacing: 8px;
+                            Text {
+                                text: "Battery Health Protection Not Supported";
+                                color: #94a3b8;
+                                font-size: 16px;
+                                font-weight: 600;
+                                horizontal-alignment: center;
+                            }
+                            Text {
+                                text: "This hardware profile does not support battery charge limit control.";
+                                color: #64748b;
+                                font-size: 12px;
+                                horizontal-alignment: center;
+                            }
+                        }
+                    }
+
+                    if root.battery_capability == "unavailable": M3Card {
+                        background: #2a2015;
+                        VerticalLayout {
+                            padding: 14px;
+                            spacing: 4px;
+                            Text {
+                                text: "Battery Controller Unavailable";
+                                color: #fab387;
+                                font-size: 14px;
+                                font-weight: 600;
+                            }
+                            Text {
+                                text: root.battery_unavailable_reason != "" ? root.battery_unavailable_reason : "sysfs charge_control_end_threshold node not accessible.";
+                                color: #e2cca8;
+                                font-size: 12px;
+                            }
+                        }
+                    }
+
                     // Flexible Charge Limit Card
-                    M3Card {
+                    if root.battery_capability != "unsupported": M3Card {
                         VerticalLayout {
                             padding: 16px;
                             spacing: 14px;

@@ -289,3 +289,120 @@ pub async fn run_monitor_loop(
 
     Ok(())
 }
+
+pub async fn handle_capabilities(
+    client: &DaemonClient,
+    json_mode: bool,
+) -> Result<(), DaemonClientError> {
+    let caps = client.get_capabilities().await?;
+    if json_mode {
+        let json = serde_json::to_string_pretty(&caps)
+            .map_err(|e| DaemonClientError::IoError(e.to_string()))?;
+        println!("{json}");
+        return Ok(());
+    }
+
+    println!(
+        "Alatus Platform Capabilities (Schema v{})",
+        caps.schema_version
+    );
+    println!("─────────────────────────────────────────────────────────────────────────────");
+    println!("{:<12} {:<15} Details", "Subsystem", "Status");
+    println!("─────────────────────────────────────────────────────────────────────────────");
+
+    let format_cap = |name: &str, status: &str, details: &str| {
+        println!("{:<12} {:<15} {}", name, status, details);
+    };
+
+    match &caps.rgb {
+        crate::hardware::CapabilityState::Supported(details) => {
+            format_cap(
+                "RGB",
+                "Supported",
+                &format!(
+                    "max_brightness: {}, timeout: {}, zones: {:?}",
+                    details.max_brightness,
+                    details.supports_inactivity_timeout,
+                    details.supported_zones
+                ),
+            );
+        }
+        crate::hardware::CapabilityState::Unavailable(reason) => {
+            format_cap("RGB", "Unavailable", &reason.to_string());
+        }
+        crate::hardware::CapabilityState::Unsupported => {
+            format_cap("RGB", "Unsupported", "Not equipped on this device");
+        }
+    }
+
+    match &caps.thermal {
+        crate::hardware::CapabilityState::Supported(details) => {
+            let modes_str: Vec<String> = details
+                .supported_modes
+                .iter()
+                .map(|m| m.to_string())
+                .collect();
+            format_cap(
+                "Thermal",
+                "Supported",
+                &format!(
+                    "modes: [{}], fans: {}",
+                    modes_str.join(", "),
+                    details.fan_count
+                ),
+            );
+        }
+        crate::hardware::CapabilityState::Unavailable(reason) => {
+            format_cap("Thermal", "Unavailable", &reason.to_string());
+        }
+        crate::hardware::CapabilityState::Unsupported => {
+            format_cap("Thermal", "Unsupported", "Not equipped on this device");
+        }
+    }
+
+    match &caps.battery {
+        crate::hardware::CapabilityState::Supported(details) => {
+            format_cap(
+                "Battery",
+                "Supported",
+                &format!(
+                    "threshold range: {}..={}%, charge_control: {}",
+                    details.min_threshold, details.max_threshold, details.supports_charge_threshold
+                ),
+            );
+        }
+        crate::hardware::CapabilityState::Unavailable(reason) => {
+            format_cap("Battery", "Unavailable", &reason.to_string());
+        }
+        crate::hardware::CapabilityState::Unsupported => {
+            format_cap("Battery", "Unsupported", "Not equipped on this device");
+        }
+    }
+
+    match &caps.display {
+        crate::hardware::CapabilityState::Supported(details) => {
+            let rates_str: Vec<String> = details
+                .supported_refresh_rates
+                .iter()
+                .map(|r| format!("{r}Hz"))
+                .collect();
+            format_cap(
+                "Display",
+                "Supported",
+                &format!(
+                    "flicker_free_dimming: {}, refresh_rates: [{}]",
+                    details.supports_flicker_free_dimming,
+                    rates_str.join(", ")
+                ),
+            );
+        }
+        crate::hardware::CapabilityState::Unavailable(reason) => {
+            format_cap("Display", "Unavailable", &reason.to_string());
+        }
+        crate::hardware::CapabilityState::Unsupported => {
+            format_cap("Display", "Unsupported", "Not equipped on this device");
+        }
+    }
+
+    Ok(())
+}
