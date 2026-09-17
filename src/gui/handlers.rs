@@ -48,6 +48,7 @@ pub fn setup_window(
     cfg: &AlatusConfig,
     initial_palette: &M3Palette,
 ) {
+    w.set_version_text(format!("v{}", env!("CARGO_PKG_VERSION")).into());
     w.set_tray_enabled(cfg.tray_enabled);
     w.set_autostart_enabled(is_autostart_enabled());
 

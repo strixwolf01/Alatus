@@ -35,6 +35,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.2.0" date="2026-09-17">
+      <description>
+        <p>Unified binary consolidation, modular architecture, keyboard RGB inactivity timeout policy (Never, Battery Only, Always), single-instance advisory lock, and multi-distro packaging automation (RPM/DEB).</p>
+      </description>
+    </release>
     <release version="1.1.0" date="2026-09-11">
       <description>
         <p>Maintenance and hardening release: refreshed Alatus identity metadata, clarified event-driven session reconciliation, refined packaging integration, and added supply-chain verification for release artifacts.</p>
