@@ -2,7 +2,7 @@
 Name=Alatus
 GenericName=ASUS Hardware Control Center
 Comment=ASUS Vivobook & Zenbook Hardware Control
-Exec=alatus-gui %U
+Exec=alatus gui %U
 Icon=io.strixwolf.alatus
 Terminal=false
 Type=Application

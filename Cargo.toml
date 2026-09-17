@@ -23,11 +23,6 @@ path = "src/bin/alatusd.rs"
 name = "alatus-session"
 path = "src/bin/alatus_session.rs"
 
-[[bin]]
-name = "alatus-gui"
-path = "src/bin/alatus_gui.rs"
-required-features = ["gui"]
-
 [features]
 gui = ["dep:slint", "dep:slint-build"]
 
@@ -63,9 +58,7 @@ assets = [
     ["target/release/alatus", "usr/bin/alatus", "755"],
     ["target/release/alatusd", "usr/bin/alatusd", "755"],
     ["target/release/alatus-session", "usr/bin/alatus-session", "755"],
-    ["target/release/alatus-gui", "usr/bin/alatus-gui", "755"],
     ["packaging/io.strixwolf.alatus.desktop", "usr/share/applications/io.strixwolf.alatus.desktop", "644"],
-    ["packaging/alatus-gui.desktop", "usr/share/applications/alatus-gui.desktop", "644"],
     ["packaging/io.strixwolf.alatus.svg", "usr/share/icons/hicolor/scalable/apps/io.strixwolf.alatus.svg", "644"],
     ["packaging/alatus-gui.svg", "usr/share/icons/hicolor/scalable/apps/alatus-gui.svg", "644"],
     ["packaging/icons/32x32/apps/io.strixwolf.alatus.png", "usr/share/icons/hicolor/32x32/apps/io.strixwolf.alatus.png", "644"],
@@ -96,9 +89,7 @@ assets = [
     { source = "target/release/alatus", dest = "/usr/bin/alatus", mode = "755" },
     { source = "target/release/alatusd", dest = "/usr/bin/alatusd", mode = "755" },
     { source = "target/release/alatus-session", dest = "/usr/bin/alatus-session", mode = "755" },
-    { source = "target/release/alatus-gui", dest = "/usr/bin/alatus-gui", mode = "755" },
     { source = "packaging/io.strixwolf.alatus.desktop", dest = "/usr/share/applications/io.strixwolf.alatus.desktop", mode = "644" },
-    { source = "packaging/alatus-gui.desktop", dest = "/usr/share/applications/alatus-gui.desktop", mode = "644" },
     { source = "packaging/io.strixwolf.alatus.svg", dest = "/usr/share/icons/hicolor/scalable/apps/io.strixwolf.alatus.svg", mode = "644" },
     { source = "packaging/alatus-gui.svg", dest = "/usr/share/icons/hicolor/scalable/apps/alatus-gui.svg", mode = "644" },
     { source = "packaging/icons/32x32/apps/io.strixwolf.alatus.png", dest = "/usr/share/icons/hicolor/32x32/apps/io.strixwolf.alatus.png", mode = "644" },

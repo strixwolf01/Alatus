@@ -2002,7 +2002,17 @@ pub async fn run_desktop_session(
         options.oled_care,
     ));
 
-    let daemon_client = DaemonClient::connect().await?;
+    let daemon_client =
+        DaemonClient::connect_with_retry(30, std::time::Duration::from_millis(500)).await?;
+
+    // Synchronize configured RGB inactivity timeout and policy to daemon
+    let config = crate::services::config::load_config();
+    let _ = daemon_client
+        .set_rgb_timeout(config.rgb_timeout_seconds)
+        .await;
+    let _ = daemon_client
+        .set_rgb_timeout_policy(&config.rgb_timeout_policy.to_string())
+        .await;
     let session_conn = Connection::session().await?;
     let system_conn = daemon_client.connection();
 
@@ -2245,6 +2255,9 @@ pub async fn run_desktop_session(
                         kde_internal_connector.as_deref(),
                         is_idle,
                     ).await;
+                    if !is_idle {
+                        let _ = daemon_client.wake_rgb().await;
+                    }
                 }
             }
             Some(msg_res) = stream_screensaver_gnome.next() => {
@@ -2259,6 +2272,9 @@ pub async fn run_desktop_session(
                         kde_internal_connector.as_deref(),
                         is_idle,
                     ).await;
+                    if !is_idle {
+                        let _ = daemon_client.wake_rgb().await;
+                    }
                 }
             }
             Some(()) = async {

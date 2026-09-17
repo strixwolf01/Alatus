@@ -1,7 +1,7 @@
 [Unit]
 Description=Alatus Desktop Session Agent
 PartOf=graphical-session.target
-After=graphical-session.target
+After=graphical-session.target alatusd.service
 
 [Service]
 Type=simple

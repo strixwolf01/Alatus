@@ -408,6 +408,42 @@ component M3Segment inherits Rectangle {
     }
 }
 
+component M3Chip inherits Rectangle {
+    in property <string> text;
+    in property <bool> selected: false;
+    in property <color> accent_color: #d0bcff;
+    in property <color> accent_container: #4f378b;
+    in property <color> on_accent_container: #eaddff;
+    callback clicked();
+
+    height: 32px;
+    border-radius: 8px;
+    background: selected ? accent_container : (touch.has-hover ? #2b2930 : #211f26);
+    border-width: selected ? 1px : 0px;
+    border-color: accent_color;
+    animate background { duration: 150ms; }
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        alignment: center;
+
+        Text {
+            text: root.text;
+            color: root.selected ? root.on_accent_container : #cbd5e1;
+            font-size: 12px;
+            font-weight: root.selected ? 600 : 400;
+            vertical-alignment: center;
+        }
+    }
+
+    touch := TouchArea {
+        width: 100%;
+        height: 100%;
+        clicked => { root.clicked(); }
+    }
+}
+
 component M3ColorChip inherits Rectangle {
     in property <string> text;
     in property <color> dot_color: transparent;
@@ -581,6 +617,8 @@ export component AppWindow inherits Window {
     in-out property <int> oled_dim_level: 100; // 10% to 100% Flicker-Free Dimming
     in-out property <int> selected_refresh_rate: 120; // 60, 120, or 0 (Auto)
     in-out property <int> rgb_brightness: 80;
+    in-out property <int> rgb_timeout: 60; // Delay in seconds: 10, 30, 60, 120, 300
+    in-out property <int> rgb_timeout_policy: 2; // 0=Never, 1=BatteryOnly, 2=Always
     in-out property <int> selected_rgb_preset: 0; // 0=Auto-Sync, 1=Cyan, 2=Purple, 3=White, 4=Amber, -1=Custom
     in-out property <int> custom_red: 255;
     in-out property <int> custom_green: 128;
@@ -645,6 +683,8 @@ export component AppWindow inherits Window {
     callback set_oled_dim_level(int);
     callback set_refresh_rate(int);
     callback set_rgb_brightness(int);
+    callback set_rgb_timeout(int);
+    callback set_rgb_timeout_policy(int);
     callback set_rgb_preset(int);
     callback apply_custom_rgb(int, int, int);
     callback set_charge_limit(int);
@@ -1419,6 +1459,154 @@ export component AppWindow inherits Window {
                                         clicked => {
                                             root.selected_rgb_preset = 0;
                                             root.set_rgb_preset(0);
+                                        }
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                height: 1px;
+                                background: #2b2930;
+                            }
+
+                            // Inactivity Timeout
+                            VerticalLayout {
+                                spacing: 12px;
+
+                                // Condition
+                                VerticalLayout {
+                                    spacing: 8px;
+                                    HorizontalLayout {
+                                        alignment: space-between;
+                                        Text {
+                                            text: "Inactivity Timeout Condition";
+                                            color: #f1f5f9;
+                                            font-size: 13px;
+                                            font-weight: 600;
+                                        }
+                                        Text {
+                                            text: root.rgb_timeout_policy == 0 ? "Disabled" : (root.rgb_timeout_policy == 1 ? "Battery Only" : "Always");
+                                            color: #94a3b8;
+                                            font-size: 12px;
+                                        }
+                                    }
+
+                                    HorizontalLayout {
+                                        spacing: 8px;
+                                        alignment: start;
+
+                                        M3Chip {
+                                            text: "Never";
+                                            selected: root.rgb_timeout_policy == 0;
+                                            accent_color: root.accent_color;
+                                            accent_container: root.accent_container;
+                                            on_accent_container: root.on_accent_container;
+                                            clicked => {
+                                                root.rgb_timeout_policy = 0;
+                                                root.set_rgb_timeout_policy(0);
+                                            }
+                                        }
+                                        M3Chip {
+                                            text: "On Battery";
+                                            selected: root.rgb_timeout_policy == 1;
+                                            accent_color: root.accent_color;
+                                            accent_container: root.accent_container;
+                                            on_accent_container: root.on_accent_container;
+                                            clicked => {
+                                                root.rgb_timeout_policy = 1;
+                                                root.set_rgb_timeout_policy(1);
+                                            }
+                                        }
+                                        M3Chip {
+                                            text: "Always";
+                                            selected: root.rgb_timeout_policy == 2;
+                                            accent_color: root.accent_color;
+                                            accent_container: root.accent_container;
+                                            on_accent_container: root.on_accent_container;
+                                            clicked => {
+                                                root.rgb_timeout_policy = 2;
+                                                root.set_rgb_timeout_policy(2);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Delay
+                                if root.rgb_timeout_policy != 0: VerticalLayout {
+                                    spacing: 8px;
+                                    HorizontalLayout {
+                                        alignment: space-between;
+                                        Text {
+                                            text: "Inactivity Delay";
+                                            color: #f1f5f9;
+                                            font-size: 13px;
+                                            font-weight: 600;
+                                        }
+                                        Text {
+                                            text: root.rgb_timeout < 60 ? root.rgb_timeout + "s" : (root.rgb_timeout / 60) + " min";
+                                            color: #94a3b8;
+                                            font-size: 12px;
+                                        }
+                                    }
+
+                                    HorizontalLayout {
+                                        spacing: 8px;
+                                        alignment: start;
+
+                                        M3Chip {
+                                            text: "10s";
+                                            selected: root.rgb_timeout == 10;
+                                            accent_color: root.accent_color;
+                                            accent_container: root.accent_container;
+                                            on_accent_container: root.on_accent_container;
+                                            clicked => {
+                                                root.rgb_timeout = 10;
+                                                root.set_rgb_timeout(10);
+                                            }
+                                        }
+                                        M3Chip {
+                                            text: "30s";
+                                            selected: root.rgb_timeout == 30;
+                                            accent_color: root.accent_color;
+                                            accent_container: root.accent_container;
+                                            on_accent_container: root.on_accent_container;
+                                            clicked => {
+                                                root.rgb_timeout = 30;
+                                                root.set_rgb_timeout(30);
+                                            }
+                                        }
+                                        M3Chip {
+                                            text: "1 min";
+                                            selected: root.rgb_timeout == 60;
+                                            accent_color: root.accent_color;
+                                            accent_container: root.accent_container;
+                                            on_accent_container: root.on_accent_container;
+                                            clicked => {
+                                                root.rgb_timeout = 60;
+                                                root.set_rgb_timeout(60);
+                                            }
+                                        }
+                                        M3Chip {
+                                            text: "2 min";
+                                            selected: root.rgb_timeout == 120;
+                                            accent_color: root.accent_color;
+                                            accent_container: root.accent_container;
+                                            on_accent_container: root.on_accent_container;
+                                            clicked => {
+                                                root.rgb_timeout = 120;
+                                                root.set_rgb_timeout(120);
+                                            }
+                                        }
+                                        M3Chip {
+                                            text: "5 min";
+                                            selected: root.rgb_timeout == 300;
+                                            accent_color: root.accent_color;
+                                            accent_container: root.accent_container;
+                                            on_accent_container: root.on_accent_container;
+                                            clicked => {
+                                                root.rgb_timeout = 300;
+                                                root.set_rgb_timeout(300);
+                                            }
                                         }
                                     }
                                 }

@@ -10,6 +10,43 @@ use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::path::PathBuf;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum RgbTimeoutPolicy {
+    Never,
+    BatteryOnly,
+    #[default]
+    Always,
+}
+
+impl std::fmt::Display for RgbTimeoutPolicy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Never => write!(f, "never"),
+            Self::BatteryOnly => write!(f, "battery"),
+            Self::Always => write!(f, "always"),
+        }
+    }
+}
+
+impl std::str::FromStr for RgbTimeoutPolicy {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().trim() {
+            "never" | "off" | "none" => Ok(Self::Never),
+            "battery" | "battery_only" | "batteryonly" | "bat" => Ok(Self::BatteryOnly),
+            "always" | "all" | "on" => Ok(Self::Always),
+            other => Err(format!(
+                "Invalid RGB timeout policy '{other}' (expected 'never', 'battery', or 'always')"
+            )),
+        }
+    }
+}
+
+fn default_rgb_timeout_seconds() -> u32 {
+    60
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct AlatusConfig {
     pub thermal_mode: u32,
@@ -22,6 +59,10 @@ pub struct AlatusConfig {
     pub oled_care_enabled: bool,
     pub oled_dim_level: u32,
     pub refresh_rate: u32,
+    #[serde(default = "default_rgb_timeout_seconds")]
+    pub rgb_timeout_seconds: u32,
+    #[serde(default)]
+    pub rgb_timeout_policy: RgbTimeoutPolicy,
 }
 
 impl Default for AlatusConfig {
@@ -37,6 +78,8 @@ impl Default for AlatusConfig {
             oled_care_enabled: true,
             oled_dim_level: 100,
             refresh_rate: 120,
+            rgb_timeout_seconds: 60,
+            rgb_timeout_policy: RgbTimeoutPolicy::Always,
         }
     }
 }
@@ -57,6 +100,23 @@ pub fn load_config() -> AlatusConfig {
         && let Ok(cfg) = serde_json::from_str::<AlatusConfig>(&data)
     {
         return cfg;
+    }
+
+    // Fallback search across /home/* for system daemon running as root
+    if let Ok(entries) = std::fs::read_dir("/home") {
+        for entry in entries.flatten() {
+            let candidate = entry
+                .path()
+                .join(".config")
+                .join("alatus")
+                .join("config.json");
+            if candidate.exists()
+                && let Ok(data) = std::fs::read_to_string(&candidate)
+                && let Ok(cfg) = serde_json::from_str::<AlatusConfig>(&data)
+            {
+                return cfg;
+            }
+        }
     }
 
     // Migration fallback for legacy ~/.config/ascend/config.json
@@ -122,6 +182,8 @@ mod tests {
         assert!(cfg.oled_care_enabled);
         assert_eq!(cfg.oled_dim_level, 100);
         assert_eq!(cfg.refresh_rate, 120);
+        assert_eq!(cfg.rgb_timeout_seconds, 60);
+        assert_eq!(cfg.rgb_timeout_policy, RgbTimeoutPolicy::Always);
     }
 
     #[test]
@@ -141,6 +203,8 @@ mod tests {
             oled_care_enabled: false,
             oled_dim_level: 80,
             refresh_rate: 60,
+            rgb_timeout_seconds: 45,
+            rgb_timeout_policy: RgbTimeoutPolicy::BatteryOnly,
         };
 
         let json_bytes = serde_json::to_vec_pretty(&cfg).unwrap();
@@ -150,5 +214,27 @@ mod tests {
         let read_data = std::fs::read_to_string(&config_file).unwrap();
         let loaded: AlatusConfig = serde_json::from_str(&read_data).unwrap();
         assert_eq!(cfg, loaded);
+    }
+
+    #[test]
+    fn test_rgb_timeout_policy_conversions() {
+        use std::str::FromStr;
+
+        assert_eq!(
+            RgbTimeoutPolicy::from_str("never").unwrap(),
+            RgbTimeoutPolicy::Never
+        );
+        assert_eq!(
+            RgbTimeoutPolicy::from_str("battery").unwrap(),
+            RgbTimeoutPolicy::BatteryOnly
+        );
+        assert_eq!(
+            RgbTimeoutPolicy::from_str("always").unwrap(),
+            RgbTimeoutPolicy::Always
+        );
+
+        assert_eq!(RgbTimeoutPolicy::Never.to_string(), "never");
+        assert_eq!(RgbTimeoutPolicy::BatteryOnly.to_string(), "battery");
+        assert_eq!(RgbTimeoutPolicy::Always.to_string(), "always");
     }
 }

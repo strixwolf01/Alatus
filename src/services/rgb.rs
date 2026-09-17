@@ -115,7 +115,9 @@ struct RgbServiceState {
     red: u8,
     green: u8,
     blue: u8,
-    brightness: u32,
+    target_brightness: u32,
+    last_sysfs_brightness: u32,
+    is_timed_out: bool,
 }
 
 impl Default for RgbService {
@@ -129,10 +131,12 @@ impl RgbService {
         let dev = alatus_rgb_wrapper::discover().ok();
         let _ = wmi_unlock();
 
-        let initial_brightness = if let Some((cur, max)) = read_sysfs_brightness() {
-            sysfs_to_percent(cur, max)
+        let (initial_brightness, initial_sysfs) = if let Some((cur, max)) = read_sysfs_brightness()
+        {
+            let p = sysfs_to_percent(cur, max);
+            (if p > 0 { p } else { 80 }, cur)
         } else {
-            100
+            (80, 0)
         };
 
         Self {
@@ -141,16 +145,25 @@ impl RgbService {
                 red: 255,
                 green: 255,
                 blue: 255,
-                brightness: initial_brightness,
+                target_brightness: initial_brightness,
+                last_sysfs_brightness: initial_sysfs,
+                is_timed_out: false,
             }),
         }
     }
 
     fn ensure_device(state: &mut RgbServiceState) -> Result<RgbDevice, String> {
-        if let Some(ref dev) = state.device
-            && Path::new(&dev.path).exists()
-        {
-            return Ok(dev.clone());
+        if let Some(ref dev) = state.device {
+            if Path::new(&dev.path).exists()
+                && std::fs::OpenOptions::new()
+                    .read(true)
+                    .write(true)
+                    .open(&dev.path)
+                    .is_ok()
+            {
+                return Ok(dev.clone());
+            }
+            state.device = None;
         }
         let dev = alatus_rgb_wrapper::discover()?;
         state.device = Some(dev.clone());
@@ -161,8 +174,14 @@ impl RgbService {
         let mut state = self.state.lock().unwrap();
         let dev = Self::ensure_device(&mut state).ok();
 
-        if let Some((cur, max)) = read_sysfs_brightness() {
-            state.brightness = sysfs_to_percent(cur, max);
+        // Only sync if user changed sysfs externally (e.g. Fn keys), not during timeout
+        if !state.is_timed_out
+            && let Some((cur, max)) = read_sysfs_brightness()
+            && cur != state.last_sysfs_brightness
+            && cur > 0
+        {
+            state.target_brightness = sysfs_to_percent(cur, max);
+            state.last_sysfs_brightness = cur;
         }
 
         RgbStatus {
@@ -175,7 +194,7 @@ impl RgbService {
             red: state.red,
             green: state.green,
             blue: state.blue,
-            brightness: state.brightness,
+            brightness: state.target_brightness,
         }
     }
 
@@ -192,31 +211,50 @@ impl RgbService {
         state.blue = b;
 
         let _ = wmi_unlock();
-        alatus_rgb_wrapper::set_firmware_mode(&dev, false)?;
-        alatus_rgb_wrapper::set_color(&dev, r, g, b, 255)?;
+        if let Err(e) = alatus_rgb_wrapper::set_firmware_mode(&dev, false) {
+            state.device = None;
+            return Err(e);
+        }
+
+        if state.is_timed_out {
+            let _ = alatus_rgb_wrapper::off(&dev, r, g, b);
+            return Ok(());
+        }
+
+        let intensity = alatus_rgb_wrapper::percent_to_intensity(state.target_brightness);
+        if let Err(e) = alatus_rgb_wrapper::set_color(&dev, r, g, b, intensity) {
+            state.device = None;
+            return Err(e);
+        }
 
         if let Some((cur, max)) = read_sysfs_brightness()
             && cur == 0
         {
-            let target = if state.brightness == 0 {
-                100
+            let target = if state.target_brightness == 0 {
+                80
             } else {
-                state.brightness
+                state.target_brightness
             };
             let sysfs_val = percent_to_sysfs(target, max);
             let _ = write_sysfs_brightness(sysfs_val);
-            state.brightness = sysfs_to_percent(sysfs_val, max);
+            state.target_brightness = sysfs_to_percent(sysfs_val, max);
         }
 
         Ok(())
     }
 
     pub fn get_brightness(&self) -> u32 {
-        if let Some((cur, max)) = read_sysfs_brightness() {
-            sysfs_to_percent(cur, max)
-        } else {
-            self.state.lock().unwrap().brightness
+        let mut state = self.state.lock().unwrap();
+        // Only sync if user changed sysfs externally (e.g. Fn keys), not during timeout
+        if !state.is_timed_out
+            && let Some((cur, max)) = read_sysfs_brightness()
+            && cur != state.last_sysfs_brightness
+            && cur > 0
+        {
+            state.target_brightness = sysfs_to_percent(cur, max);
+            state.last_sysfs_brightness = cur;
         }
+        state.target_brightness
     }
 
     pub fn set_brightness(&self, brightness: u32) -> Result<(), String> {
@@ -224,14 +262,14 @@ impl RgbService {
             return Err("Brightness must be between 0 and 100".to_string());
         }
         let mut state = self.state.lock().unwrap();
+        state.is_timed_out = false;
+        state.target_brightness = brightness;
         let dev = Self::ensure_device(&mut state)?;
 
         if let Some((_, max)) = read_sysfs_brightness() {
             let sysfs_val = percent_to_sysfs(brightness, max);
             write_sysfs_brightness(sysfs_val)?;
-            state.brightness = sysfs_to_percent(sysfs_val, max);
-        } else {
-            state.brightness = brightness;
+            state.last_sysfs_brightness = sysfs_val;
         }
 
         if brightness == 0 {
@@ -239,7 +277,9 @@ impl RgbService {
         } else {
             let _ = wmi_unlock();
             let _ = alatus_rgb_wrapper::set_firmware_mode(&dev, false);
-            let _ = alatus_rgb_wrapper::set_color(&dev, state.red, state.green, state.blue, 255);
+            let intensity = alatus_rgb_wrapper::percent_to_intensity(brightness);
+            let _ =
+                alatus_rgb_wrapper::set_color(&dev, state.red, state.green, state.blue, intensity);
         }
 
         Ok(())
@@ -253,34 +293,96 @@ impl RgbService {
         self.set_brightness(100)
     }
 
+    pub fn is_timed_out(&self) -> bool {
+        self.state.lock().unwrap().is_timed_out
+    }
+
+    pub fn target_brightness(&self) -> u32 {
+        self.state.lock().unwrap().target_brightness
+    }
+
+    pub fn wake(&self) -> Result<(), String> {
+        {
+            let mut state = self.state.lock().unwrap();
+            state.is_timed_out = false;
+        }
+        self.reapply()
+    }
+
+    /// Turns off backlight for inactivity timeout without resetting configured brightness level.
+    pub fn sleep_timeout(&self) -> Result<(), String> {
+        let mut state = self.state.lock().unwrap();
+        state.is_timed_out = true;
+        let dev = match Self::ensure_device(&mut state) {
+            Ok(d) => d,
+            Err(e) => {
+                state.device = None;
+                return Err(e);
+            }
+        };
+        let _ = alatus_rgb_wrapper::off(&dev, state.red, state.green, state.blue);
+        let _ = write_sysfs_brightness(0);
+        state.last_sysfs_brightness = 0;
+        Ok(())
+    }
+
     pub fn reapply(&self) -> Result<(), String> {
         let mut state = self.state.lock().unwrap();
-        let dev = Self::ensure_device(&mut state)?;
+        state.is_timed_out = false;
+        let dev = match Self::ensure_device(&mut state) {
+            Ok(d) => d,
+            Err(e) => {
+                state.device = None;
+                return Err(e);
+            }
+        };
         let _ = wmi_unlock();
-        alatus_rgb_wrapper::set_firmware_mode(&dev, false)?;
+        if let Err(e) = alatus_rgb_wrapper::set_firmware_mode(&dev, false) {
+            state.device = None;
+            return Err(e);
+        }
 
-        if state.brightness == 0 {
+        if state.target_brightness == 0 {
             let _ = alatus_rgb_wrapper::off(&dev, state.red, state.green, state.blue);
             let _ = write_sysfs_brightness(0);
+            state.last_sysfs_brightness = 0;
         } else {
-            alatus_rgb_wrapper::set_color(&dev, state.red, state.green, state.blue, 255)?;
+            let intensity = alatus_rgb_wrapper::percent_to_intensity(state.target_brightness);
+            if let Err(e) =
+                alatus_rgb_wrapper::set_color(&dev, state.red, state.green, state.blue, intensity)
+            {
+                state.device = None;
+                return Err(e);
+            }
             if let Some((_, max)) = read_sysfs_brightness() {
-                let sysfs_val = percent_to_sysfs(state.brightness, max);
+                let sysfs_val = percent_to_sysfs(state.target_brightness, max);
                 let _ = write_sysfs_brightness(sysfs_val);
+                state.last_sysfs_brightness = sysfs_val;
             }
         }
         Ok(())
     }
 
     /// Clears the cached device descriptor, performs WMI unlock, and reapplies
-    /// current RGB color and brightness settings. Useful after sleep/resume.
+    /// current RGB color and brightness settings with retry backoff.
     pub fn reset_and_reapply(&self) -> Result<(), String> {
         let _ = wmi_unlock();
         {
             let mut state = self.state.lock().unwrap();
             state.device = None;
         }
-        self.reapply()
+
+        let mut last_err = String::new();
+        for _ in 0..10 {
+            match self.reapply() {
+                Ok(()) => return Ok(()),
+                Err(e) => {
+                    last_err = e;
+                    std::thread::sleep(std::time::Duration::from_millis(300));
+                }
+            }
+        }
+        Err(last_err)
     }
 }
 
@@ -317,5 +419,45 @@ mod tests {
         assert_eq!(sysfs_to_percent(1, 3), 33);
         assert_eq!(sysfs_to_percent(2, 3), 67);
         assert_eq!(sysfs_to_percent(3, 3), 100);
+    }
+
+    #[test]
+    fn test_target_brightness_preserved_across_timeout() {
+        let sysfs_cur = read_sysfs_brightness().map(|(c, _)| c).unwrap_or(0);
+        let service = RgbService {
+            state: Mutex::new(RgbServiceState {
+                device: None,
+                red: 255,
+                green: 255,
+                blue: 255,
+                target_brightness: 80,
+                last_sysfs_brightness: sysfs_cur,
+                is_timed_out: false,
+            }),
+        };
+
+        assert_eq!(service.get_brightness(), 80);
+        assert_eq!(service.get_status().brightness, 80);
+
+        // Enter timeout sleep
+        {
+            let mut state = service.state.lock().unwrap();
+            state.is_timed_out = true;
+        }
+
+        // Status and brightness still reflect target preference, not 0
+        assert_eq!(service.get_brightness(), 80);
+        assert_eq!(service.get_status().brightness, 80);
+        assert!(service.is_timed_out());
+
+        // Wake
+        {
+            let mut state = service.state.lock().unwrap();
+            state.is_timed_out = false;
+        }
+
+        assert_eq!(service.get_brightness(), 80);
+        assert_eq!(service.get_status().brightness, 80);
+        assert!(!service.is_timed_out());
     }
 }

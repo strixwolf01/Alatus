@@ -26,10 +26,8 @@ install:
 	$(INSTALL) -m 755 target/release/alatus $(DESTDIR)$(BINDIR)/alatus
 	$(INSTALL) -m 755 target/release/alatusd $(DESTDIR)$(BINDIR)/alatusd
 	$(INSTALL) -m 755 target/release/alatus-session $(DESTDIR)$(BINDIR)/alatus-session
-	$(INSTALL) -m 755 target/release/alatus-gui $(DESTDIR)$(BINDIR)/alatus-gui
 	$(INSTALL) -d $(DESTDIR)$(APPDIR)
 	$(INSTALL) -m 644 packaging/io.strixwolf.alatus.desktop $(DESTDIR)$(APPDIR)/io.strixwolf.alatus.desktop
-	$(INSTALL) -m 644 packaging/alatus-gui.desktop $(DESTDIR)$(APPDIR)/alatus-gui.desktop
 	$(INSTALL) -d $(DESTDIR)$(ICONDIR)
 	$(INSTALL) -m 644 packaging/io.strixwolf.alatus.svg $(DESTDIR)$(ICONDIR)/io.strixwolf.alatus.svg
 	$(INSTALL) -m 644 packaging/alatus-gui.svg $(DESTDIR)$(ICONDIR)/alatus-gui.svg

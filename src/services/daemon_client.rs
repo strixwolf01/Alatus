@@ -97,6 +97,35 @@ impl DaemonClient {
         })
     }
 
+    /// Connects to the io.strixwolf.alatus.Daemon on the system bus with retries.
+    pub async fn connect_with_retry(
+        max_retries: u32,
+        retry_delay: std::time::Duration,
+    ) -> Result<Self, DaemonClientError> {
+        let mut last_err = None;
+        for attempt in 1..=max_retries {
+            match Self::connect().await {
+                Ok(client) => {
+                    if client.check_active().await.unwrap_or(false) {
+                        return Ok(client);
+                    }
+                    last_err = Some(DaemonClientError::ServiceNotRunning(
+                        "Daemon bus name has no active owner yet".to_string(),
+                    ));
+                }
+                Err(e) => {
+                    last_err = Some(e);
+                }
+            }
+            if attempt < max_retries {
+                tokio::time::sleep(retry_delay).await;
+            }
+        }
+        Err(last_err.unwrap_or_else(|| {
+            DaemonClientError::ConnectionFailed("Timed out connecting to daemon".to_string())
+        }))
+    }
+
     /// Check if the daemon has an active owner on the system bus.
     pub async fn check_active(&self) -> Result<bool, DaemonClientError> {
         let dbus_proxy = zbus::fdo::DBusProxy::new(self.proxy.connection())
@@ -232,6 +261,40 @@ impl DaemonClient {
             .call("GetHardwareDiagnostics", &())
             .await
             .map_err(Into::into)
+    }
+
+    pub async fn set_rgb_timeout(&self, seconds: u32) -> Result<(), DaemonClientError> {
+        let _: () = self.proxy.call("SetRgbTimeout", &(seconds,)).await?;
+        Ok(())
+    }
+
+    pub async fn get_rgb_timeout(&self) -> Result<u32, DaemonClientError> {
+        self.proxy
+            .call("GetRgbTimeout", &())
+            .await
+            .map_err(Into::into)
+    }
+
+    pub async fn set_rgb_timeout_policy(&self, policy: &str) -> Result<(), DaemonClientError> {
+        let _: () = self.proxy.call("SetRgbTimeoutPolicy", &(policy,)).await?;
+        Ok(())
+    }
+
+    pub async fn get_rgb_timeout_policy(&self) -> Result<String, DaemonClientError> {
+        self.proxy
+            .call("GetRgbTimeoutPolicy", &())
+            .await
+            .map_err(Into::into)
+    }
+
+    pub async fn wake_rgb(&self) -> Result<(), DaemonClientError> {
+        let _: () = self.proxy.call("WakeRgb", &()).await?;
+        Ok(())
+    }
+
+    pub async fn notify_activity(&self) -> Result<(), DaemonClientError> {
+        let _: () = self.proxy.call("NotifyActivity", &()).await?;
+        Ok(())
     }
 }
 
