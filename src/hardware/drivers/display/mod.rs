@@ -4,4 +4,3 @@
 pub mod oled;
 
 pub use oled::OledDisplayDriver;
-

@@ -4,6 +4,7 @@
 //! Pure hardware driver abstractions and platform capability models.
 
 pub mod capabilities;
+pub mod context;
 pub mod drivers;
 pub mod error;
 pub mod mock;
@@ -14,6 +15,7 @@ pub use capabilities::{
     BatteryCapabilityDetails, CapabilityState, DisplayCapabilityDetails, RgbCapabilityDetails,
     SystemCapabilities, ThermalCapabilityDetails, UnavailableReason,
 };
+pub use context::DeviceContext;
 pub use drivers::{AsusWmiDriver, Ite5570Driver, OledDisplayDriver, SysfsBatteryDriver};
 pub use error::DriverError;
 pub use mock::{MockBatteryDriver, MockDisplayDriver, MockRgbDriver, MockThermalDriver};

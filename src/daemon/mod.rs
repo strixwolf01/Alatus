@@ -44,17 +44,44 @@ pub async fn run_daemon() -> Result<(), Box<dyn std::error::Error>> {
     let initial_on_ac = check_is_on_ac();
     let initial_rgb_timeout = saved_config.rgb_timeout_seconds;
 
+    let device_context = Arc::new(Mutex::new(crate::hardware::DeviceContext::new()));
+    {
+        let ctx = device_context.lock().await;
+        tracing::info!(
+            "Initialized DeviceContext with profile: {} ({})",
+            ctx.profile.device.name,
+            ctx.profile.device.vendor
+        );
+        tracing::info!("Probed system capabilities: {:?}", ctx.capabilities);
+    }
+
     // Apply saved configurations immediately to hardware
     if let Some(limit) = initial_charge_limit {
         tracing::info!("Applying startup battery charge limit: {limit}%");
-        let _ = write_charge_limit(limit);
+        let threshold = if limit == 0 {
+            crate::domain::ChargeThreshold::new(100).ok()
+        } else {
+            crate::domain::ChargeThreshold::new(limit as u8).ok()
+        };
+        if let Some(threshold) = threshold {
+            let mut ctx = device_context.lock().await;
+            if let Some(ref mut bat) = ctx.battery {
+                let _ = bat.set_charge_threshold(threshold);
+            }
+        }
     }
     if let Some(mode) = initial_firmware_mode {
         tracing::info!("Applying startup firmware mode: {mode}");
-        let _ = write_wmi_firmware_mode(mode);
+        if let Ok(thermal_mode) = crate::domain::ThermalMode::try_from(mode) {
+            let mut ctx = device_context.lock().await;
+            if let Some(ref mut th) = ctx.thermal {
+                let _ = th.set_mode(thermal_mode);
+            }
+        }
     }
 
     let state = Arc::new(Mutex::new(DaemonState::new(
+        Arc::clone(&device_context),
         initial_charge_limit,
         initial_firmware_mode,
         initial_on_ac,
@@ -87,6 +114,7 @@ pub async fn run_daemon() -> Result<(), Box<dyn std::error::Error>> {
 
     let interface = DaemonInterface::new(
         Arc::clone(&state),
+        Arc::clone(&device_context),
         Arc::clone(&rgb_service),
         Arc::clone(&inactivity),
     );
@@ -193,5 +221,21 @@ mod tests {
     fn test_polkit_authorization_allowed() {
         let res = parse_polkit_result(true);
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_daemon_dbus_error_names() {
+        use zbus::DBusError;
+        let err_unavail = DaemonError::CapabilityUnavailable("Missing kernel node".to_string());
+        assert_eq!(
+            err_unavail.name().as_str(),
+            "io.strixwolf.alatus.Error.CapabilityUnavailable"
+        );
+
+        let err_unsupp = DaemonError::CapabilityUnsupported("Hardware absent".to_string());
+        assert_eq!(
+            err_unsupp.name().as_str(),
+            "io.strixwolf.alatus.Error.CapabilityUnsupported"
+        );
     }
 }

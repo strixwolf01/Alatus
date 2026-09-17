@@ -15,8 +15,11 @@ pub const SYS_CHARGE_THRESHOLDS: &[&str] = &[
     "/sys/class/power_supply/BATT/charge_control_end_threshold",
 ];
 
-#[derive(Debug)]
+#[derive(Debug, zbus::DBusError)]
+#[zbus(prefix = "io.strixwolf.alatus.Error")]
 pub enum DaemonError {
+    CapabilityUnavailable(String),
+    CapabilityUnsupported(String),
     InvalidArgument(String),
     PermissionDenied(String),
     NotSupported(String),
@@ -24,23 +27,11 @@ pub enum DaemonError {
     BackendUnavailable(String),
 }
 
-impl std::fmt::Display for DaemonError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::InvalidArgument(msg) => write!(f, "InvalidArgument: {msg}"),
-            Self::PermissionDenied(msg) => write!(f, "PermissionDenied: {msg}"),
-            Self::NotSupported(msg) => write!(f, "NotSupported: {msg}"),
-            Self::IoError(msg) => write!(f, "IoError: {msg}"),
-            Self::BackendUnavailable(msg) => write!(f, "BackendUnavailable: {msg}"),
-        }
-    }
-}
-
-impl std::error::Error for DaemonError {}
-
 impl From<DaemonError> for zbus::fdo::Error {
     fn from(e: DaemonError) -> Self {
         match e {
+            DaemonError::CapabilityUnavailable(msg) => zbus::fdo::Error::Failed(msg),
+            DaemonError::CapabilityUnsupported(msg) => zbus::fdo::Error::NotSupported(msg),
             DaemonError::InvalidArgument(msg) => zbus::fdo::Error::InvalidArgs(msg),
             DaemonError::PermissionDenied(msg) => zbus::fdo::Error::Failed(msg),
             DaemonError::NotSupported(msg) => zbus::fdo::Error::NotSupported(msg),

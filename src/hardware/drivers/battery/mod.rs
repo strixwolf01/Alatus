@@ -4,4 +4,3 @@
 pub mod sysfs;
 
 pub use sysfs::SysfsBatteryDriver;
-

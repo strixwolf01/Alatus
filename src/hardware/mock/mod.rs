@@ -141,7 +141,9 @@ impl MockThermalDriver {
 impl ThermalDriver for MockThermalDriver {
     fn set_mode(&mut self, mode: ThermalMode) -> Result<(), DriverError> {
         if self.simulate_failure {
-            return Err(DriverError::Communication("Simulated thermal failure".into()));
+            return Err(DriverError::Communication(
+                "Simulated thermal failure".into(),
+            ));
         }
         if self.supported.contains(&mode) {
             self.current_mode = mode;
@@ -153,7 +155,9 @@ impl ThermalDriver for MockThermalDriver {
 
     fn get_mode(&self) -> Result<ThermalMode, DriverError> {
         if self.simulate_failure {
-            return Err(DriverError::Communication("Simulated thermal failure".into()));
+            return Err(DriverError::Communication(
+                "Simulated thermal failure".into(),
+            ));
         }
         Ok(self.current_mode)
     }
@@ -164,7 +168,9 @@ impl ThermalDriver for MockThermalDriver {
 
     fn read_fan_speeds(&self) -> Result<Vec<u32>, DriverError> {
         if self.simulate_failure {
-            return Err(DriverError::Communication("Simulated thermal failure".into()));
+            return Err(DriverError::Communication(
+                "Simulated thermal failure".into(),
+            ));
         }
         Ok(self.fan_speeds.clone())
     }
@@ -200,7 +206,9 @@ impl MockBatteryDriver {
 impl BatteryDriver for MockBatteryDriver {
     fn set_charge_threshold(&mut self, threshold: ChargeThreshold) -> Result<(), DriverError> {
         if self.simulate_failure {
-            return Err(DriverError::Communication("Simulated battery failure".into()));
+            return Err(DriverError::Communication(
+                "Simulated battery failure".into(),
+            ));
         }
         self.threshold = threshold;
         Ok(())
@@ -208,7 +216,9 @@ impl BatteryDriver for MockBatteryDriver {
 
     fn get_charge_threshold(&self) -> Result<ChargeThreshold, DriverError> {
         if self.simulate_failure {
-            return Err(DriverError::Communication("Simulated battery failure".into()));
+            return Err(DriverError::Communication(
+                "Simulated battery failure".into(),
+            ));
         }
         Ok(self.threshold)
     }
@@ -248,7 +258,9 @@ impl MockDisplayDriver {
 impl DisplayDriver for MockDisplayDriver {
     fn set_flicker_free_dimming(&mut self, factor: f32) -> Result<(), DriverError> {
         if self.simulate_failure {
-            return Err(DriverError::Communication("Simulated display failure".into()));
+            return Err(DriverError::Communication(
+                "Simulated display failure".into(),
+            ));
         }
         self.dimming_factor = factor.clamp(0.0, 1.0);
         Ok(())
@@ -256,7 +268,9 @@ impl DisplayDriver for MockDisplayDriver {
 
     fn set_refresh_rate(&mut self, rate: u32) -> Result<(), DriverError> {
         if self.simulate_failure {
-            return Err(DriverError::Communication("Simulated display failure".into()));
+            return Err(DriverError::Communication(
+                "Simulated display failure".into(),
+            ));
         }
         if self.supported_rates.contains(&rate) {
             self.refresh_rate = rate;
@@ -319,9 +333,11 @@ mod tests {
         // Error injection
         let mut failing = MockBatteryDriver::new().with_simulate_failure(true);
         assert!(failing.get_charge_threshold().is_err());
-        assert!(failing
-            .set_charge_threshold(ChargeThreshold::new(80).unwrap())
-            .is_err());
+        assert!(
+            failing
+                .set_charge_threshold(ChargeThreshold::new(80).unwrap())
+                .is_err()
+        );
     }
 
     #[test]
@@ -343,4 +359,3 @@ mod tests {
         assert!(failing.set_refresh_rate(60).is_err());
     }
 }
-

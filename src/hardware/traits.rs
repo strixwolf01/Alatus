@@ -7,7 +7,7 @@ use crate::domain::{
 use crate::hardware::error::DriverError;
 
 /// Low-level interface for keyboard backlighting hardware controllers (e.g. ITE5570 HID).
-pub trait RgbDriver {
+pub trait RgbDriver: Send + Sync {
     /// Sets the static illumination color across keyboard backlighting zones.
     fn set_color(&mut self, color: ColorRgb) -> Result<(), DriverError>;
 
@@ -35,7 +35,7 @@ pub trait RgbDriver {
 }
 
 /// Low-level interface for ASUS platform thermal curves and fan controllers (e.g. WMI / DebugFS).
-pub trait ThermalDriver {
+pub trait ThermalDriver: Send + Sync {
     /// Applies a platform firmware thermal profile.
     fn set_mode(&mut self, mode: ThermalMode) -> Result<(), DriverError>;
 
@@ -50,7 +50,7 @@ pub trait ThermalDriver {
 }
 
 /// Low-level interface for battery charging thresholds (e.g. `charge_control_end_threshold`).
-pub trait BatteryDriver {
+pub trait BatteryDriver: Send + Sync {
     /// Commits a new upper charge threshold limit to the battery controller.
     fn set_charge_threshold(&mut self, threshold: ChargeThreshold) -> Result<(), DriverError>;
 
@@ -59,7 +59,7 @@ pub trait BatteryDriver {
 }
 
 /// Low-level interface for display panel management (e.g. OLED DC dimming & refresh rate).
-pub trait DisplayDriver {
+pub trait DisplayDriver: Send + Sync {
     /// Sets the software / driver OLED flicker-free dimming luminance factor.
     fn set_flicker_free_dimming(&mut self, factor: f32) -> Result<(), DriverError>;
 

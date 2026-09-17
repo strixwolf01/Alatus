@@ -4,4 +4,3 @@
 pub mod asus_wmi;
 
 pub use asus_wmi::AsusWmiDriver;
-

@@ -40,4 +40,13 @@
       <allow_active>yes</allow_active>
     </defaults>
   </action>
+  <action id="io.strixwolf.alatus.set-display">
+    <description>Set laptop display refresh rate and flicker-free dimming</description>
+    <message>Authentication is required to set display properties</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
 </policyconfig>

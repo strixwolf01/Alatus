@@ -4,9 +4,10 @@
 use super::inactivity::InactivityState;
 use super::power::{
     DaemonError, check_conflicting_power_daemons_sync, check_is_on_ac, check_polkit,
-    read_charge_limit, read_deep_sleep, read_product_serial, read_wmi_firmware_mode,
-    validate_charge_limit, write_charge_limit, write_deep_sleep, write_wmi_firmware_mode,
+    read_deep_sleep, read_product_serial, write_deep_sleep,
 };
+use crate::hardware::DeviceContext;
+use crate::hardware::capabilities::CapabilityState;
 use crate::services::config::RgbTimeoutPolicy;
 use crate::services::firmware_mode;
 use std::path::Path;
@@ -16,6 +17,7 @@ use tokio::sync::Mutex;
 use zbus::{Connection, interface};
 
 pub struct DaemonState {
+    pub device_context: Arc<Mutex<DeviceContext>>,
     pub last_charge_limit: Option<u32>,
     pub last_firmware_mode: Option<u32>,
     pub on_ac: bool,
@@ -26,6 +28,7 @@ pub struct DaemonState {
 
 impl DaemonState {
     pub fn new(
+        device_context: Arc<Mutex<DeviceContext>>,
         charge_limit: Option<u32>,
         firmware_mode: Option<u32>,
         on_ac: bool,
@@ -34,6 +37,7 @@ impl DaemonState {
         battery_thermal_mode: u32,
     ) -> Self {
         Self {
+            device_context,
             last_charge_limit: charge_limit,
             last_firmware_mode: firmware_mode,
             on_ac,
@@ -47,6 +51,7 @@ impl DaemonState {
 #[derive(Clone)]
 pub struct DaemonInterface {
     pub state: Arc<Mutex<DaemonState>>,
+    pub device_context: Arc<Mutex<DeviceContext>>,
     pub rgb_service: Arc<crate::services::rgb::RgbService>,
     pub inactivity: Arc<InactivityState>,
 }
@@ -54,11 +59,13 @@ pub struct DaemonInterface {
 impl DaemonInterface {
     pub fn new(
         state: Arc<Mutex<DaemonState>>,
+        device_context: Arc<Mutex<DeviceContext>>,
         rgb_service: Arc<crate::services::rgb::RgbService>,
         inactivity: Arc<InactivityState>,
     ) -> Self {
         Self {
             state,
+            device_context,
             rgb_service,
             inactivity,
         }
@@ -69,7 +76,30 @@ impl DaemonInterface {
 impl DaemonInterface {
     #[zbus(property)]
     async fn firmware_mode(&self) -> zbus::fdo::Result<u32> {
-        read_wmi_firmware_mode().map_err(Into::into)
+        let ctx = self.device_context.lock().await;
+        match &ctx.capabilities.thermal {
+            CapabilityState::Unsupported => Err(DaemonError::CapabilityUnsupported(
+                "Thermal mode control unsupported on this device".to_string(),
+            )
+            .into()),
+            CapabilityState::Unavailable(reason) => Err(DaemonError::CapabilityUnavailable(
+                format!("Thermal driver unavailable: {reason}"),
+            )
+            .into()),
+            CapabilityState::Supported(_) => {
+                if let Some(ref th) = ctx.thermal {
+                    let mode = th
+                        .get_mode()
+                        .map_err(|e| DaemonError::IoError(e.to_string()))?;
+                    Ok(mode.as_u32())
+                } else {
+                    Err(
+                        DaemonError::CapabilityUnavailable("Thermal driver missing".to_string())
+                            .into(),
+                    )
+                }
+            }
+        }
     }
 
     #[zbus(property)]
@@ -79,11 +109,12 @@ impl DaemonInterface {
         #[zbus(connection)] conn: &Connection,
         value: u32,
     ) -> zbus::Result<()> {
-        if value > 3 {
-            return Err(zbus::Error::from(DaemonError::InvalidArgument(
+        let thermal_mode = crate::domain::ThermalMode::try_from(value).map_err(|_| {
+            zbus::Error::from(DaemonError::InvalidArgument(
                 "Firmware mode must be 0..=3".to_string(),
-            )));
-        }
+            ))
+        })?;
+
         let sender = header
             .and_then(|h| h.sender().map(|s| s.to_owned()))
             .ok_or_else(|| {
@@ -91,7 +122,32 @@ impl DaemonInterface {
             })?;
 
         check_polkit(conn, &sender, "io.strixwolf.alatus.set-firmware-mode").await?;
-        write_wmi_firmware_mode(value)?;
+
+        {
+            let mut ctx = self.device_context.lock().await;
+            match &ctx.capabilities.thermal {
+                CapabilityState::Unsupported => {
+                    return Err(zbus::Error::from(DaemonError::CapabilityUnsupported(
+                        "Thermal mode control unsupported on this device".to_string(),
+                    )));
+                }
+                CapabilityState::Unavailable(reason) => {
+                    return Err(zbus::Error::from(DaemonError::CapabilityUnavailable(
+                        format!("Thermal driver unavailable: {reason}"),
+                    )));
+                }
+                CapabilityState::Supported(_) => {
+                    if let Some(ref mut th) = ctx.thermal {
+                        th.set_mode(thermal_mode)
+                            .map_err(|e| DaemonError::IoError(e.to_string()))?;
+                    } else {
+                        return Err(zbus::Error::from(DaemonError::CapabilityUnavailable(
+                            "Thermal driver missing".to_string(),
+                        )));
+                    }
+                }
+            }
+        }
 
         {
             let mut s = self.state.lock().await;
@@ -116,7 +172,30 @@ impl DaemonInterface {
 
     #[zbus(property)]
     async fn charge_limit(&self) -> zbus::fdo::Result<u32> {
-        read_charge_limit().map_err(Into::into)
+        let ctx = self.device_context.lock().await;
+        match &ctx.capabilities.battery {
+            CapabilityState::Unsupported => Err(DaemonError::CapabilityUnsupported(
+                "Battery charge limit unsupported on this device".to_string(),
+            )
+            .into()),
+            CapabilityState::Unavailable(reason) => Err(DaemonError::CapabilityUnavailable(
+                format!("Battery driver unavailable: {reason}"),
+            )
+            .into()),
+            CapabilityState::Supported(_) => {
+                if let Some(ref bat) = ctx.battery {
+                    let threshold = bat
+                        .get_charge_threshold()
+                        .map_err(|e| DaemonError::IoError(e.to_string()))?;
+                    Ok(threshold.value() as u32)
+                } else {
+                    Err(
+                        DaemonError::CapabilityUnavailable("Battery driver missing".to_string())
+                            .into(),
+                    )
+                }
+            }
+        }
     }
 
     #[zbus(property)]
@@ -126,7 +205,16 @@ impl DaemonInterface {
         #[zbus(connection)] conn: &Connection,
         value: u32,
     ) -> zbus::Result<()> {
-        validate_charge_limit(value).map_err(zbus::Error::from)?;
+        let threshold = if value == 0 {
+            crate::domain::ChargeThreshold::new(100).unwrap()
+        } else {
+            crate::domain::ChargeThreshold::new(value as u8).map_err(|e| {
+                zbus::Error::from(DaemonError::InvalidArgument(format!(
+                    "Invalid charge limit: {e}"
+                )))
+            })?
+        };
+
         let sender = header
             .and_then(|h| h.sender().map(|s| s.to_owned()))
             .ok_or_else(|| {
@@ -134,7 +222,32 @@ impl DaemonInterface {
             })?;
 
         check_polkit(conn, &sender, "io.strixwolf.alatus.set-charge-limit").await?;
-        write_charge_limit(value)?;
+
+        {
+            let mut ctx = self.device_context.lock().await;
+            match &ctx.capabilities.battery {
+                CapabilityState::Unsupported => {
+                    return Err(zbus::Error::from(DaemonError::CapabilityUnsupported(
+                        "Battery charge limit unsupported on this device".to_string(),
+                    )));
+                }
+                CapabilityState::Unavailable(reason) => {
+                    return Err(zbus::Error::from(DaemonError::CapabilityUnavailable(
+                        format!("Battery driver unavailable: {reason}"),
+                    )));
+                }
+                CapabilityState::Supported(_) => {
+                    if let Some(ref mut bat) = ctx.battery {
+                        bat.set_charge_threshold(threshold)
+                            .map_err(|e| DaemonError::IoError(e.to_string()))?;
+                    } else {
+                        return Err(zbus::Error::from(DaemonError::CapabilityUnavailable(
+                            "Battery driver missing".to_string(),
+                        )));
+                    }
+                }
+            }
+        }
 
         let mut state = self.state.lock().await;
         state.last_charge_limit = Some(value);
@@ -250,7 +363,12 @@ impl DaemonInterface {
             tracing::info!(
                 "Auto-thermal profile enabled (OnAC={on_ac}). Setting mode {target_mode}"
             );
-            let _ = write_wmi_firmware_mode(target_mode);
+            if let Ok(thermal_mode) = crate::domain::ThermalMode::try_from(target_mode) {
+                let mut ctx = self.device_context.lock().await;
+                if let Some(ref mut th) = ctx.thermal {
+                    let _ = th.set_mode(thermal_mode);
+                }
+            }
             interface_ref
                 .get()
                 .await
@@ -279,8 +397,21 @@ impl DaemonInterface {
         mode: u32,
     ) -> zbus::Result<()>;
 
+    #[zbus(name = "GetCapabilities")]
+    async fn get_capabilities(&self) -> zbus::fdo::Result<String> {
+        let ctx = self.device_context.lock().await;
+        serde_json::to_string(&ctx.capabilities)
+            .map_err(|e| zbus::fdo::Error::Failed(e.to_string()))
+    }
+
     #[zbus(name = "GetRgbStatus")]
     async fn get_rgb_status(&self) -> zbus::fdo::Result<String> {
+        let ctx = self.device_context.lock().await;
+        if ctx.capabilities.rgb.is_unsupported() {
+            return Err(zbus::fdo::Error::from(DaemonError::CapabilityUnsupported(
+                "RGB backlighting unsupported on this device".to_string(),
+            )));
+        }
         let status = self.rgb_service.get_status();
         serde_json::to_string(&status).map_err(|e| zbus::fdo::Error::Failed(e.to_string()))
     }
@@ -301,10 +432,28 @@ impl DaemonInterface {
         check_polkit(conn, sender, "io.strixwolf.alatus.set-rgb")
             .await
             .map_err(zbus::fdo::Error::from)?;
-        self.rgb_service
-            .set_color(r, g, b)
-            .map_err(|e| zbus::fdo::Error::from(DaemonError::IoError(e)))?;
-        Ok(())
+
+        let mut ctx = self.device_context.lock().await;
+        match &ctx.capabilities.rgb {
+            CapabilityState::Unsupported => Err(DaemonError::CapabilityUnsupported(
+                "RGB backlighting unsupported on this device".to_string(),
+            )
+            .into()),
+            CapabilityState::Unavailable(reason) => Err(DaemonError::CapabilityUnavailable(
+                format!("RGB driver unavailable: {reason}"),
+            )
+            .into()),
+            CapabilityState::Supported(_) => {
+                if let Some(ref mut rgb) = ctx.rgb {
+                    rgb.set_color(crate::domain::ColorRgb::new(r, g, b))
+                        .map_err(|e| DaemonError::IoError(e.to_string()))?;
+                    let _ = self.rgb_service.set_color(r, g, b);
+                    Ok(())
+                } else {
+                    Err(DaemonError::CapabilityUnavailable("RGB driver missing".to_string()).into())
+                }
+            }
+        }
     }
 
     #[zbus(name = "SetRgbBrightness")]
@@ -314,11 +463,9 @@ impl DaemonInterface {
         #[zbus(connection)] conn: &Connection,
         brightness: u32,
     ) -> zbus::fdo::Result<()> {
-        if brightness > 100 {
-            return Err(zbus::fdo::Error::from(DaemonError::InvalidArgument(
-                "Brightness must be between 0 and 100".to_string(),
-            )));
-        }
+        let brightness_pct = crate::domain::BrightnessPercent::new(brightness as u8)
+            .map_err(|e| zbus::fdo::Error::from(DaemonError::InvalidArgument(e.to_string())))?;
+
         let sender = header.sender().ok_or_else(|| {
             zbus::fdo::Error::from(DaemonError::PermissionDenied("No sender found".to_string()))
         })?;
@@ -326,14 +473,32 @@ impl DaemonInterface {
         check_polkit(conn, sender, "io.strixwolf.alatus.set-rgb")
             .await
             .map_err(zbus::fdo::Error::from)?;
-        if brightness > 0 {
-            self.inactivity.wake_if_timed_out(&self.rgb_service);
+
+        let mut ctx = self.device_context.lock().await;
+        match &ctx.capabilities.rgb {
+            CapabilityState::Unsupported => Err(DaemonError::CapabilityUnsupported(
+                "RGB backlighting unsupported on this device".to_string(),
+            )
+            .into()),
+            CapabilityState::Unavailable(reason) => Err(DaemonError::CapabilityUnavailable(
+                format!("RGB driver unavailable: {reason}"),
+            )
+            .into()),
+            CapabilityState::Supported(_) => {
+                if let Some(ref mut rgb) = ctx.rgb {
+                    if brightness > 0 {
+                        self.inactivity.wake_if_timed_out(&self.rgb_service);
+                    }
+                    rgb.set_brightness(brightness_pct)
+                        .map_err(|e| DaemonError::IoError(e.to_string()))?;
+                    let _ = self.rgb_service.set_brightness(brightness);
+                    self.inactivity.record_activity(&self.rgb_service);
+                    Ok(())
+                } else {
+                    Err(DaemonError::CapabilityUnavailable("RGB driver missing".to_string()).into())
+                }
+            }
         }
-        self.rgb_service
-            .set_brightness(brightness)
-            .map_err(|e| zbus::fdo::Error::from(DaemonError::IoError(e)))?;
-        self.inactivity.record_activity(&self.rgb_service);
-        Ok(())
     }
 
     #[zbus(name = "GetRgbTimeout")]
@@ -492,7 +657,13 @@ pub async fn run_background_listener(
                     tracing::info!(
                         "Auto-thermal profile: switching to mode {target_mode} (OnAC={current_on_ac})"
                     );
-                    let _ = write_wmi_firmware_mode(target_mode);
+                    if let Ok(thermal_mode) = crate::domain::ThermalMode::try_from(target_mode) {
+                        let state_guard = state.lock().await;
+                        let mut ctx = state_guard.device_context.lock().await;
+                        if let Some(ref mut th) = ctx.thermal {
+                            let _ = th.set_mode(thermal_mode);
+                        }
+                    }
                     let _ = interface_ref
                         .get()
                         .await
@@ -560,29 +731,52 @@ pub async fn run_background_listener(
                                     s.battery_thermal_mode
                                 }
                             } else {
-                                s.last_firmware_mode
-                                    .or_else(|| read_wmi_firmware_mode().ok())
-                                    .unwrap_or(0)
+                                s.last_firmware_mode.unwrap_or(0)
                             };
                             (s.last_charge_limit, mode)
                         };
 
                         if let Some(limit) = limit {
-                            for attempt in 1..=5 {
-                                if write_charge_limit(limit).is_ok() {
-                                    tracing::info!("Re-applied charge limit of {limit}% on resume (attempt {attempt})");
-                                    break;
+                            let threshold = if limit == 0 {
+                                crate::domain::ChargeThreshold::new(100).ok()
+                            } else {
+                                crate::domain::ChargeThreshold::new(limit as u8).ok()
+                            };
+                            if let Some(threshold) = threshold {
+                                for attempt in 1..=5 {
+                                    let s = state_clone.lock().await;
+                                    let mut ctx = s.device_context.lock().await;
+                                    if let Some(ref mut bat) = ctx.battery {
+                                        if bat.set_charge_threshold(threshold).is_ok() {
+                                            tracing::info!("Re-applied charge limit of {limit}% on resume (attempt {attempt})");
+                                            break;
+                                        }
+                                    } else {
+                                        break;
+                                    }
+                                    drop(ctx);
+                                    drop(s);
+                                    tokio::time::sleep(Duration::from_millis(400)).await;
                                 }
-                                tokio::time::sleep(Duration::from_millis(400)).await;
                             }
                         }
 
-                        for attempt in 1..=5 {
-                            if write_wmi_firmware_mode(target_mode).is_ok() {
-                                tracing::info!("Re-applied firmware mode {target_mode} on resume (attempt {attempt})");
-                                break;
+                        if let Ok(thermal_mode) = crate::domain::ThermalMode::try_from(target_mode) {
+                            for attempt in 1..=5 {
+                                let s = state_clone.lock().await;
+                                let mut ctx = s.device_context.lock().await;
+                                if let Some(ref mut th) = ctx.thermal {
+                                    if th.set_mode(thermal_mode).is_ok() {
+                                        tracing::info!("Re-applied firmware mode {target_mode} on resume (attempt {attempt})");
+                                        break;
+                                    }
+                                } else {
+                                    break;
+                                }
+                                drop(ctx);
+                                drop(s);
+                                tokio::time::sleep(Duration::from_millis(400)).await;
                             }
-                            tokio::time::sleep(Duration::from_millis(400)).await;
                         }
 
                         if let Ok(interface_ref) = conn_clone

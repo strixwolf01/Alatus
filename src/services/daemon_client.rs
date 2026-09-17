@@ -18,6 +18,8 @@ pub async fn get_daemon_client() -> Result<DaemonClient, DaemonClientError> {
 
 #[derive(Debug, Clone)]
 pub enum DaemonClientError {
+    CapabilityUnavailable(String),
+    CapabilityUnsupported(String),
     InvalidArgument(String),
     PermissionDenied(String),
     NotSupported(String),
@@ -29,6 +31,8 @@ pub enum DaemonClientError {
 impl std::fmt::Display for DaemonClientError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::CapabilityUnavailable(msg) => write!(f, "CapabilityUnavailable: {msg}"),
+            Self::CapabilityUnsupported(msg) => write!(f, "CapabilityUnsupported: {msg}"),
             Self::InvalidArgument(msg) => write!(f, "InvalidArgument: {msg}"),
             Self::PermissionDenied(msg) => write!(f, "PermissionDenied: {msg}"),
             Self::NotSupported(msg) => write!(f, "NotSupported: {msg}"),
@@ -45,6 +49,21 @@ impl From<zbus::Error> for DaemonClientError {
     fn from(e: zbus::Error) -> Self {
         match e {
             zbus::Error::FDO(fdo_err) => DaemonClientError::from(*fdo_err),
+            zbus::Error::MethodError(name, desc, _) => {
+                let name_str = name.as_str();
+                let msg = desc.unwrap_or_default();
+                if name_str.ends_with("CapabilityUnavailable") {
+                    DaemonClientError::CapabilityUnavailable(msg)
+                } else if name_str.ends_with("CapabilityUnsupported") {
+                    DaemonClientError::CapabilityUnsupported(msg)
+                } else if name_str.ends_with("PermissionDenied") {
+                    DaemonClientError::PermissionDenied(msg)
+                } else if name_str.ends_with("InvalidArgument") {
+                    DaemonClientError::InvalidArgument(msg)
+                } else {
+                    DaemonClientError::ConnectionFailed(format!("{name_str}: {msg}"))
+                }
+            }
             other => DaemonClientError::ConnectionFailed(other.to_string()),
         }
     }
@@ -60,13 +79,21 @@ impl From<zbus::fdo::Error> for DaemonClientError {
                 ))
             }
             zbus::fdo::Error::Failed(msg) => {
-                if msg.contains("PermissionDenied") || msg.contains("authorization") {
+                if msg.contains("CapabilityUnavailable") || msg.contains("unavailable") {
+                    DaemonClientError::CapabilityUnavailable(msg)
+                } else if msg.contains("PermissionDenied") || msg.contains("authorization") {
                     DaemonClientError::PermissionDenied(msg)
                 } else {
                     DaemonClientError::IoError(msg)
                 }
             }
-            zbus::fdo::Error::NotSupported(msg) => DaemonClientError::NotSupported(msg),
+            zbus::fdo::Error::NotSupported(msg) => {
+                if msg.contains("unsupported") {
+                    DaemonClientError::CapabilityUnsupported(msg)
+                } else {
+                    DaemonClientError::NotSupported(msg)
+                }
+            }
             other => DaemonClientError::IoError(other.to_string()),
         }
     }
@@ -191,6 +218,17 @@ impl DaemonClient {
     pub async fn get_product_serial(&self) -> Result<String, DaemonClientError> {
         let val: String = self.proxy.get_property("ProductSerial").await?;
         Ok(val)
+    }
+
+    pub async fn get_capabilities(
+        &self,
+    ) -> Result<crate::hardware::SystemCapabilities, DaemonClientError> {
+        let json_str: String = self
+            .proxy
+            .call("GetCapabilities", &())
+            .await
+            .map_err(DaemonClientError::from)?;
+        serde_json::from_str(&json_str).map_err(|e| DaemonClientError::IoError(e.to_string()))
     }
 
     pub async fn get_deep_sleep_active(&self) -> Result<bool, DaemonClientError> {

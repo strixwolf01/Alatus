@@ -3,7 +3,6 @@
 
 use super::dbus_interface::{DaemonInterface, DaemonState};
 use super::inactivity::InactivityState;
-use super::power::{read_wmi_firmware_mode, write_wmi_firmware_mode};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -108,7 +107,13 @@ pub async fn trigger_osd_notification(mode: u32) {
 }
 
 pub async fn handle_fn_f_hotkey(conn: &Connection, state: &Arc<Mutex<DaemonState>>) {
-    let cur = read_wmi_firmware_mode().unwrap_or(0);
+    let (cur, device_context) = {
+        let s = state.lock().await;
+        (
+            s.last_firmware_mode.unwrap_or(0),
+            Arc::clone(&s.device_context),
+        )
+    };
     // Cycle order: Quiet (1) -> Balanced (0) -> Performance (2) -> Full (3) -> Quiet (1)
     let next_mode = match cur {
         1 => 0, // Quiet -> Balanced
@@ -119,9 +124,14 @@ pub async fn handle_fn_f_hotkey(conn: &Connection, state: &Arc<Mutex<DaemonState
     };
 
     tracing::info!("Fn+F hotkey cycling thermal mode: {cur} -> {next_mode}");
-    if let Err(e) = write_wmi_firmware_mode(next_mode) {
-        tracing::error!("Failed to write cycled firmware mode: {e}");
-        return;
+    if let Ok(thermal_mode) = crate::domain::ThermalMode::try_from(next_mode) {
+        let mut ctx = device_context.lock().await;
+        if let Some(ref mut th) = ctx.thermal
+            && let Err(e) = th.set_mode(thermal_mode)
+        {
+            tracing::error!("Failed to write cycled firmware mode: {e}");
+            return;
+        }
     }
 
     {

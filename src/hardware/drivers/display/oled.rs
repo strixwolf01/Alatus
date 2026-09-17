@@ -106,4 +106,3 @@ mod tests {
         assert!(driver.set_refresh_rate(144).is_err());
     }
 }
-

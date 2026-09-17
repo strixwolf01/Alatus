@@ -283,3 +283,29 @@ fn test_flicker_free_dimming_clamp_zero() {
     assert_eq!(clamp_dim(120), 100);
     assert_eq!(clamp_dim(75), 75);
 }
+
+// ============================================================================
+// Test 9: DeviceContext and SystemCapabilities D-Bus Contract
+// ============================================================================
+
+#[test]
+fn test_device_context_system_capabilities_dbus_payload() {
+    use alatus::hardware::DeviceContext;
+    use alatus::hardware::capabilities::SystemCapabilities;
+
+    let ctx = DeviceContext::new();
+    assert_eq!(ctx.capabilities.schema_version, 1);
+
+    // Verify JSON serialization contract matches expected wire format
+    let serialized = serde_json::to_string(&ctx.capabilities).expect("serializes capabilities");
+    assert!(serialized.contains("\"schema_version\":1"));
+    assert!(serialized.contains("\"rgb\":"));
+    assert!(serialized.contains("\"thermal\":"));
+    assert!(serialized.contains("\"battery\":"));
+    assert!(serialized.contains("\"display\":"));
+
+    let deserialized: SystemCapabilities =
+        serde_json::from_str(&serialized).expect("deserializes wire payload");
+    assert_eq!(deserialized.schema_version, 1);
+    assert_eq!(deserialized, ctx.capabilities);
+}

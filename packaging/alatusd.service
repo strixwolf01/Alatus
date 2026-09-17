@@ -16,6 +16,9 @@ ProtectSystem=strict
 ReadWritePaths=/sys /dev
 PrivateTmp=true
 ProtectKernelLogs=true
+ProtectControlGroups=true
+DevicePolicy=closed
+DeviceAllow=char-hidraw rw
 CapabilityBoundingSet=CAP_SYS_ADMIN CAP_SYS_RAWIO
 NoNewPrivileges=true
 

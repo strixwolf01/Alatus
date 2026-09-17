@@ -31,6 +31,16 @@ impl ThermalMode {
             Self::FullSpeed => "full_speed",
         }
     }
+
+    /// Returns the integer representation used across D-Bus interfaces (0=Balanced, 1=Quiet, 2=Perf, 3=Full).
+    pub const fn as_u32(&self) -> u32 {
+        match self {
+            Self::Balanced => 0,
+            Self::Quiet => 1,
+            Self::Performance => 2,
+            Self::FullSpeed => 3,
+        }
+    }
 }
 
 impl fmt::Display for ThermalMode {
@@ -58,6 +68,30 @@ impl TryFrom<&str> for ThermalMode {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         value.parse()
+    }
+}
+
+impl TryFrom<u32> for ThermalMode {
+    type Error = DomainError;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Balanced),
+            1 => Ok(Self::Quiet),
+            2 => Ok(Self::Performance),
+            3 => Ok(Self::FullSpeed),
+            other => Err(DomainError::InvalidThermalMode(format!(
+                "Invalid thermal mode code: {other}"
+            ))),
+        }
+    }
+}
+
+impl TryFrom<u8> for ThermalMode {
+    type Error = DomainError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        Self::try_from(value as u32)
     }
 }
 

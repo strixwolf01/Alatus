@@ -12,4 +12,3 @@ pub use battery::SysfsBatteryDriver;
 pub use display::OledDisplayDriver;
 pub use rgb::Ite5570Driver;
 pub use thermal::AsusWmiDriver;
-
