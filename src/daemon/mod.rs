@@ -4,11 +4,13 @@
 pub mod dbus_interface;
 pub mod hardware_listener;
 pub mod inactivity;
+pub mod policy;
 pub mod power;
 
 pub use dbus_interface::*;
 pub use hardware_listener::*;
 pub use inactivity::*;
+pub use policy::*;
 pub use power::*;
 
 use std::path::Path;
@@ -55,6 +57,34 @@ pub async fn run_daemon() -> Result<(), Box<dyn std::error::Error>> {
         tracing::info!("Probed system capabilities: {:?}", ctx.capabilities);
     }
 
+    let policy_engine = Arc::new(Mutex::new(PolicyEngine::new()));
+
+    // Startup State Reconciliation: query current hardware status into snapshot
+    let initial_battery_level =
+        crate::services::telemetry::read_battery_telemetry().map(|t| t.capacity as u8);
+    let initial_thermal_mode = {
+        let ctx = device_context.lock().await;
+        ctx.thermal.as_ref().and_then(|th| th.get_mode().ok())
+    };
+    let startup_snapshot =
+        HardwareSnapshot::new(initial_on_ac, initial_battery_level, initial_thermal_mode);
+
+    let startup_decisions = {
+        let mut engine = policy_engine.lock().await;
+        engine.reconcile_startup(startup_snapshot)
+    };
+
+    tracing::info!(
+        "Startup reconciliation evaluated {} decisions",
+        startup_decisions.len()
+    );
+    {
+        let mut ctx = device_context.lock().await;
+        for decision in startup_decisions {
+            SafetyGate::dispatch(&decision, &mut ctx);
+        }
+    }
+
     // Apply saved configurations immediately to hardware
     if let Some(limit) = initial_charge_limit {
         tracing::info!("Applying startup battery charge limit: {limit}%");
@@ -82,6 +112,7 @@ pub async fn run_daemon() -> Result<(), Box<dyn std::error::Error>> {
 
     let state = Arc::new(Mutex::new(DaemonState::new(
         Arc::clone(&device_context),
+        Arc::clone(&policy_engine),
         initial_charge_limit,
         initial_firmware_mode,
         initial_on_ac,
@@ -115,6 +146,7 @@ pub async fn run_daemon() -> Result<(), Box<dyn std::error::Error>> {
     let interface = DaemonInterface::new(
         Arc::clone(&state),
         Arc::clone(&device_context),
+        Arc::clone(&policy_engine),
         Arc::clone(&rgb_service),
         Arc::clone(&inactivity),
     );

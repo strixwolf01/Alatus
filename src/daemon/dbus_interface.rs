@@ -18,6 +18,7 @@ use zbus::{Connection, interface};
 
 pub struct DaemonState {
     pub device_context: Arc<Mutex<DeviceContext>>,
+    pub policy_engine: Arc<Mutex<crate::daemon::policy::PolicyEngine>>,
     pub last_charge_limit: Option<u32>,
     pub last_firmware_mode: Option<u32>,
     pub on_ac: bool,
@@ -27,8 +28,10 @@ pub struct DaemonState {
 }
 
 impl DaemonState {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         device_context: Arc<Mutex<DeviceContext>>,
+        policy_engine: Arc<Mutex<crate::daemon::policy::PolicyEngine>>,
         charge_limit: Option<u32>,
         firmware_mode: Option<u32>,
         on_ac: bool,
@@ -38,6 +41,7 @@ impl DaemonState {
     ) -> Self {
         Self {
             device_context,
+            policy_engine,
             last_charge_limit: charge_limit,
             last_firmware_mode: firmware_mode,
             on_ac,
@@ -52,6 +56,7 @@ impl DaemonState {
 pub struct DaemonInterface {
     pub state: Arc<Mutex<DaemonState>>,
     pub device_context: Arc<Mutex<DeviceContext>>,
+    pub policy_engine: Arc<Mutex<crate::daemon::policy::PolicyEngine>>,
     pub rgb_service: Arc<crate::services::rgb::RgbService>,
     pub inactivity: Arc<InactivityState>,
 }
@@ -60,12 +65,14 @@ impl DaemonInterface {
     pub fn new(
         state: Arc<Mutex<DaemonState>>,
         device_context: Arc<Mutex<DeviceContext>>,
+        policy_engine: Arc<Mutex<crate::daemon::policy::PolicyEngine>>,
         rgb_service: Arc<crate::services::rgb::RgbService>,
         inactivity: Arc<InactivityState>,
     ) -> Self {
         Self {
             state,
             device_context,
+            policy_engine,
             rgb_service,
             inactivity,
         }
@@ -152,6 +159,12 @@ impl DaemonInterface {
         {
             let mut s = self.state.lock().await;
             s.last_firmware_mode = Some(value);
+        }
+
+        {
+            let mut engine = self.policy_engine.lock().await;
+            engine.last_applied_thermal_mode = Some(thermal_mode);
+            engine.current_thermal_mode = Some(thermal_mode);
         }
 
         // Emit PropertiesChanged signal and ThermalModeChanged signal
@@ -626,17 +639,21 @@ pub async fn run_background_listener(
         rgb_service: &Arc<crate::services::rgb::RgbService>,
     ) {
         let current_on_ac = check_is_on_ac();
-        let mut s = state.lock().await;
-        if s.on_ac != current_on_ac {
-            s.on_ac = current_on_ac;
-            let auto_thermal = s.auto_thermal_profile;
-            let target_mode = if current_on_ac {
-                s.ac_thermal_mode
-            } else {
-                s.battery_thermal_mode
-            };
-            drop(s);
+        let (policy_engine, device_context, auto_thermal, changed) = {
+            let mut s = state.lock().await;
+            let changed = s.on_ac != current_on_ac;
+            if changed {
+                s.on_ac = current_on_ac;
+            }
+            (
+                Arc::clone(&s.policy_engine),
+                Arc::clone(&s.device_context),
+                s.auto_thermal_profile,
+                changed,
+            )
+        };
 
+        if changed {
             tracing::info!("Power source transition detected: OnAC = {current_on_ac}");
 
             // If AC connected and policy is BatteryOnly, immediately wake backlight
@@ -652,23 +669,71 @@ pub async fn run_background_listener(
                 let emitter = interface_ref.signal_emitter();
                 let _ = DaemonInterface::power_source_changed(emitter, current_on_ac).await;
                 let _ = interface_ref.get().await.on_ac_changed(emitter).await;
+            }
 
-                if auto_thermal {
-                    tracing::info!(
-                        "Auto-thermal profile: switching to mode {target_mode} (OnAC={current_on_ac})"
-                    );
-                    if let Ok(thermal_mode) = crate::domain::ThermalMode::try_from(target_mode) {
-                        let state_guard = state.lock().await;
-                        let mut ctx = state_guard.device_context.lock().await;
-                        if let Some(ref mut th) = ctx.thermal {
-                            let _ = th.set_mode(thermal_mode);
+            if auto_thermal {
+                let decision = {
+                    let mut engine = policy_engine.lock().await;
+                    engine.evaluate_event(crate::daemon::policy::SystemEvent::AcStateChanged(
+                        current_on_ac,
+                    ))
+                };
+
+                if let Some(decision) = decision {
+                    let mut ctx = device_context.lock().await;
+                    if crate::daemon::policy::SafetyGate::dispatch(&decision, &mut ctx)
+                        && let Ok(interface_ref) = conn
+                            .object_server()
+                            .interface::<_, DaemonInterface>("/io/strixwolf/alatus/Daemon")
+                            .await
+                    {
+                        let emitter = interface_ref.signal_emitter();
+                        let _ = interface_ref
+                            .get()
+                            .await
+                            .firmware_mode_changed(emitter)
+                            .await;
+                        if let crate::daemon::policy::PolicyAction::SetThermalMode(mode) =
+                            decision.action
+                        {
+                            let _ =
+                                DaemonInterface::thermal_mode_changed(emitter, mode.as_u32()).await;
                         }
                     }
+                }
+            }
+        }
+
+        // Battery level monitoring for hysteresis
+        let current_battery_level =
+            crate::services::telemetry::read_battery_telemetry().map(|t| t.capacity as u8);
+        if let Some(level) = current_battery_level {
+            let decision = {
+                let mut engine = policy_engine.lock().await;
+                engine.evaluate_event(crate::daemon::policy::SystemEvent::BatteryLevelChanged(
+                    level,
+                ))
+            };
+
+            if let Some(decision) = decision {
+                let mut ctx = device_context.lock().await;
+                if crate::daemon::policy::SafetyGate::dispatch(&decision, &mut ctx)
+                    && let Ok(interface_ref) = conn
+                        .object_server()
+                        .interface::<_, DaemonInterface>("/io/strixwolf/alatus/Daemon")
+                        .await
+                {
+                    let emitter = interface_ref.signal_emitter();
                     let _ = interface_ref
                         .get()
                         .await
                         .firmware_mode_changed(emitter)
                         .await;
+                    if let crate::daemon::policy::PolicyAction::SetThermalMode(mode) =
+                        decision.action
+                    {
+                        let _ = DaemonInterface::thermal_mode_changed(emitter, mode.as_u32()).await;
+                    }
                 }
             }
         }
@@ -722,18 +787,13 @@ pub async fn run_background_listener(
                             tracing::warn!("Failed to re-apply RGB state on resume: {e}");
                         }
 
-                        let (limit, target_mode) = {
+                        let (limit, policy_engine, device_context) = {
                             let s = state_clone.lock().await;
-                            let mode = if s.auto_thermal_profile {
-                                if s.on_ac {
-                                    s.ac_thermal_mode
-                                } else {
-                                    s.battery_thermal_mode
-                                }
-                            } else {
-                                s.last_firmware_mode.unwrap_or(0)
-                            };
-                            (s.last_charge_limit, mode)
+                            (
+                                s.last_charge_limit,
+                                Arc::clone(&s.policy_engine),
+                                Arc::clone(&s.device_context),
+                            )
                         };
 
                         if let Some(limit) = limit {
@@ -744,53 +804,61 @@ pub async fn run_background_listener(
                             };
                             if let Some(threshold) = threshold {
                                 for attempt in 1..=5 {
-                                    let s = state_clone.lock().await;
-                                    let mut ctx = s.device_context.lock().await;
+                                    let mut ctx = device_context.lock().await;
                                     if let Some(ref mut bat) = ctx.battery {
                                         if bat.set_charge_threshold(threshold).is_ok() {
-                                            tracing::info!("Re-applied charge limit of {limit}% on resume (attempt {attempt})");
+                                            tracing::info!(
+                                                "Re-applied charge limit of {limit}% on resume (attempt {attempt})"
+                                            );
                                             break;
                                         }
                                     } else {
                                         break;
                                     }
                                     drop(ctx);
-                                    drop(s);
                                     tokio::time::sleep(Duration::from_millis(400)).await;
                                 }
                             }
                         }
 
-                        if let Ok(thermal_mode) = crate::domain::ThermalMode::try_from(target_mode) {
+                        // Evaluate resume through PolicyEngine and dispatch via SafetyGate
+                        let resume_decision = {
+                            let mut engine = policy_engine.lock().await;
+                            engine.evaluate_event(crate::daemon::policy::SystemEvent::ResumeFromSuspend)
+                        };
+
+                        if let Some(decision) = resume_decision {
                             for attempt in 1..=5 {
-                                let s = state_clone.lock().await;
-                                let mut ctx = s.device_context.lock().await;
-                                if let Some(ref mut th) = ctx.thermal {
-                                    if th.set_mode(thermal_mode).is_ok() {
-                                        tracing::info!("Re-applied firmware mode {target_mode} on resume (attempt {attempt})");
-                                        break;
+                                let mut ctx = device_context.lock().await;
+                                if crate::daemon::policy::SafetyGate::dispatch(&decision, &mut ctx) {
+                                    tracing::info!(
+                                        "Re-applied resume policy decision {:?} (attempt {attempt})",
+                                        decision
+                                    );
+                                    if let crate::daemon::policy::PolicyAction::SetThermalMode(mode) =
+                                        decision.action
+                                        && let Ok(interface_ref) = conn_clone
+                                            .object_server()
+                                            .interface::<_, DaemonInterface>("/io/strixwolf/alatus/Daemon")
+                                            .await
+                                    {
+                                        let emitter = interface_ref.signal_emitter();
+                                        let _ = interface_ref
+                                            .get()
+                                            .await
+                                            .firmware_mode_changed(emitter)
+                                            .await;
+                                        let _ = DaemonInterface::thermal_mode_changed(
+                                            emitter,
+                                            mode.as_u32(),
+                                        )
+                                        .await;
                                     }
-                                } else {
                                     break;
                                 }
                                 drop(ctx);
-                                drop(s);
                                 tokio::time::sleep(Duration::from_millis(400)).await;
                             }
-                        }
-
-                        if let Ok(interface_ref) = conn_clone
-                            .object_server()
-                            .interface::<_, DaemonInterface>("/io/strixwolf/alatus/Daemon")
-                            .await
-                        {
-                            let emitter = interface_ref.signal_emitter();
-                            let _ = interface_ref
-                                .get()
-                                .await
-                                .firmware_mode_changed(emitter)
-                                .await;
-                            let _ = DaemonInterface::thermal_mode_changed(emitter, target_mode).await;
                         }
                     });
                 }
