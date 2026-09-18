@@ -13,4 +13,4 @@ pub use battery::SysfsBatteryDriver;
 pub use display::OledDisplayDriver;
 pub use proxy::AsusctlProxyDriver;
 pub use rgb::{AuraHidDriver, Ite5570Driver, TufSysfsRgbDriver};
-pub use thermal::AsusWmiDriver;
+pub use thermal::{AsusWmiDriver, FanCurve, FanCurvePoint, RogWmiThermalDriver};

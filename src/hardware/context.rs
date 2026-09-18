@@ -7,7 +7,7 @@ use crate::hardware::capabilities::{
 };
 use crate::hardware::drivers::{
     AsusWmiDriver, AsusctlProxyDriver, AuraHidDriver, Ite5570Driver, OledDisplayDriver,
-    SysfsBatteryDriver, TufSysfsRgbDriver,
+    RogWmiThermalDriver, SysfsBatteryDriver, TufSysfsRgbDriver,
 };
 use crate::hardware::error::DriverError;
 use crate::hardware::profile::{DeviceMeta, DeviceProfile, DeviceProfileCapabilities, DmiMatcher};
@@ -217,15 +217,31 @@ impl DeviceContext {
                 capabilities.thermal = CapabilityState::Unsupported;
                 None
             }
-            Some(_th_cfg) => {
-                let driver = AsusWmiDriver::new();
-                if driver.get_mode().is_ok() {
+            Some(th_cfg) => {
+                let mut driver: Option<Box<dyn ThermalDriver>> = None;
+                let mut fan_count = 2;
+
+                if th_cfg.has_fan_curve
+                    && let Ok(Some(rog_driver)) = RogWmiThermalDriver::probe()
+                {
+                    fan_count = rog_driver.fan_count() as u32;
+                    driver = Some(Box::new(rog_driver));
+                }
+
+                if driver.is_none() {
+                    let standard_driver = AsusWmiDriver::new();
+                    if standard_driver.get_mode().is_ok() {
+                        driver = Some(Box::new(standard_driver));
+                    }
+                }
+
+                if let Some(d) = driver {
                     capabilities.thermal = CapabilityState::Supported(ThermalCapabilityDetails {
-                        supported_modes: driver.supported_modes().to_vec(),
-                        fan_count: 2,
+                        supported_modes: d.supported_modes().to_vec(),
+                        fan_count,
                         supports_fan_telemetry: true,
                     });
-                    Some(Box::new(driver))
+                    Some(d)
                 } else if let Some(proxy) = get_proxy(&mut proxy_cache) {
                     capabilities.thermal = CapabilityState::Supported(ThermalCapabilityDetails {
                         supported_modes: proxy.supported_modes().to_vec(),

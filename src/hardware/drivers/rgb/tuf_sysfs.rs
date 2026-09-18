@@ -80,14 +80,13 @@ impl TufBackend {
     /// Writes 6-byte RGB payload to `kbd_rgb_mode`.
     pub fn write_rgb_mode(&mut self, packet: &[u8; 6]) -> Result<(), DriverError> {
         match self {
-            Self::Sysfs { rgb_mode_path, .. } => {
-                std::fs::write(rgb_mode_path.as_path(), packet).map_err(|e| {
+            Self::Sysfs { rgb_mode_path, .. } => std::fs::write(rgb_mode_path.as_path(), packet)
+                .map_err(|e| {
                     DriverError::Io(std::io::Error::new(
                         e.kind(),
                         format!("Failed to write to {}: {e}", rgb_mode_path.display()),
                     ))
-                })
-            }
+                }),
             Self::Mock {
                 written_packets,
                 simulate_failure,

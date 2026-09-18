@@ -518,3 +518,73 @@ fn test_tuf_gaming_with_sysfs_and_fallback() {
         .unwrap();
     assert_eq!(*brightness.lock().unwrap(), 2);
 }
+
+#[test]
+fn test_rog_wmi_fan_curve_and_fallback() {
+    use alatus::hardware::drivers::{FanCurve, FanCurvePoint, RogWmiThermalDriver};
+    use alatus::hardware::{AsusctlProxyDriver, CapabilityState, DeviceContext, DeviceProfile};
+    use std::fs;
+    use std::path::Path;
+
+    let path = Path::new("assets/devices/rog_zephyrus_g14.toml");
+    let content = fs::read_to_string(path).expect("read rog_zephyrus_g14.toml");
+    let profile = DeviceProfile::from_toml_str(&content).expect("parse rog_zephyrus_g14.toml");
+
+    // Headless / non-ROG environment: native thermal probe falls back to proxy or standard driver
+    let mock_proxy = AsusctlProxyDriver::new_mock();
+    let ctx = DeviceContext::from_profile_with_fallback(profile.clone(), Some(mock_proxy));
+
+    match &ctx.capabilities.thermal {
+        CapabilityState::Supported(details) => {
+            assert!(details.supported_modes.len() >= 3);
+            assert!(details.fan_count >= 2);
+        }
+        other => panic!("Expected Supported Thermal capability via fallback, got {other:?}"),
+    }
+    assert!(ctx.thermal.is_some());
+
+    // Standalone mock driver verification
+    let (mut driver, writes) = RogWmiThermalDriver::new_mock();
+    assert_eq!(driver.fan_count(), 2);
+
+    let curve = FanCurve([
+        FanCurvePoint::new(35, 30),
+        FanCurvePoint::new(45, 60),
+        FanCurvePoint::new(55, 90),
+        FanCurvePoint::new(65, 120),
+        FanCurvePoint::new(75, 150),
+        FanCurvePoint::new(85, 190),
+        FanCurvePoint::new(95, 225),
+        FanCurvePoint::new(105, 255),
+    ]);
+    assert!(curve.validate().is_ok());
+
+    // Apply curve to fan 1
+    driver.apply_custom_curve(1, &curve).unwrap();
+
+    let logged = writes.lock().unwrap().clone();
+    assert_eq!(logged.len(), 17);
+    // 8 PWM points
+    assert_eq!(logged[0].0, "pwm1_auto_point1_pwm");
+    assert_eq!(logged[7].0, "pwm1_auto_point8_pwm");
+    // 8 Temp points
+    assert_eq!(logged[8].0, "pwm1_auto_point1_temp");
+    assert_eq!(logged[15].0, "pwm1_auto_point8_temp");
+    // Enable point must be last
+    assert_eq!(logged[16].0, "pwm1_enable");
+    assert_eq!(logged[16].1, "1");
+
+    // Reset to auto
+    writes.lock().unwrap().clear();
+    driver.reset_curves_to_auto().unwrap();
+    let logged_reset = writes.lock().unwrap().clone();
+    assert_eq!(logged_reset.len(), 2);
+    assert_eq!(
+        logged_reset[0],
+        ("pwm1_enable".to_string(), "2".to_string())
+    );
+    assert_eq!(
+        logged_reset[1],
+        ("pwm2_enable".to_string(), "2".to_string())
+    );
+}
