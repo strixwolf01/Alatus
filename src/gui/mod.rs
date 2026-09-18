@@ -799,7 +799,8 @@ pub async fn run_gui(minimized: bool) -> Result<(), Box<dyn std::error::Error>> 
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_millis(1500));
         let mut daemon_client_opt = get_daemon_client().await.ok();
-        let session_conn_opt = zbus::Connection::session().await.ok();
+        let mut session_conn_opt = zbus::Connection::session().await.ok();
+        let mut consecutive_daemon_failures: u32 = 0;
 
         loop {
             interval.tick().await;
@@ -816,7 +817,11 @@ pub async fn run_gui(minimized: bool) -> Result<(), Box<dyn std::error::Error>> 
                 }
             }
 
-            // Read sensors
+            if session_conn_opt.is_none() {
+                session_conn_opt = zbus::Connection::session().await.ok();
+            }
+
+            // Read sensors (never terminates loop, resilient against sleep/resume transients)
             let thermal = read_thermal_telemetry();
             let cpu_temp_str = format!("{}°C", thermal.temp_c);
             let fan_rpm_str = if thermal.fan_rpm > 0 {
@@ -832,43 +837,99 @@ pub async fn run_gui(minimized: bool) -> Result<(), Box<dyn std::error::Error>> 
             let mut charge_limit_opt = None;
 
             if let Some(ref client) = daemon_client_opt {
-                root_daemon_active = true;
-                if let Ok(on_ac) = client.get_on_ac().await {
-                    power_source_str = if on_ac {
-                        "AC".to_string()
+                let mut client_failed = false;
+
+                match tokio::time::timeout(Duration::from_millis(1000), client.get_on_ac()).await {
+                    Ok(Ok(on_ac)) => {
+                        consecutive_daemon_failures = 0;
+                        root_daemon_active = true;
+                        power_source_str = if on_ac {
+                            "AC".to_string()
+                        } else {
+                            "Battery".to_string()
+                        };
+                    }
+                    Ok(Err(e)) => {
+                        tracing::warn!("Daemon get_on_ac call failed: {e}");
+                        client_failed = true;
+                    }
+                    Err(_) => {
+                        tracing::warn!("Daemon get_on_ac timed out");
+                        client_failed = true;
+                    }
+                }
+
+                if !client_failed {
+                    if let Ok(Ok(mode)) = tokio::time::timeout(
+                        Duration::from_millis(1000),
+                        client.get_firmware_mode(),
+                    )
+                    .await
+                    {
+                        thermal_mode_idx_opt = Some(match mode {
+                            FirmwareMode::Quiet => 0,
+                            FirmwareMode::Balanced => 1,
+                            FirmwareMode::High => 2,
+                            FirmwareMode::Full => 3,
+                            FirmwareMode::Unknown(_) => 1,
+                        });
+                    }
+                    if let Ok(Ok(rgb)) =
+                        tokio::time::timeout(Duration::from_millis(1000), client.get_rgb_status())
+                            .await
+                    {
+                        rgb_brightness_opt = Some(rgb.brightness as i32);
+                    }
+                    if let Ok(Ok(limit)) =
+                        tokio::time::timeout(Duration::from_millis(1000), client.get_charge_limit())
+                            .await
+                    {
+                        charge_limit_opt = Some(limit.clamp(50, 100) as i32);
+                    }
+                } else {
+                    consecutive_daemon_failures += 1;
+                    if consecutive_daemon_failures >= 3 {
+                        daemon_client_opt = None;
+                        root_daemon_active = false;
                     } else {
-                        "Battery".to_string()
-                    };
+                        // Tolerate transient single poll drop without marking daemon inactive immediately
+                        root_daemon_active = true;
+                    }
                 }
-                if let Ok(mode) = client.get_firmware_mode().await {
-                    thermal_mode_idx_opt = Some(match mode {
-                        FirmwareMode::Quiet => 0,
-                        FirmwareMode::Balanced => 1,
-                        FirmwareMode::High => 2,
-                        FirmwareMode::Full => 3,
-                        FirmwareMode::Unknown(_) => 1,
-                    });
-                }
-                if let Ok(rgb) = client.get_rgb_status().await {
-                    rgb_brightness_opt = Some(rgb.brightness as i32);
-                }
-                if let Ok(limit) = client.get_charge_limit().await {
-                    charge_limit_opt = Some(limit.clamp(50, 100) as i32);
-                }
-            } else {
-                daemon_client_opt = None;
             }
 
             // Dynamic Desktop Accent Color polling
             let mut dynamic_palette_opt = None;
-            if let Some(ref conn) = session_conn_opt
-                && let Ok(Some(rgb)) = read_portal_accent_color(conn).await
-            {
-                dynamic_palette_opt = Some(derive_m3_palette(Some(rgb)));
+            if let Some(ref conn) = session_conn_opt {
+                match tokio::time::timeout(
+                    Duration::from_millis(300),
+                    read_portal_accent_color(conn),
+                )
+                .await
+                {
+                    Ok(Ok(Some(rgb))) => {
+                        dynamic_palette_opt = Some(derive_m3_palette(Some(rgb)));
+                    }
+                    Ok(Err(e)) => {
+                        tracing::warn!("read_portal_accent_color failed: {e}");
+                        session_conn_opt = None;
+                    }
+                    Err(_) => {
+                        tracing::warn!("read_portal_accent_color timed out");
+                        session_conn_opt = None;
+                    }
+                    _ => {}
+                }
             }
 
-            let session_status = query_session_status().await;
-            let display_info = query_display_info().await;
+            let session_status =
+                tokio::time::timeout(Duration::from_millis(500), query_session_status())
+                    .await
+                    .unwrap_or_default();
+            let display_info =
+                tokio::time::timeout(Duration::from_millis(500), query_display_info())
+                    .await
+                    .unwrap_or_default();
             let session_daemon_active = is_session_daemon_running().await || session_status.running;
 
             let refresh_rate_selection = if session_status.auto_refresh {

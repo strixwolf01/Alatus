@@ -33,7 +33,7 @@ pub async fn wait_for_devices() {
 }
 
 pub async fn run_daemon() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt::init();
+    crate::telemetry::init_tracing("alatusd");
     tracing::info!("Starting alatusd");
 
     wait_for_devices().await;

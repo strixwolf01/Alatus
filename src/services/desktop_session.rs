@@ -19,11 +19,12 @@ use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU32, AtomicU64, Ordering};
 use zbus::zvariant::Value;
 use zbus::{Connection, MatchRule};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum DesktopEnv {
     Kde,
     Gnome,
     Wlroots,
+    #[default]
     Other,
 }
 
@@ -1471,7 +1472,7 @@ pub async fn is_session_daemon_running() -> bool {
     false
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct SessionStatusInfo {
     pub running: bool,
     pub desktop: DesktopEnv,
@@ -1671,7 +1672,7 @@ pub async fn set_session_oled_care(enable: bool) -> Result<(), Box<dyn std::erro
     Ok(())
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct DisplayInfo {
     pub connector: String,
     pub width: u32,

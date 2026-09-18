@@ -85,6 +85,12 @@ impl Ite5570Driver {
 
         fs::write(&brightness_file, format!("{sysfs_level}\n")).map_err(DriverError::Io)
     }
+
+    /// Refreshes the ITE5570 `/dev/hidraw*` device node handle.
+    /// Useful after USB bus re-enumeration or system resume.
+    pub fn re_enumerate(&mut self) {
+        self.device = alatus_rgb_wrapper::discover().ok();
+    }
 }
 
 impl RgbDriver for Ite5570Driver {
@@ -158,6 +164,26 @@ impl RgbDriver for Ite5570Driver {
 
     fn wake(&mut self) -> Result<(), DriverError> {
         self.sleeping = false;
+
+        // Perform WMI hardware unlock if available
+        let _ = rgb_service::wmi_unlock();
+
+        if self.device.is_none() {
+            self.device = alatus_rgb_wrapper::discover().ok();
+        }
+
+        if let Some(ref dev) = self.device {
+            // Wake handshake: switch out of firmware autonomous mode and apply active color
+            let _ = alatus_rgb_wrapper::set_firmware_mode(dev, false);
+            let _ = alatus_rgb_wrapper::set_static(
+                dev,
+                self.cached_color.r,
+                self.cached_color.g,
+                self.cached_color.b,
+                self.cached_brightness.value() as u32,
+            );
+        }
+
         let sysfs_val = Self::percent_to_sysfs(self.cached_brightness.value());
         let _ = self.write_sysfs_brightness(sysfs_val);
         Ok(())

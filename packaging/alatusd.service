@@ -9,6 +9,7 @@ Type=simple
 ExecStart=/usr/bin/alatusd
 Restart=always
 RestartSec=5
+Environment=RUST_LOG=info
 
 # Production security sandbox hardening
 ProtectHome=true

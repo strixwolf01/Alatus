@@ -641,7 +641,6 @@ pub async fn run_background_listener(
 
     let rule_login = MatchRule::builder()
         .msg_type(zbus::message::Type::Signal)
-        .sender("org.freedesktop.login1")?
         .interface("org.freedesktop.login1.Manager")?
         .member("PrepareForSleep")?
         .path("/org/freedesktop/login1")?
@@ -695,8 +694,12 @@ pub async fn run_background_listener(
                 };
 
                 if let Some(decision) = decision {
-                    let mut ctx = device_context.lock().await;
-                    if crate::daemon::policy::SafetyGate::dispatch(&decision, &mut ctx)
+                    let dispatched = {
+                        let mut ctx = device_context.lock().await;
+                        crate::daemon::policy::SafetyGate::dispatch(&decision, &mut ctx)
+                    };
+
+                    if dispatched
                         && let Ok(interface_ref) = conn
                             .object_server()
                             .interface::<_, DaemonInterface>("/io/strixwolf/alatus/Daemon")
@@ -731,8 +734,12 @@ pub async fn run_background_listener(
             };
 
             if let Some(decision) = decision {
-                let mut ctx = device_context.lock().await;
-                if crate::daemon::policy::SafetyGate::dispatch(&decision, &mut ctx)
+                let dispatched = {
+                    let mut ctx = device_context.lock().await;
+                    crate::daemon::policy::SafetyGate::dispatch(&decision, &mut ctx)
+                };
+
+                if dispatched
                     && let Ok(interface_ref) = conn
                         .object_server()
                         .interface::<_, DaemonInterface>("/io/strixwolf/alatus/Daemon")
@@ -782,100 +789,163 @@ pub async fn run_background_listener(
 
                 if interface == "org.freedesktop.login1.Manager"
                     && member == "PrepareForSleep"
-                    && let Ok(false) = msg.body().deserialize::<bool>()
                 {
-                    tracing::info!(
-                        "System resumed from sleep (PrepareForSleep=false). Scheduling hardware restoration..."
-                    );
+                    let is_sleeping = msg
+                        .body()
+                        .deserialize::<(bool,)>()
+                        .map(|(b,)| b)
+                        .or_else(|_| msg.body().deserialize::<bool>());
 
-                    let rgb_clone = Arc::clone(&rgb_service);
-                    let state_clone = Arc::clone(&state);
-                    let conn_clone = conn.clone();
-                    let inactivity_clone = Arc::clone(&inactivity);
-                    tokio::spawn(async move {
-                        // Delay 1s to allow USB host controller and hidraw nodes to re-enumerate
-                        tokio::time::sleep(Duration::from_millis(1000)).await;
+                    if let Ok(true) = is_sleeping {
+                        tracing::info!("System is preparing for sleep (PrepareForSleep=true).");
+                    } else if let Ok(false) = is_sleeping {
+                        tracing::info!(
+                            "System resumed from sleep (PrepareForSleep=false). Scheduling hardware restoration..."
+                        );
 
-                        inactivity_clone.record_activity(&rgb_clone);
-                        let _ = crate::services::rgb::wmi_unlock();
-                        if let Err(e) = rgb_clone.reset_and_reapply() {
-                            tracing::warn!("Failed to re-apply RGB state on resume: {e}");
-                        }
+                        // Reset inactivity timer immediately to prevent stale timestamps triggering instant dimming
+                        inactivity.reset_activity_timer();
 
-                        let (limit, policy_engine, device_context) = {
-                            let s = state_clone.lock().await;
-                            (
-                                s.last_charge_limit,
-                                Arc::clone(&s.policy_engine),
-                                Arc::clone(&s.device_context),
-                            )
-                        };
+                        let rgb_clone = Arc::clone(&rgb_service);
+                        let state_clone = Arc::clone(&state);
+                        let conn_clone = conn.clone();
+                        let inactivity_clone = Arc::clone(&inactivity);
+                        tokio::spawn(async move {
+                            // Delay 800ms to allow USB host controller and hidraw nodes to settle
+                            tokio::time::sleep(Duration::from_millis(800)).await;
 
-                        if let Some(limit) = limit {
-                            let threshold = if limit == 0 {
-                                crate::domain::ChargeThreshold::new(100).ok()
-                            } else {
-                                crate::domain::ChargeThreshold::new(limit as u8).ok()
+                            // Reset inactivity timer again after settling delay
+                            inactivity_clone.reset_activity_timer();
+
+                            // 1. Reset fan and thermal telemetry read handles / cache
+                            crate::services::telemetry::reset_telemetry_cache();
+
+                            // 2. Hardware re-enumeration on DeviceContext
+                            let (limit, policy_engine, device_context) = {
+                                let s = state_clone.lock().await;
+                                (
+                                    s.last_charge_limit,
+                                    Arc::clone(&s.policy_engine),
+                                    Arc::clone(&s.device_context),
+                                )
                             };
-                            if let Some(threshold) = threshold {
-                                for attempt in 1..=5 {
-                                    let mut ctx = device_context.lock().await;
-                                    if let Some(ref mut bat) = ctx.battery {
-                                        if bat.set_charge_threshold(threshold).is_ok() {
+
+                            {
+                                let mut ctx = device_context.lock().await;
+                                ctx.re_enumerate();
+                                tracing::info!(
+                                    "Hardware drivers re-enumerated on resume: thermal={:?}, battery={:?}, rgb={:?}",
+                                    ctx.capabilities.thermal,
+                                    ctx.capabilities.battery,
+                                    ctx.capabilities.rgb
+                                );
+                            }
+
+                            // 3. Delayed & Retried RGB Restoration on Resume
+                            let (active_color, active_brightness) = {
+                                let (r, g, b) = rgb_clone.get_color();
+                                let bri = rgb_clone.get_brightness();
+                                (
+                                    crate::domain::ColorRgb::new(r, g, b),
+                                    crate::domain::BrightnessPercent::new(bri as u8)
+                                        .unwrap_or_else(|_| crate::domain::BrightnessPercent::new(80).unwrap()),
+                                )
+                            };
+
+                            for attempt in 1..=4 {
+                                let mut ctx = device_context.lock().await;
+                                ctx.re_enumerate_rgb();
+                                if let Ok(rgb) = ctx.rgb_mut() {
+                                    let _ = rgb.wake();
+                                    if rgb.set_color(active_color).is_ok()
+                                        && rgb.set_brightness(active_brightness).is_ok()
+                                    {
+                                        tracing::info!(
+                                            "Successfully restored RGB state after resume on attempt {attempt}: color={:?}, brightness={}%",
+                                            active_color,
+                                            active_brightness.value()
+                                        );
+                                        let _ = rgb_clone.wake();
+                                        let _ = rgb_clone.set_color(active_color.r, active_color.g, active_color.b);
+                                        let _ = rgb_clone.set_brightness(active_brightness.value() as u32);
+                                        break;
+                                    }
+                                }
+                                drop(ctx);
+                                tokio::time::sleep(Duration::from_millis(300)).await;
+                            }
+
+                            // Refresh inactivity timer once restoration finishes
+                            inactivity_clone.reset_activity_timer();
+
+                            // 4. Re-apply charge limit with retry loop
+                            if let Some(limit) = limit {
+                                let threshold = if limit == 0 {
+                                    crate::domain::ChargeThreshold::new(100).ok()
+                                } else {
+                                    crate::domain::ChargeThreshold::new(limit as u8).ok()
+                                };
+                                if let Some(threshold) = threshold {
+                                    for attempt in 1..=5 {
+                                        let mut ctx = device_context.lock().await;
+                                        if let Ok(bat) = ctx.battery_mut()
+                                            && bat.set_charge_threshold(threshold).is_ok()
+                                        {
                                             tracing::info!(
                                                 "Re-applied charge limit of {limit}% on resume (attempt {attempt})"
                                             );
                                             break;
                                         }
-                                    } else {
+                                        drop(ctx);
+                                        tokio::time::sleep(Duration::from_millis(400)).await;
+                                    }
+                                }
+                            }
+
+                            // 5. Evaluate resume through PolicyEngine and dispatch via SafetyGate
+                            let resume_decision = {
+                                let mut engine = policy_engine.lock().await;
+                                engine.evaluate_event(crate::daemon::policy::SystemEvent::ResumeFromSuspend)
+                            };
+
+                            if let Some(decision) = resume_decision {
+                                for attempt in 1..=5 {
+                                    let dispatched = {
+                                        let mut ctx = device_context.lock().await;
+                                        crate::daemon::policy::SafetyGate::dispatch(&decision, &mut ctx)
+                                    };
+
+                                    if dispatched {
+                                        tracing::info!(
+                                            "Re-applied resume policy decision {:?} (attempt {attempt})",
+                                            decision
+                                        );
+                                        if let crate::daemon::policy::PolicyAction::SetThermalMode(mode) =
+                                            decision.action
+                                            && let Ok(interface_ref) = conn_clone
+                                                .object_server()
+                                                .interface::<_, DaemonInterface>("/io/strixwolf/alatus/Daemon")
+                                                .await
+                                        {
+                                            let emitter = interface_ref.signal_emitter();
+                                            let _ = interface_ref
+                                                .get()
+                                                .await
+                                                .firmware_mode_changed(emitter)
+                                                .await;
+                                            let _ = DaemonInterface::thermal_mode_changed(
+                                                emitter,
+                                                mode.as_u32(),
+                                            )
+                                            .await;
+                                        }
                                         break;
                                     }
-                                    drop(ctx);
                                     tokio::time::sleep(Duration::from_millis(400)).await;
                                 }
                             }
-                        }
-
-                        // Evaluate resume through PolicyEngine and dispatch via SafetyGate
-                        let resume_decision = {
-                            let mut engine = policy_engine.lock().await;
-                            engine.evaluate_event(crate::daemon::policy::SystemEvent::ResumeFromSuspend)
-                        };
-
-                        if let Some(decision) = resume_decision {
-                            for attempt in 1..=5 {
-                                let mut ctx = device_context.lock().await;
-                                if crate::daemon::policy::SafetyGate::dispatch(&decision, &mut ctx) {
-                                    tracing::info!(
-                                        "Re-applied resume policy decision {:?} (attempt {attempt})",
-                                        decision
-                                    );
-                                    if let crate::daemon::policy::PolicyAction::SetThermalMode(mode) =
-                                        decision.action
-                                        && let Ok(interface_ref) = conn_clone
-                                            .object_server()
-                                            .interface::<_, DaemonInterface>("/io/strixwolf/alatus/Daemon")
-                                            .await
-                                    {
-                                        let emitter = interface_ref.signal_emitter();
-                                        let _ = interface_ref
-                                            .get()
-                                            .await
-                                            .firmware_mode_changed(emitter)
-                                            .await;
-                                        let _ = DaemonInterface::thermal_mode_changed(
-                                            emitter,
-                                            mode.as_u32(),
-                                        )
-                                        .await;
-                                    }
-                                    break;
-                                }
-                                drop(ctx);
-                                tokio::time::sleep(Duration::from_millis(400)).await;
-                            }
-                        }
-                    });
+                        });
+                    }
                 }
             }
         }
