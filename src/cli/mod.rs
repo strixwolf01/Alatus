@@ -7,12 +7,14 @@
 //! battery charge limiting, deep sleep states, keyboard RGB lighting, and status diagnostics via D-Bus.
 
 pub mod battery;
+pub mod power;
 pub mod rgb;
 pub mod session_cmd;
 pub mod status;
 pub mod thermal;
 
 pub use battery::*;
+pub use power::*;
 pub use rgb::*;
 pub use session_cmd::*;
 pub use status::*;
@@ -120,6 +122,13 @@ pub enum Commands {
     Display {
         #[command(subcommand)]
         action: Option<DisplayAction>,
+    },
+
+    /// Platform power limits (PPT) and Dynamic Boost tuning
+    #[command(alias = "p")]
+    Power {
+        #[command(subcommand)]
+        action: PowerAction,
     },
 
     /// Set battery charge limit threshold (0-100%)
@@ -256,10 +265,23 @@ pub async fn run() {
         }
         Some(Commands::Display { action }) => {
             if let Err(e) = handle_display(action.clone()).await {
-                eprintln!("Error executing command: {}", e);
-                eprintln!(
-                    "Hint: Ensure 'alatus-session' is running: systemctl --user start alatus-session.service"
-                );
+                match &e {
+                    DaemonClientError::CapabilityUnsupported(subsystem)
+                    | DaemonClientError::NotSupported(subsystem) => {
+                        eprintln!("Feature '{subsystem}' is not supported on this device profile.");
+                    }
+                    DaemonClientError::CapabilityUnavailable(reason) => {
+                        eprintln!(
+                            "Feature is currently unavailable: {reason}. Check kernel modules or permissions."
+                        );
+                    }
+                    _ => {
+                        eprintln!("Error executing command: {e}");
+                        eprintln!(
+                            "Hint: Ensure 'alatus-session' is running: systemctl --user start alatus-session.service"
+                        );
+                    }
+                }
                 process::exit(1);
             }
             return;
@@ -267,6 +289,24 @@ pub async fn run() {
         Some(Commands::Daemon { target }) => {
             if let Err(e) = handle_daemon(target.clone()).await {
                 eprintln!("Error executing command: {}", e);
+                process::exit(1);
+            }
+            return;
+        }
+        Some(Commands::Power { action }) => {
+            if let Err(e) = handle_power(action.clone()).await {
+                match &e {
+                    DaemonClientError::CapabilityUnsupported(subsystem)
+                    | DaemonClientError::NotSupported(subsystem) => {
+                        eprintln!("Feature '{subsystem}' is not supported on this device profile.");
+                    }
+                    DaemonClientError::CapabilityUnavailable(reason) => {
+                        eprintln!(
+                            "Feature is currently unavailable: {reason}. Check kernel modules or permissions."
+                        );
+                    }
+                    _ => eprintln!("Error executing power command: {e}"),
+                }
                 process::exit(1);
             }
             return;
@@ -326,6 +366,7 @@ pub async fn run() {
         Commands::Gui { .. }
         | Commands::Oled { .. }
         | Commands::Display { .. }
+        | Commands::Power { .. }
         | Commands::Daemon { .. }
         | Commands::Session { .. }
         | Commands::Completions { .. } => unreachable!(),

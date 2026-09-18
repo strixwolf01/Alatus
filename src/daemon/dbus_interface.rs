@@ -627,6 +627,307 @@ impl DaemonInterface {
             }
         }
     }
+
+    #[zbus(property)]
+    async fn gpu_mux_mode(&self) -> zbus::fdo::Result<u8> {
+        let ctx = self.device_context.lock().await;
+        match &ctx.capabilities.platform {
+            CapabilityState::Unsupported => Err(DaemonError::CapabilityUnsupported(
+                "Platform attributes unsupported on this device".to_string(),
+            )
+            .into()),
+            CapabilityState::Unavailable(reason) => Err(DaemonError::CapabilityUnavailable(
+                format!("Platform driver unavailable: {reason}"),
+            )
+            .into()),
+            CapabilityState::Supported(_) => {
+                if let Some(ref plat) = ctx.platform {
+                    let mode = plat
+                        .get_gpu_mux_mode()
+                        .map_err(|e| DaemonError::IoError(e.to_string()))?;
+                    Ok(mode as u8)
+                } else {
+                    Err(
+                        DaemonError::CapabilityUnavailable("Platform driver missing".to_string())
+                            .into(),
+                    )
+                }
+            }
+        }
+    }
+
+    #[zbus(property)]
+    async fn set_gpu_mux_mode(
+        &self,
+        #[zbus(header)] header: Option<zbus::message::Header<'_>>,
+        #[zbus(connection)] conn: &Connection,
+        value: u8,
+    ) -> zbus::Result<()> {
+        if value > 1 {
+            return Err(zbus::Error::from(DaemonError::InvalidArgument(
+                "GPU MUX mode must be 0 (Discrete) or 1 (Hybrid)".to_string(),
+            )));
+        }
+
+        let sender = header
+            .and_then(|h| h.sender().map(|s| s.to_owned()))
+            .ok_or_else(|| {
+                zbus::Error::from(DaemonError::PermissionDenied("No sender found".to_string()))
+            })?;
+
+        check_polkit(conn, &sender, "io.strixwolf.alatus.set-display").await?;
+
+        {
+            let mut ctx = self.device_context.lock().await;
+            match &ctx.capabilities.platform {
+                CapabilityState::Unsupported => {
+                    return Err(zbus::Error::from(DaemonError::CapabilityUnsupported(
+                        "Platform attributes unsupported on this device".to_string(),
+                    )));
+                }
+                CapabilityState::Unavailable(reason) => {
+                    return Err(zbus::Error::from(DaemonError::CapabilityUnavailable(
+                        format!("Platform driver unavailable: {reason}"),
+                    )));
+                }
+                CapabilityState::Supported(_) => {
+                    if let Some(ref mut plat) = ctx.platform {
+                        plat.set_gpu_mux_mode(value as u32)
+                            .map_err(|e| DaemonError::IoError(e.to_string()))?;
+                    } else {
+                        return Err(zbus::Error::from(DaemonError::CapabilityUnavailable(
+                            "Platform driver missing".to_string(),
+                        )));
+                    }
+                }
+            }
+        }
+
+        // Emit PropertiesChanged signal
+        let interface_ref = conn
+            .object_server()
+            .interface::<_, DaemonInterface>("/io/strixwolf/alatus/Daemon")
+            .await?;
+        interface_ref
+            .get()
+            .await
+            .gpu_mux_mode_changed(interface_ref.signal_emitter())
+            .await?;
+
+        Ok(())
+    }
+
+    #[zbus(property)]
+    async fn panel_overdrive(&self) -> zbus::fdo::Result<bool> {
+        let ctx = self.device_context.lock().await;
+        match &ctx.capabilities.platform {
+            CapabilityState::Unsupported => Err(DaemonError::CapabilityUnsupported(
+                "Platform attributes unsupported on this device".to_string(),
+            )
+            .into()),
+            CapabilityState::Unavailable(reason) => Err(DaemonError::CapabilityUnavailable(
+                format!("Platform driver unavailable: {reason}"),
+            )
+            .into()),
+            CapabilityState::Supported(_) => {
+                if let Some(ref plat) = ctx.platform {
+                    plat.get_panel_od()
+                        .map_err(|e| DaemonError::IoError(e.to_string()).into())
+                } else {
+                    Err(
+                        DaemonError::CapabilityUnavailable("Platform driver missing".to_string())
+                            .into(),
+                    )
+                }
+            }
+        }
+    }
+
+    #[zbus(property)]
+    async fn set_panel_overdrive(
+        &self,
+        #[zbus(header)] header: Option<zbus::message::Header<'_>>,
+        #[zbus(connection)] conn: &Connection,
+        value: bool,
+    ) -> zbus::Result<()> {
+        let sender = header
+            .and_then(|h| h.sender().map(|s| s.to_owned()))
+            .ok_or_else(|| {
+                zbus::Error::from(DaemonError::PermissionDenied("No sender found".to_string()))
+            })?;
+
+        check_polkit(conn, &sender, "io.strixwolf.alatus.set-display").await?;
+
+        {
+            let mut ctx = self.device_context.lock().await;
+            match &ctx.capabilities.platform {
+                CapabilityState::Unsupported => {
+                    return Err(zbus::Error::from(DaemonError::CapabilityUnsupported(
+                        "Platform attributes unsupported on this device".to_string(),
+                    )));
+                }
+                CapabilityState::Unavailable(reason) => {
+                    return Err(zbus::Error::from(DaemonError::CapabilityUnavailable(
+                        format!("Platform driver unavailable: {reason}"),
+                    )));
+                }
+                CapabilityState::Supported(_) => {
+                    if let Some(ref mut plat) = ctx.platform {
+                        plat.set_panel_od(value)
+                            .map_err(|e| DaemonError::IoError(e.to_string()))?;
+                    } else {
+                        return Err(zbus::Error::from(DaemonError::CapabilityUnavailable(
+                            "Platform driver missing".to_string(),
+                        )));
+                    }
+                }
+            }
+        }
+
+        // Emit PropertiesChanged signal
+        let interface_ref = conn
+            .object_server()
+            .interface::<_, DaemonInterface>("/io/strixwolf/alatus/Daemon")
+            .await?;
+        interface_ref
+            .get()
+            .await
+            .panel_overdrive_changed(interface_ref.signal_emitter())
+            .await?;
+
+        Ok(())
+    }
+
+    #[zbus(name = "SetPptLimit")]
+    async fn set_ppt_limit(
+        &self,
+        #[zbus(header)] header: zbus::message::Header<'_>,
+        #[zbus(connection)] conn: &Connection,
+        attribute: String,
+        value: u32,
+    ) -> zbus::fdo::Result<()> {
+        let sender = header.sender().ok_or_else(|| {
+            zbus::fdo::Error::from(DaemonError::PermissionDenied("No sender found".to_string()))
+        })?;
+
+        check_polkit(conn, sender, "io.strixwolf.alatus.set-platform-power")
+            .await
+            .map_err(zbus::fdo::Error::from)?;
+
+        let mut ctx = self.device_context.lock().await;
+        match &ctx.capabilities.platform {
+            CapabilityState::Unsupported => Err(DaemonError::CapabilityUnsupported(
+                "Platform power attributes unsupported on this device".to_string(),
+            )
+            .into()),
+            CapabilityState::Unavailable(reason) => Err(DaemonError::CapabilityUnavailable(
+                format!("Platform driver unavailable: {reason}"),
+            )
+            .into()),
+            CapabilityState::Supported(_) => {
+                if let Some(ref mut plat) = ctx.platform {
+                    plat.set_attribute(&attribute, value)
+                        .map_err(|e| DaemonError::IoError(e.to_string()))?;
+                    Ok(())
+                } else {
+                    Err(
+                        DaemonError::CapabilityUnavailable("Platform driver missing".to_string())
+                            .into(),
+                    )
+                }
+            }
+        }
+    }
+
+    #[zbus(name = "GetPptAttribute")]
+    async fn get_ppt_attribute(&self, attribute: String) -> zbus::fdo::Result<String> {
+        let ctx = self.device_context.lock().await;
+        match &ctx.capabilities.platform {
+            CapabilityState::Unsupported => Err(DaemonError::CapabilityUnsupported(
+                "Platform power attributes unsupported on this device".to_string(),
+            )
+            .into()),
+            CapabilityState::Unavailable(reason) => Err(DaemonError::CapabilityUnavailable(
+                format!("Platform driver unavailable: {reason}"),
+            )
+            .into()),
+            CapabilityState::Supported(_) => {
+                if let Some(ref plat) = ctx.platform {
+                    let attr = plat
+                        .get_attribute(&attribute)
+                        .map_err(|e| DaemonError::IoError(e.to_string()))?;
+                    serde_json::to_string(&attr)
+                        .map_err(|e| zbus::fdo::Error::Failed(e.to_string()))
+                } else {
+                    Err(
+                        DaemonError::CapabilityUnavailable("Platform driver missing".to_string())
+                            .into(),
+                    )
+                }
+            }
+        }
+    }
+
+    #[zbus(name = "ListPptAttributes")]
+    async fn list_ppt_attributes(&self) -> zbus::fdo::Result<Vec<String>> {
+        let ctx = self.device_context.lock().await;
+        match &ctx.capabilities.platform {
+            CapabilityState::Unsupported => Err(DaemonError::CapabilityUnsupported(
+                "Platform power attributes unsupported on this device".to_string(),
+            )
+            .into()),
+            CapabilityState::Unavailable(reason) => Err(DaemonError::CapabilityUnavailable(
+                format!("Platform driver unavailable: {reason}"),
+            )
+            .into()),
+            CapabilityState::Supported(_) => {
+                if let Some(ref plat) = ctx.platform {
+                    Ok(plat.list_attributes())
+                } else {
+                    Err(
+                        DaemonError::CapabilityUnavailable("Platform driver missing".to_string())
+                            .into(),
+                    )
+                }
+            }
+        }
+    }
+
+    #[zbus(name = "SetGpuMuxMode")]
+    async fn set_gpu_mux_mode_method(
+        &self,
+        #[zbus(header)] header: zbus::message::Header<'_>,
+        #[zbus(connection)] conn: &Connection,
+        mode: u8,
+    ) -> zbus::fdo::Result<()> {
+        let header_opt = Some(header);
+        self.set_gpu_mux_mode(header_opt, conn, mode)
+            .await
+            .map_err(|e| zbus::fdo::Error::Failed(e.to_string()))
+    }
+
+    #[zbus(name = "GetGpuMuxMode")]
+    async fn get_gpu_mux_mode_method(&self) -> zbus::fdo::Result<u8> {
+        self.gpu_mux_mode().await
+    }
+
+    #[zbus(name = "SetPanelOverdrive")]
+    async fn set_panel_overdrive_method(
+        &self,
+        #[zbus(header)] header: zbus::message::Header<'_>,
+        #[zbus(connection)] conn: &Connection,
+        enabled: bool,
+    ) -> zbus::fdo::Result<()> {
+        let header_opt = Some(header);
+        self.set_panel_overdrive(header_opt, conn, enabled)
+            .await
+            .map_err(|e| zbus::fdo::Error::Failed(e.to_string()))
+    }
+
+    #[zbus(name = "GetPanelOverdrive")]
+    async fn get_panel_overdrive_method(&self) -> zbus::fdo::Result<bool> {
+        self.panel_overdrive().await
+    }
 }
 
 pub async fn run_background_listener(

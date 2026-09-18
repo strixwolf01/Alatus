@@ -818,3 +818,120 @@ fn test_cli_parse_shortcuts_and_aliases() {
         })
     ));
 }
+
+#[test]
+fn test_cli_parse_power_and_platform_switches() {
+    // 1. alatus power ppt --list
+    let cli_ppt_list_flag = Cli::try_parse_from(["alatus", "power", "ppt", "--list"]).unwrap();
+    assert!(matches!(
+        cli_ppt_list_flag.command,
+        Some(Commands::Power {
+            action: PowerAction::Ppt {
+                action: None,
+                list: true,
+            }
+        })
+    ));
+
+    // 2. alatus power ppt list
+    let cli_ppt_list_cmd = Cli::try_parse_from(["alatus", "power", "ppt", "list"]).unwrap();
+    assert!(matches!(
+        cli_ppt_list_cmd.command,
+        Some(Commands::Power {
+            action: PowerAction::Ppt {
+                action: Some(PptAction::List),
+                list: false,
+            }
+        })
+    ));
+
+    // 3. alatus power ppt set <attribute> <value>
+    let cli_ppt_set =
+        Cli::try_parse_from(["alatus", "power", "ppt", "set", "ppt_pl1_spl", "85"]).unwrap();
+    assert!(matches!(
+        cli_ppt_set.command,
+        Some(Commands::Power {
+            action: PowerAction::Ppt {
+                action: Some(PptAction::Set {
+                    ref attribute,
+                    value: 85,
+                }),
+                list: false,
+            }
+        }) if attribute == "ppt_pl1_spl"
+    ));
+
+    // 4. Power alias 'p'
+    let cli_p_set =
+        Cli::try_parse_from(["alatus", "p", "ppt", "set", "nv_dynamic_boost", "25"]).unwrap();
+    assert!(matches!(
+        cli_p_set.command,
+        Some(Commands::Power {
+            action: PowerAction::Ppt {
+                action: Some(PptAction::Set {
+                    ref attribute,
+                    value: 25,
+                }),
+                list: false,
+            }
+        }) if attribute == "nv_dynamic_boost"
+    ));
+
+    // 5. alatus display mux [discrete|hybrid]
+    let cli_mux_disc = Cli::try_parse_from(["alatus", "display", "mux", "discrete"]).unwrap();
+    assert!(matches!(
+        cli_mux_disc.command,
+        Some(Commands::Display {
+            action: Some(DisplayAction::Mux {
+                mode: Some(ref m),
+            })
+        }) if m == "discrete"
+    ));
+
+    let cli_mux_hyb = Cli::try_parse_from(["alatus", "display", "mux", "hybrid"]).unwrap();
+    assert!(matches!(
+        cli_mux_hyb.command,
+        Some(Commands::Display {
+            action: Some(DisplayAction::Mux {
+                mode: Some(ref m),
+            })
+        }) if m == "hybrid"
+    ));
+
+    let cli_mux_query = Cli::try_parse_from(["alatus", "display", "mux"]).unwrap();
+    assert!(matches!(
+        cli_mux_query.command,
+        Some(Commands::Display {
+            action: Some(DisplayAction::Mux { mode: None })
+        })
+    ));
+
+    // 6. alatus display overdrive [on|off] and alias 'od'
+    let cli_od_on = Cli::try_parse_from(["alatus", "display", "overdrive", "on"]).unwrap();
+    assert!(matches!(
+        cli_od_on.command,
+        Some(Commands::Display {
+            action: Some(DisplayAction::Overdrive {
+                state: Some(ref s),
+            })
+        }) if s == "on"
+    ));
+
+    let cli_od_off = Cli::try_parse_from(["alatus", "display", "od", "off"]).unwrap();
+    assert!(matches!(
+        cli_od_off.command,
+        Some(Commands::Display {
+            action: Some(DisplayAction::Overdrive {
+                state: Some(ref s),
+            })
+        }) if s == "off"
+    ));
+
+    let cli_od_query = Cli::try_parse_from(["alatus", "display", "overdrive"]).unwrap();
+    assert!(matches!(
+        cli_od_query.command,
+        Some(Commands::Display {
+            action: Some(DisplayAction::Overdrive { state: None })
+        })
+    ));
+}

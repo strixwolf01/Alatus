@@ -14,8 +14,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 /// Default sysfs root path for the `asus-armoury` kernel interface.
-pub const ARMOURY_ATTRIBUTES_BASE: &str =
-    "/sys/class/firmware-attributes/asus-armoury/attributes";
+pub const ARMOURY_ATTRIBUTES_BASE: &str = "/sys/class/firmware-attributes/asus-armoury/attributes";
 
 /// Represents an Armoury attribute node with hardware limits and resolution.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -382,7 +381,8 @@ impl ArmouryPlatformDriver {
 
     /// Reads NVIDIA Dynamic Boost power shift ceiling in Watts.
     pub fn get_gpu_dynamic_boost(&self) -> Result<u32, DriverError> {
-        self.get_attribute("nv_dynamic_boost").map(|a| a.current_value)
+        self.get_attribute("nv_dynamic_boost")
+            .map(|a| a.current_value)
     }
 
     /// Commits NVIDIA Dynamic Boost power shift ceiling in Watts.
@@ -515,4 +515,3 @@ mod tests {
         assert!(matches!(res, Ok(None)));
     }
 }
-

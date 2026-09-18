@@ -49,4 +49,13 @@
       <allow_active>yes</allow_active>
     </defaults>
   </action>
+  <action id="io.strixwolf.alatus.set-platform-power">
+    <description>Set CPU and GPU platform power limits (PPT / Dynamic Boost)</description>
+    <message>Authentication is required to tune platform power limits</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
 </policyconfig>

@@ -591,10 +591,10 @@ fn test_rog_wmi_fan_curve_and_fallback() {
 
 #[test]
 fn test_armoury_platform_driver_device_context() {
+    use alatus::hardware::DriverError;
     use alatus::hardware::capabilities::{CapabilityState, PowerLimitCapabilities};
     use alatus::hardware::context::DeviceContext;
     use alatus::hardware::drivers::{ArmouryPlatformDriver, AsusctlProxyDriver};
-    use alatus::hardware::DriverError;
 
     // 1. Standalone mock Armoury driver validation
     let (mut driver, writes) = ArmouryPlatformDriver::new_mock();

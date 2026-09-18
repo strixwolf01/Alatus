@@ -70,6 +70,9 @@ _alatus() {
             alatus,performance)
                 cmd="alatus__subcmd__perf"
                 ;;
+            alatus,power)
+                cmd="alatus__subcmd__power"
+                ;;
             alatus,profile)
                 cmd="alatus__subcmd__mode"
                 ;;
@@ -223,6 +226,15 @@ _alatus() {
             alatus__subcmd__display,help)
                 cmd="alatus__subcmd__display__subcmd__help"
                 ;;
+            alatus__subcmd__display,mux)
+                cmd="alatus__subcmd__display__subcmd__mux"
+                ;;
+            alatus__subcmd__display,od)
+                cmd="alatus__subcmd__display__subcmd__overdrive"
+                ;;
+            alatus__subcmd__display,overdrive)
+                cmd="alatus__subcmd__display__subcmd__overdrive"
+                ;;
             alatus__subcmd__display,rate)
                 cmd="alatus__subcmd__display__subcmd__rate"
                 ;;
@@ -234,6 +246,12 @@ _alatus() {
                 ;;
             alatus__subcmd__display__subcmd__help,help)
                 cmd="alatus__subcmd__display__subcmd__help__subcmd__help"
+                ;;
+            alatus__subcmd__display__subcmd__help,mux)
+                cmd="alatus__subcmd__display__subcmd__help__subcmd__mux"
+                ;;
+            alatus__subcmd__display__subcmd__help,overdrive)
+                cmd="alatus__subcmd__display__subcmd__help__subcmd__overdrive"
                 ;;
             alatus__subcmd__display__subcmd__help,rate)
                 cmd="alatus__subcmd__display__subcmd__help__subcmd__rate"
@@ -334,6 +352,9 @@ _alatus() {
             alatus__subcmd__help,perf)
                 cmd="alatus__subcmd__help__subcmd__perf"
                 ;;
+            alatus__subcmd__help,power)
+                cmd="alatus__subcmd__help__subcmd__power"
+                ;;
             alatus__subcmd__help,quiet)
                 cmd="alatus__subcmd__help__subcmd__quiet"
                 ;;
@@ -390,6 +411,12 @@ _alatus() {
                 ;;
             alatus__subcmd__help__subcmd__display,dim)
                 cmd="alatus__subcmd__help__subcmd__display__subcmd__dim"
+                ;;
+            alatus__subcmd__help__subcmd__display,mux)
+                cmd="alatus__subcmd__help__subcmd__display__subcmd__mux"
+                ;;
+            alatus__subcmd__help__subcmd__display,overdrive)
+                cmd="alatus__subcmd__help__subcmd__display__subcmd__overdrive"
                 ;;
             alatus__subcmd__help__subcmd__display,rate)
                 cmd="alatus__subcmd__help__subcmd__display__subcmd__rate"
@@ -450,6 +477,15 @@ _alatus() {
                 ;;
             alatus__subcmd__help__subcmd__oled,status)
                 cmd="alatus__subcmd__help__subcmd__oled__subcmd__status"
+                ;;
+            alatus__subcmd__help__subcmd__power,ppt)
+                cmd="alatus__subcmd__help__subcmd__power__subcmd__ppt"
+                ;;
+            alatus__subcmd__help__subcmd__power__subcmd__ppt,list)
+                cmd="alatus__subcmd__help__subcmd__power__subcmd__ppt__subcmd__list"
+                ;;
+            alatus__subcmd__help__subcmd__power__subcmd__ppt,set)
+                cmd="alatus__subcmd__help__subcmd__power__subcmd__ppt__subcmd__set"
                 ;;
             alatus__subcmd__help__subcmd__rgb,off)
                 cmd="alatus__subcmd__help__subcmd__rgb__subcmd__off"
@@ -568,6 +604,42 @@ _alatus() {
             alatus__subcmd__oled__subcmd__help,status)
                 cmd="alatus__subcmd__oled__subcmd__help__subcmd__status"
                 ;;
+            alatus__subcmd__power,help)
+                cmd="alatus__subcmd__power__subcmd__help"
+                ;;
+            alatus__subcmd__power,ppt)
+                cmd="alatus__subcmd__power__subcmd__ppt"
+                ;;
+            alatus__subcmd__power__subcmd__help,help)
+                cmd="alatus__subcmd__power__subcmd__help__subcmd__help"
+                ;;
+            alatus__subcmd__power__subcmd__help,ppt)
+                cmd="alatus__subcmd__power__subcmd__help__subcmd__ppt"
+                ;;
+            alatus__subcmd__power__subcmd__help__subcmd__ppt,list)
+                cmd="alatus__subcmd__power__subcmd__help__subcmd__ppt__subcmd__list"
+                ;;
+            alatus__subcmd__power__subcmd__help__subcmd__ppt,set)
+                cmd="alatus__subcmd__power__subcmd__help__subcmd__ppt__subcmd__set"
+                ;;
+            alatus__subcmd__power__subcmd__ppt,help)
+                cmd="alatus__subcmd__power__subcmd__ppt__subcmd__help"
+                ;;
+            alatus__subcmd__power__subcmd__ppt,list)
+                cmd="alatus__subcmd__power__subcmd__ppt__subcmd__list"
+                ;;
+            alatus__subcmd__power__subcmd__ppt,set)
+                cmd="alatus__subcmd__power__subcmd__ppt__subcmd__set"
+                ;;
+            alatus__subcmd__power__subcmd__ppt__subcmd__help,help)
+                cmd="alatus__subcmd__power__subcmd__ppt__subcmd__help__subcmd__help"
+                ;;
+            alatus__subcmd__power__subcmd__ppt__subcmd__help,list)
+                cmd="alatus__subcmd__power__subcmd__ppt__subcmd__help__subcmd__list"
+                ;;
+            alatus__subcmd__power__subcmd__ppt__subcmd__help,set)
+                cmd="alatus__subcmd__power__subcmd__ppt__subcmd__help__subcmd__set"
+                ;;
             alatus__subcmd__rgb,help)
                 cmd="alatus__subcmd__rgb__subcmd__help"
                 ;;
@@ -677,7 +749,7 @@ _alatus() {
 
     case "${cmd}" in
         alatus)
-            opts="-h -V --gui --tray --help --version gui status capabilities watch monitor mode thermal profile fan cycle quiet balanced perf performance full oled display charge-limit battery charge rgb daemon completions session help"
+            opts="-h -V --gui --tray --help --version gui status capabilities watch monitor mode thermal profile fan cycle quiet balanced perf performance full oled display power charge-limit battery charge rgb daemon completions session help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -1363,7 +1435,7 @@ _alatus() {
             return 0
             ;;
         alatus__subcmd__display)
-            opts="-h --help status rate dim help"
+            opts="-h --help status rate dim mux overdrive od help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -1391,7 +1463,7 @@ _alatus() {
             return 0
             ;;
         alatus__subcmd__display__subcmd__help)
-            opts="status rate dim help"
+            opts="status rate dim mux overdrive help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -1432,6 +1504,34 @@ _alatus() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
+        alatus__subcmd__display__subcmd__help__subcmd__mux)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__display__subcmd__help__subcmd__overdrive)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
         alatus__subcmd__display__subcmd__help__subcmd__rate)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
@@ -1449,6 +1549,34 @@ _alatus() {
         alatus__subcmd__display__subcmd__help__subcmd__status)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__display__subcmd__mux)
+            opts="-h --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__display__subcmd__overdrive)
+            opts="-h --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
@@ -1755,7 +1883,7 @@ _alatus() {
             return 0
             ;;
         alatus__subcmd__help)
-            opts="gui status capabilities watch monitor mode fan cycle quiet balanced perf full oled display charge-limit rgb daemon completions session help"
+            opts="gui status capabilities watch monitor mode fan cycle quiet balanced perf full oled display power charge-limit rgb daemon completions session help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -2035,7 +2163,7 @@ _alatus() {
             return 0
             ;;
         alatus__subcmd__help__subcmd__display)
-            opts="status rate dim"
+            opts="status rate dim mux overdrive"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -2049,6 +2177,34 @@ _alatus() {
             return 0
             ;;
         alatus__subcmd__help__subcmd__display__subcmd__dim)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__help__subcmd__display__subcmd__mux)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__help__subcmd__display__subcmd__overdrive)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -2443,6 +2599,62 @@ _alatus() {
         alatus__subcmd__help__subcmd__perf)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__help__subcmd__power)
+            opts="ppt"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__help__subcmd__power__subcmd__ppt)
+            opts="list set"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__help__subcmd__power__subcmd__ppt__subcmd__list)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 5 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__help__subcmd__power__subcmd__ppt__subcmd__set)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 5 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
@@ -3131,6 +3343,188 @@ _alatus() {
         alatus__subcmd__perf)
             opts="-h --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__power)
+            opts="-h --help ppt help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__power__subcmd__help)
+            opts="ppt help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__power__subcmd__help__subcmd__help)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__power__subcmd__help__subcmd__ppt)
+            opts="list set"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__power__subcmd__help__subcmd__ppt__subcmd__list)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 5 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__power__subcmd__help__subcmd__ppt__subcmd__set)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 5 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__power__subcmd__ppt)
+            opts="-h --list --help list set help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__power__subcmd__ppt__subcmd__help)
+            opts="list set help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__power__subcmd__ppt__subcmd__help__subcmd__help)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 5 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__power__subcmd__ppt__subcmd__help__subcmd__list)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 5 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__power__subcmd__ppt__subcmd__help__subcmd__set)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 5 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__power__subcmd__ppt__subcmd__list)
+            opts="-h --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__power__subcmd__ppt__subcmd__set)
+            opts="-h --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi

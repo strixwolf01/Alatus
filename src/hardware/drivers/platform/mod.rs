@@ -6,4 +6,3 @@
 pub mod armoury;
 
 pub use armoury::{ArmouryAttribute, ArmouryPlatformDriver};
-

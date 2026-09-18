@@ -29,7 +29,7 @@ pub enum OledAction {
     Refresh,
 }
 
-#[derive(Subcommand, Debug, Clone)]
+#[derive(Subcommand, Debug, Clone, PartialEq, Eq)]
 pub enum DisplayAction {
     /// Show active panel connector, current refresh rate, resolution, and auto-refresh state
     Status,
@@ -49,6 +49,19 @@ pub enum DisplayAction {
         /// Luminance percentage (10 to 100)
         #[arg(value_parser = clap::value_parser!(u32).range(10..=100))]
         level: u32,
+    },
+
+    /// Switch GPU MUX mode between Discrete (dedicated dGPU) and Hybrid (Optimus)
+    Mux {
+        /// Target mode: 'discrete' (0), 'hybrid' (1), or query if omitted
+        mode: Option<String>,
+    },
+
+    /// Toggle display panel overdrive
+    #[command(visible_alias = "od")]
+    Overdrive {
+        /// Overdrive state: 'on' (1), 'off' (0), or query if omitted
+        state: Option<String>,
     },
 }
 
@@ -395,6 +408,62 @@ pub async fn handle_display(action: Option<DisplayAction>) -> Result<(), DaemonC
                     DaemonClientError::IoError(format!("Failed to set display dimming: {e}"))
                 })?;
             println!("Display flicker-free dimming set to {clamped}%.");
+            Ok(())
+        }
+        DisplayAction::Mux { mode } => {
+            let client = crate::services::daemon_client::get_daemon_client().await?;
+            match mode.as_deref() {
+                Some("discrete") | Some("0") | Some("d") => {
+                    client.set_gpu_mux_mode(0).await?;
+                    println!(
+                        "✓ GPU MUX mode set to Discrete (Dedicated GPU only). A system reboot or session restart may be required."
+                    );
+                }
+                Some("hybrid") | Some("optimus") | Some("1") | Some("h") => {
+                    client.set_gpu_mux_mode(1).await?;
+                    println!("✓ GPU MUX mode set to Hybrid (Optimus / Dynamic switching).");
+                }
+                Some(other) => {
+                    return Err(DaemonClientError::InvalidArgument(format!(
+                        "Unknown GPU MUX mode '{other}'. Expected 'discrete' or 'hybrid'."
+                    )));
+                }
+                None => {
+                    let m = client.get_gpu_mux_mode().await?;
+                    let mode_str = if m == 0 {
+                        "Discrete (dGPU only, 0)"
+                    } else {
+                        "Hybrid (Optimus, 1)"
+                    };
+                    println!("GPU MUX Mode: {mode_str}");
+                }
+            }
+            Ok(())
+        }
+        DisplayAction::Overdrive { state } => {
+            let client = crate::services::daemon_client::get_daemon_client().await?;
+            match state.as_deref() {
+                Some("on") | Some("1") | Some("enable") | Some("true") => {
+                    client.set_panel_overdrive(true).await?;
+                    println!("✓ Panel Overdrive enabled.");
+                }
+                Some("off") | Some("0") | Some("disable") | Some("false") => {
+                    client.set_panel_overdrive(false).await?;
+                    println!("✓ Panel Overdrive disabled.");
+                }
+                Some(other) => {
+                    return Err(DaemonClientError::InvalidArgument(format!(
+                        "Unknown overdrive state '{other}'. Expected 'on' or 'off'."
+                    )));
+                }
+                None => {
+                    let od = client.get_panel_overdrive().await?;
+                    println!(
+                        "Panel Overdrive: {}",
+                        if od { "Enabled (on)" } else { "Disabled (off)" }
+                    );
+                }
+            }
             Ok(())
         }
     }

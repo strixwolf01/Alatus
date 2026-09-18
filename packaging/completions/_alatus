@@ -694,6 +694,27 @@ _arguments "${_arguments_options[@]}" : \
 ':level -- Luminance percentage (10 to 100):_default' \
 && ret=0
 ;;
+(mux)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'::mode -- Target mode\: '\''discrete'\'' (0), '\''hybrid'\'' (1), or query if omitted:_default' \
+&& ret=0
+;;
+(overdrive)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'::state -- Overdrive state\: '\''on'\'' (1), '\''off'\'' (0), or query if omitted:_default' \
+&& ret=0
+;;
+(od)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'::state -- Overdrive state\: '\''on'\'' (1), '\''off'\'' (0), or query if omitted:_default' \
+&& ret=0
+;;
 (help)
 _arguments "${_arguments_options[@]}" : \
 ":: :_alatus__subcmd__display__subcmd__help_commands" \
@@ -717,6 +738,137 @@ _arguments "${_arguments_options[@]}" : \
 (dim)
 _arguments "${_arguments_options[@]}" : \
 && ret=0
+;;
+(mux)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(overdrive)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(power)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_alatus__subcmd__power_commands" \
+"*::: :->power" \
+&& ret=0
+
+    case $state in
+    (power)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-power-command-$line[1]:"
+        case $line[1] in
+            (ppt)
+_arguments "${_arguments_options[@]}" : \
+'--list[List available PPT attributes, current values, and hardware limits]' \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_alatus__subcmd__power__subcmd__ppt_commands" \
+"*::: :->ppt" \
+&& ret=0
+
+    case $state in
+    (ppt)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-power-ppt-command-$line[1]:"
+        case $line[1] in
+            (list)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':attribute -- Attribute name (e.g. ppt_pl1_spl, ppt_pl2_sppt, ppt_fppt, nv_dynamic_boost):_default' \
+':value -- Target limit in Watts:_default' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__power__subcmd__ppt__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-power-ppt-help-command-$line[1]:"
+        case $line[1] in
+            (list)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__power__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-power-help-command-$line[1]:"
+        case $line[1] in
+            (ppt)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__power__subcmd__help__subcmd__ppt_commands" \
+"*::: :->ppt" \
+&& ret=0
+
+    case $state in
+    (ppt)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-power-help-ppt-command-$line[1]:"
+        case $line[1] in
+            (list)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
 ;;
 (help)
 _arguments "${_arguments_options[@]}" : \
@@ -1527,6 +1679,54 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
+(mux)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(overdrive)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(power)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__help__subcmd__power_commands" \
+"*::: :->power" \
+&& ret=0
+
+    case $state in
+    (power)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-help-power-command-$line[1]:"
+        case $line[1] in
+            (ppt)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__help__subcmd__power__subcmd__ppt_commands" \
+"*::: :->ppt" \
+&& ret=0
+
+    case $state in
+    (ppt)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-help-power-ppt-command-$line[1]:"
+        case $line[1] in
+            (list)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
         esac
     ;;
 esac
@@ -1760,6 +1960,7 @@ _alatus_commands() {
 'full:Shortcut\: Switch directly to Full speed thermal profile' \
 'oled:OLED panel care, cumulative usage hours, idle dimming, and pixel refresh' \
 'display:Display panel resolution, refresh rate switching, and auto power-matching' \
+'power:Platform power limits (PPT) and Dynamic Boost tuning' \
 'charge-limit:Set battery charge limit threshold (0-100%)' \
 'battery:Set battery charge limit threshold (0-100%)' \
 'charge:Set battery charge limit threshold (0-100%)' \
@@ -2067,6 +2268,9 @@ _alatus__subcmd__display_commands() {
 'status:Show active panel connector, current refresh rate, resolution, and auto-refresh state' \
 'rate:Switch refresh rate in Hz (e.g. 60, 120) or toggle auto power-matching (auto \[on|off\])' \
 'dim:Scale flicker-free luminance level at compositor level (10-100%)' \
+'mux:Switch GPU MUX mode between Discrete (dedicated dGPU) and Hybrid (Optimus)' \
+'overdrive:Toggle display panel overdrive' \
+'od:Toggle display panel overdrive' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
     _describe -t commands 'alatus display commands' commands "$@"
@@ -2082,6 +2286,8 @@ _alatus__subcmd__display__subcmd__help_commands() {
 'status:Show active panel connector, current refresh rate, resolution, and auto-refresh state' \
 'rate:Switch refresh rate in Hz (e.g. 60, 120) or toggle auto power-matching (auto \[on|off\])' \
 'dim:Scale flicker-free luminance level at compositor level (10-100%)' \
+'mux:Switch GPU MUX mode between Discrete (dedicated dGPU) and Hybrid (Optimus)' \
+'overdrive:Toggle display panel overdrive' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
     _describe -t commands 'alatus display help commands' commands "$@"
@@ -2096,6 +2302,16 @@ _alatus__subcmd__display__subcmd__help__subcmd__help_commands() {
     local commands; commands=()
     _describe -t commands 'alatus display help help commands' commands "$@"
 }
+(( $+functions[_alatus__subcmd__display__subcmd__help__subcmd__mux_commands] )) ||
+_alatus__subcmd__display__subcmd__help__subcmd__mux_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus display help mux commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__display__subcmd__help__subcmd__overdrive_commands] )) ||
+_alatus__subcmd__display__subcmd__help__subcmd__overdrive_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus display help overdrive commands' commands "$@"
+}
 (( $+functions[_alatus__subcmd__display__subcmd__help__subcmd__rate_commands] )) ||
 _alatus__subcmd__display__subcmd__help__subcmd__rate_commands() {
     local commands; commands=()
@@ -2105,6 +2321,16 @@ _alatus__subcmd__display__subcmd__help__subcmd__rate_commands() {
 _alatus__subcmd__display__subcmd__help__subcmd__status_commands() {
     local commands; commands=()
     _describe -t commands 'alatus display help status commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__display__subcmd__mux_commands] )) ||
+_alatus__subcmd__display__subcmd__mux_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus display mux commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__display__subcmd__overdrive_commands] )) ||
+_alatus__subcmd__display__subcmd__overdrive_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus display overdrive commands' commands "$@"
 }
 (( $+functions[_alatus__subcmd__display__subcmd__rate_commands] )) ||
 _alatus__subcmd__display__subcmd__rate_commands() {
@@ -2246,6 +2472,7 @@ _alatus__subcmd__help_commands() {
 'full:Shortcut\: Switch directly to Full speed thermal profile' \
 'oled:OLED panel care, cumulative usage hours, idle dimming, and pixel refresh' \
 'display:Display panel resolution, refresh rate switching, and auto power-matching' \
+'power:Platform power limits (PPT) and Dynamic Boost tuning' \
 'charge-limit:Set battery charge limit threshold (0-100%)' \
 'rgb:Control keyboard RGB backlight and desktop accent color sync' \
 'daemon:Manage system hardware daemon and user desktop session background services' \
@@ -2372,6 +2599,8 @@ _alatus__subcmd__help__subcmd__display_commands() {
 'status:Show active panel connector, current refresh rate, resolution, and auto-refresh state' \
 'rate:Switch refresh rate in Hz (e.g. 60, 120) or toggle auto power-matching (auto \[on|off\])' \
 'dim:Scale flicker-free luminance level at compositor level (10-100%)' \
+'mux:Switch GPU MUX mode between Discrete (dedicated dGPU) and Hybrid (Optimus)' \
+'overdrive:Toggle display panel overdrive' \
     )
     _describe -t commands 'alatus help display commands' commands "$@"
 }
@@ -2379,6 +2608,16 @@ _alatus__subcmd__help__subcmd__display_commands() {
 _alatus__subcmd__help__subcmd__display__subcmd__dim_commands() {
     local commands; commands=()
     _describe -t commands 'alatus help display dim commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__display__subcmd__mux_commands] )) ||
+_alatus__subcmd__help__subcmd__display__subcmd__mux_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help display mux commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__display__subcmd__overdrive_commands] )) ||
+_alatus__subcmd__help__subcmd__display__subcmd__overdrive_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help display overdrive commands' commands "$@"
 }
 (( $+functions[_alatus__subcmd__help__subcmd__display__subcmd__rate_commands] )) ||
 _alatus__subcmd__help__subcmd__display__subcmd__rate_commands() {
@@ -2540,6 +2779,31 @@ _alatus__subcmd__help__subcmd__oled__subcmd__status_commands() {
 _alatus__subcmd__help__subcmd__perf_commands() {
     local commands; commands=()
     _describe -t commands 'alatus help perf commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__power_commands] )) ||
+_alatus__subcmd__help__subcmd__power_commands() {
+    local commands; commands=(
+'ppt:Platform power limits (PPT) and Dynamic Boost controls' \
+    )
+    _describe -t commands 'alatus help power commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__power__subcmd__ppt_commands] )) ||
+_alatus__subcmd__help__subcmd__power__subcmd__ppt_commands() {
+    local commands; commands=(
+'list:List available PPT attributes, current values, and hardware limits' \
+'set:Set a platform power limit attribute (in Watts)' \
+    )
+    _describe -t commands 'alatus help power ppt commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__power__subcmd__ppt__subcmd__list_commands] )) ||
+_alatus__subcmd__help__subcmd__power__subcmd__ppt__subcmd__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help power ppt list commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__power__subcmd__ppt__subcmd__set_commands] )) ||
+_alatus__subcmd__help__subcmd__power__subcmd__ppt__subcmd__set_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help power ppt set commands' commands "$@"
 }
 (( $+functions[_alatus__subcmd__help__subcmd__quiet_commands] )) ||
 _alatus__subcmd__help__subcmd__quiet_commands() {
@@ -2826,6 +3090,88 @@ _alatus__subcmd__oled__subcmd__status_commands() {
 _alatus__subcmd__perf_commands() {
     local commands; commands=()
     _describe -t commands 'alatus perf commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__power_commands] )) ||
+_alatus__subcmd__power_commands() {
+    local commands; commands=(
+'ppt:Platform power limits (PPT) and Dynamic Boost controls' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus power commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__power__subcmd__help_commands] )) ||
+_alatus__subcmd__power__subcmd__help_commands() {
+    local commands; commands=(
+'ppt:Platform power limits (PPT) and Dynamic Boost controls' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus power help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__power__subcmd__help__subcmd__help_commands] )) ||
+_alatus__subcmd__power__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus power help help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__power__subcmd__help__subcmd__ppt_commands] )) ||
+_alatus__subcmd__power__subcmd__help__subcmd__ppt_commands() {
+    local commands; commands=(
+'list:List available PPT attributes, current values, and hardware limits' \
+'set:Set a platform power limit attribute (in Watts)' \
+    )
+    _describe -t commands 'alatus power help ppt commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__power__subcmd__help__subcmd__ppt__subcmd__list_commands] )) ||
+_alatus__subcmd__power__subcmd__help__subcmd__ppt__subcmd__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus power help ppt list commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__power__subcmd__help__subcmd__ppt__subcmd__set_commands] )) ||
+_alatus__subcmd__power__subcmd__help__subcmd__ppt__subcmd__set_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus power help ppt set commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__power__subcmd__ppt_commands] )) ||
+_alatus__subcmd__power__subcmd__ppt_commands() {
+    local commands; commands=(
+'list:List available PPT attributes, current values, and hardware limits' \
+'set:Set a platform power limit attribute (in Watts)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus power ppt commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__power__subcmd__ppt__subcmd__help_commands] )) ||
+_alatus__subcmd__power__subcmd__ppt__subcmd__help_commands() {
+    local commands; commands=(
+'list:List available PPT attributes, current values, and hardware limits' \
+'set:Set a platform power limit attribute (in Watts)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus power ppt help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__power__subcmd__ppt__subcmd__help__subcmd__help_commands] )) ||
+_alatus__subcmd__power__subcmd__ppt__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus power ppt help help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__power__subcmd__ppt__subcmd__help__subcmd__list_commands] )) ||
+_alatus__subcmd__power__subcmd__ppt__subcmd__help__subcmd__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus power ppt help list commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__power__subcmd__ppt__subcmd__help__subcmd__set_commands] )) ||
+_alatus__subcmd__power__subcmd__ppt__subcmd__help__subcmd__set_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus power ppt help set commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__power__subcmd__ppt__subcmd__list_commands] )) ||
+_alatus__subcmd__power__subcmd__ppt__subcmd__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus power ppt list commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__power__subcmd__ppt__subcmd__set_commands] )) ||
+_alatus__subcmd__power__subcmd__ppt__subcmd__set_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus power ppt set commands' commands "$@"
 }
 (( $+functions[_alatus__subcmd__quiet_commands] )) ||
 _alatus__subcmd__quiet_commands() {

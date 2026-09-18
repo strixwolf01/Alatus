@@ -54,7 +54,9 @@ impl From<zbus::Error> for DaemonClientError {
                 let msg = desc.unwrap_or_default();
                 if name_str.ends_with("CapabilityUnavailable") {
                     DaemonClientError::CapabilityUnavailable(msg)
-                } else if name_str.ends_with("CapabilityUnsupported") {
+                } else if name_str.ends_with("CapabilityUnsupported")
+                    || name_str.ends_with("NotSupported")
+                {
                     DaemonClientError::CapabilityUnsupported(msg)
                 } else if name_str.ends_with("PermissionDenied") {
                     DaemonClientError::PermissionDenied(msg)
@@ -332,6 +334,56 @@ impl DaemonClient {
 
     pub async fn notify_activity(&self) -> Result<(), DaemonClientError> {
         let _: () = self.proxy.call("NotifyActivity", &()).await?;
+        Ok(())
+    }
+
+    pub async fn list_ppt_attributes(&self) -> Result<Vec<String>, DaemonClientError> {
+        self.proxy
+            .call("ListPptAttributes", &())
+            .await
+            .map_err(Into::into)
+    }
+
+    pub async fn get_ppt_attribute(
+        &self,
+        attribute: &str,
+    ) -> Result<crate::hardware::ArmouryAttribute, DaemonClientError> {
+        let json_str: String = self.proxy.call("GetPptAttribute", &(attribute,)).await?;
+        serde_json::from_str(&json_str).map_err(|e| {
+            DaemonClientError::IoError(format!("Failed to parse ArmouryAttribute JSON: {e}"))
+        })
+    }
+
+    pub async fn set_ppt_limit(
+        &self,
+        attribute: &str,
+        value: u32,
+    ) -> Result<(), DaemonClientError> {
+        let _: () = self.proxy.call("SetPptLimit", &(attribute, value)).await?;
+        Ok(())
+    }
+
+    pub async fn get_gpu_mux_mode(&self) -> Result<u8, DaemonClientError> {
+        self.proxy
+            .call("GetGpuMuxMode", &())
+            .await
+            .map_err(Into::into)
+    }
+
+    pub async fn set_gpu_mux_mode(&self, mode: u8) -> Result<(), DaemonClientError> {
+        let _: () = self.proxy.call("SetGpuMuxMode", &(mode,)).await?;
+        Ok(())
+    }
+
+    pub async fn get_panel_overdrive(&self) -> Result<bool, DaemonClientError> {
+        self.proxy
+            .call("GetPanelOverdrive", &())
+            .await
+            .map_err(Into::into)
+    }
+
+    pub async fn set_panel_overdrive(&self, enabled: bool) -> Result<(), DaemonClientError> {
+        let _: () = self.proxy.call("SetPanelOverdrive", &(enabled,)).await?;
         Ok(())
     }
 }
