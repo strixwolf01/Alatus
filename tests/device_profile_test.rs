@@ -415,3 +415,56 @@ fn test_zenbook_oled_declarative_profile() {
     let matched_zen = DmiMatcher::match_profile(&profiles, "Zenbook OLED UX5401ZA", None);
     assert!(matched_zen.is_some());
 }
+
+#[test]
+fn test_rog_zephyrus_with_aura_hid_and_fallback() {
+    use alatus::hardware::drivers::AuraHidDriver;
+    use alatus::hardware::{
+        AsusctlProxyDriver, CapabilityState, DeviceContext, DeviceProfile, RgbDriver,
+    };
+    use std::fs;
+    use std::path::Path;
+
+    let path = Path::new("assets/devices/rog_zephyrus_g14.toml");
+    let content = fs::read_to_string(path).expect("read rog_zephyrus_g14.toml");
+    let profile = DeviceProfile::from_toml_str(&content).expect("parse rog_zephyrus_g14.toml");
+
+    // Headless / non-ROG environment: native Aura HID probe returns None, so proxy takes over
+    let mock_proxy = AsusctlProxyDriver::new_mock();
+    let ctx = DeviceContext::from_profile_with_fallback(profile.clone(), Some(mock_proxy));
+
+    match &ctx.capabilities.rgb {
+        CapabilityState::Supported(details) => {
+            assert_eq!(details.max_brightness, 100);
+            assert!(details.supports_custom_color);
+            assert!(details.supports_inactivity_timeout);
+            assert_eq!(
+                details.supported_zones,
+                vec!["zone1", "zone2", "zone3", "zone4"]
+            );
+        }
+        other => panic!("Expected Supported RGB capability via fallback, got {other:?}"),
+    }
+    assert!(ctx.rgb.is_some());
+
+    // Without proxy and in headless environment, RGB becomes Unavailable(KernelInterfaceMissing)
+    let ctx_no_proxy = DeviceContext::from_profile_with_fallback(profile, None);
+    // If running on actual ROG hardware it could be Supported; if not, it must be gracefully Unavailable without panicking
+    assert!(
+        ctx_no_proxy.capabilities.rgb.is_supported()
+            || ctx_no_proxy.capabilities.rgb.is_unavailable()
+    );
+
+    // Standalone mock driver verification
+    let (mut driver, packets) = AuraHidDriver::new_mock();
+    assert_eq!(driver.zones(), 4);
+    driver
+        .set_color(alatus::domain::ColorRgb::new(255, 0, 0))
+        .unwrap();
+    let logged = packets.lock().unwrap().clone();
+    assert_eq!(logged.len(), 3);
+    assert_eq!(logged[0][0], 0x5d); // Report ID
+    assert_eq!(logged[0][1], 0xb3); // CMD_BUILTIN_MODE
+    assert_eq!(logged[1][1], 0xb5); // CMD_SET
+    assert_eq!(logged[2][1], 0xb4); // CMD_APPLY
+}

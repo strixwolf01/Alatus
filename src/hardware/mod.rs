@@ -17,7 +17,8 @@ pub use capabilities::{
 };
 pub use context::DeviceContext;
 pub use drivers::{
-    AsusWmiDriver, AsusctlProxyDriver, Ite5570Driver, OledDisplayDriver, SysfsBatteryDriver,
+    AsusWmiDriver, AsusctlProxyDriver, AuraHidDriver, Ite5570Driver, OledDisplayDriver,
+    SysfsBatteryDriver,
 };
 pub use error::DriverError;
 pub use mock::{MockBatteryDriver, MockDisplayDriver, MockRgbDriver, MockThermalDriver};

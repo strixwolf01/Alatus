@@ -6,7 +6,8 @@ use crate::hardware::capabilities::{
     SystemCapabilities, ThermalCapabilityDetails, UnavailableReason,
 };
 use crate::hardware::drivers::{
-    AsusWmiDriver, AsusctlProxyDriver, Ite5570Driver, OledDisplayDriver, SysfsBatteryDriver,
+    AsusWmiDriver, AsusctlProxyDriver, AuraHidDriver, Ite5570Driver, OledDisplayDriver,
+    SysfsBatteryDriver,
 };
 use crate::hardware::error::DriverError;
 use crate::hardware::profile::{DeviceMeta, DeviceProfile, DeviceProfileCapabilities, DmiMatcher};
@@ -159,27 +160,43 @@ impl DeviceContext {
                 None
             }
             Some(rgb_cfg) => {
-                let is_ite = rgb_cfg.driver == "ite5570";
-                let has_hid = is_ite && crate::services::alatus_rgb_wrapper::discover().is_ok();
-                let has_sysfs = is_ite
-                    && Path::new(crate::services::rgb::SYS_KBD_BACKLIGHT)
+                let supported_zones = if rgb_cfg.zones > 1 {
+                    (1..=rgb_cfg.zones).map(|z| format!("zone{z}")).collect()
+                } else {
+                    vec!["keyboard".to_string()]
+                };
+
+                let mut driver: Option<Box<dyn RgbDriver>> = None;
+
+                if rgb_cfg.driver == "ite5570" {
+                    let has_hid = crate::services::alatus_rgb_wrapper::discover().is_ok();
+                    let has_sysfs = Path::new(crate::services::rgb::SYS_KBD_BACKLIGHT)
                         .join("brightness")
                         .exists();
 
-                if has_hid || has_sysfs {
+                    if has_hid || has_sysfs {
+                        driver = Some(Box::new(Ite5570Driver::new()));
+                    }
+                } else if rgb_cfg.driver == "aura_hid"
+                    && let Ok(Some(d)) = AuraHidDriver::probe()
+                {
+                    driver = Some(Box::new(d));
+                }
+
+                if let Some(d) = driver {
                     capabilities.rgb = CapabilityState::Supported(RgbCapabilityDetails {
                         max_brightness: 100,
                         supports_custom_color: true,
                         supports_inactivity_timeout: rgb_cfg.supports_timeout,
-                        supported_zones: vec!["keyboard".to_string()],
+                        supported_zones,
                     });
-                    Some(Box::new(Ite5570Driver::new()))
+                    Some(d)
                 } else if let Some(proxy) = get_proxy(&mut proxy_cache) {
                     capabilities.rgb = CapabilityState::Supported(RgbCapabilityDetails {
                         max_brightness: 100,
                         supports_custom_color: true,
                         supports_inactivity_timeout: rgb_cfg.supports_timeout,
-                        supported_zones: vec!["keyboard".to_string()],
+                        supported_zones,
                     });
                     Some(Box::new(proxy))
                 } else {
