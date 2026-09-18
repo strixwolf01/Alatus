@@ -7,7 +7,7 @@ use crate::hardware::capabilities::{
 };
 use crate::hardware::drivers::{
     AsusWmiDriver, AsusctlProxyDriver, AuraHidDriver, Ite5570Driver, OledDisplayDriver,
-    SysfsBatteryDriver,
+    SysfsBatteryDriver, TufSysfsRgbDriver,
 };
 use crate::hardware::error::DriverError;
 use crate::hardware::profile::{DeviceMeta, DeviceProfile, DeviceProfileCapabilities, DmiMatcher};
@@ -179,6 +179,10 @@ impl DeviceContext {
                     }
                 } else if rgb_cfg.driver == "aura_hid"
                     && let Ok(Some(d)) = AuraHidDriver::probe()
+                {
+                    driver = Some(Box::new(d));
+                } else if rgb_cfg.driver == "tuf_sysfs"
+                    && let Ok(Some(d)) = TufSysfsRgbDriver::probe()
                 {
                     driver = Some(Box::new(d));
                 }

@@ -468,3 +468,53 @@ fn test_rog_zephyrus_with_aura_hid_and_fallback() {
     assert_eq!(logged[1][1], 0xb5); // CMD_SET
     assert_eq!(logged[2][1], 0xb4); // CMD_APPLY
 }
+
+#[test]
+fn test_tuf_gaming_with_sysfs_and_fallback() {
+    use alatus::hardware::drivers::TufSysfsRgbDriver;
+    use alatus::hardware::{
+        AsusctlProxyDriver, CapabilityState, DeviceContext, DeviceProfile, RgbDriver,
+    };
+    use std::fs;
+    use std::path::Path;
+
+    let path = Path::new("assets/devices/tuf_gaming_a15.toml");
+    let content = fs::read_to_string(path).expect("read tuf_gaming_a15.toml");
+    let profile = DeviceProfile::from_toml_str(&content).expect("parse tuf_gaming_a15.toml");
+
+    // Headless / non-TUF environment: native TUF sysfs probe returns None, so proxy takes over
+    let mock_proxy = AsusctlProxyDriver::new_mock();
+    let ctx = DeviceContext::from_profile_with_fallback(profile.clone(), Some(mock_proxy));
+
+    match &ctx.capabilities.rgb {
+        CapabilityState::Supported(details) => {
+            assert_eq!(details.max_brightness, 100);
+            assert!(details.supports_custom_color);
+            assert!(details.supports_inactivity_timeout);
+            assert_eq!(details.supported_zones, vec!["keyboard"]);
+        }
+        other => panic!("Expected Supported RGB capability via fallback, got {other:?}"),
+    }
+    assert!(ctx.rgb.is_some());
+
+    // Without proxy and in headless environment, RGB becomes Unavailable(KernelInterfaceMissing)
+    let ctx_no_proxy = DeviceContext::from_profile_with_fallback(profile, None);
+    assert!(
+        ctx_no_proxy.capabilities.rgb.is_supported()
+            || ctx_no_proxy.capabilities.rgb.is_unavailable()
+    );
+
+    // Standalone mock driver verification
+    let (mut driver, packets, brightness) = TufSysfsRgbDriver::new_mock();
+    driver
+        .set_color(alatus::domain::ColorRgb::new(0, 255, 128))
+        .unwrap();
+    let logged = packets.lock().unwrap().clone();
+    assert_eq!(logged.len(), 1);
+    assert_eq!(logged[0], [1, 0, 0, 255, 128, 1]);
+
+    driver
+        .set_brightness(alatus::domain::BrightnessPercent::new(60).unwrap())
+        .unwrap();
+    assert_eq!(*brightness.lock().unwrap(), 2);
+}
