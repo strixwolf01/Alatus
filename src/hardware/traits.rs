@@ -70,6 +70,33 @@ pub trait DisplayDriver: Send + Sync {
     fn supported_refresh_rates(&self) -> &[u32];
 }
 
+/// Low-level interface for ASUS platform power limits (PPT / Boost) and platform switches.
+pub trait PlatformPowerDriver: Send + Sync {
+    /// Reads an armoury attribute by name.
+    fn get_attribute(
+        &self,
+        name: &str,
+    ) -> Result<crate::hardware::drivers::platform::ArmouryAttribute, DriverError>;
+
+    /// Commits a new value for an attribute with hardware safety clamping.
+    fn set_attribute(&mut self, name: &str, value: u32) -> Result<(), DriverError>;
+
+    /// Lists all discovered attribute names.
+    fn list_attributes(&self) -> Vec<String>;
+
+    /// Reads GPU MUX mode (0 = Discrete, 1 = Optimus/Hybrid).
+    fn get_gpu_mux_mode(&self) -> Result<u32, DriverError>;
+
+    /// Commits GPU MUX mode (0 = Discrete, 1 = Optimus/Hybrid).
+    fn set_gpu_mux_mode(&mut self, mode: u32) -> Result<(), DriverError>;
+
+    /// Reads panel overdrive status.
+    fn get_panel_od(&self) -> Result<bool, DriverError>;
+
+    /// Commits panel overdrive status.
+    fn set_panel_od(&mut self, enabled: bool) -> Result<(), DriverError>;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

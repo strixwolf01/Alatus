@@ -5,12 +5,14 @@
 
 pub mod battery;
 pub mod display;
+pub mod platform;
 pub mod proxy;
 pub mod rgb;
 pub mod thermal;
 
 pub use battery::SysfsBatteryDriver;
 pub use display::OledDisplayDriver;
+pub use platform::{ArmouryAttribute, ArmouryPlatformDriver};
 pub use proxy::AsusctlProxyDriver;
 pub use rgb::{AuraHidDriver, Ite5570Driver, TufSysfsRgbDriver};
 pub use thermal::{AsusWmiDriver, FanCurve, FanCurvePoint, RogWmiThermalDriver};

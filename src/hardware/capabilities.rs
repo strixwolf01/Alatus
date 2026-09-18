@@ -116,6 +116,24 @@ pub struct BatteryCapabilityDetails {
 pub struct DisplayCapabilityDetails {
     pub supports_flicker_free_dimming: bool,
     pub supported_refresh_rates: Vec<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gpu_mux_mode: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub panel_od: Option<bool>,
+}
+
+/// Probed hardware capabilities for platform power limits and attributes (PPT / Boost / Armoury).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct PowerLimitCapabilities {
+    pub supported_attributes: Vec<String>,
+    pub has_cpu_ppt: bool,
+    pub has_gpu_boost: bool,
+    pub has_gpu_mux: bool,
+    pub has_panel_od: bool,
+}
+
+fn default_unsupported<T>() -> CapabilityState<T> {
+    CapabilityState::Unsupported
 }
 
 /// Versioned platform capabilities model reporting hardware support state.
@@ -127,6 +145,8 @@ pub struct SystemCapabilities {
     pub thermal: CapabilityState<ThermalCapabilityDetails>,
     pub battery: CapabilityState<BatteryCapabilityDetails>,
     pub display: CapabilityState<DisplayCapabilityDetails>,
+    #[serde(default = "default_unsupported")]
+    pub platform: CapabilityState<PowerLimitCapabilities>,
 }
 
 impl Default for SystemCapabilities {
@@ -137,6 +157,7 @@ impl Default for SystemCapabilities {
             thermal: CapabilityState::Unsupported,
             battery: CapabilityState::Unsupported,
             display: CapabilityState::Unsupported,
+            platform: CapabilityState::Unsupported,
         }
     }
 }
@@ -193,6 +214,7 @@ mod tests {
             }),
             battery: CapabilityState::Unavailable(UnavailableReason::KernelInterfaceMissing),
             display: CapabilityState::Unsupported,
+            platform: CapabilityState::Unsupported,
         };
 
         let json = serde_json::to_string_pretty(&caps).unwrap();
@@ -217,6 +239,7 @@ mod tests {
                 supports_charge_threshold: true,
             }),
             display: CapabilityState::Unavailable(UnavailableReason::DriverMissing),
+            platform: CapabilityState::Unsupported,
         };
 
         let toml_str = toml::to_string_pretty(&caps).unwrap();

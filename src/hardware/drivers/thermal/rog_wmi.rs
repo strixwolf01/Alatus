@@ -287,49 +287,49 @@ impl RogWmiThermalDriver {
                 && name.trim() == "asus_custom_fan_curve"
             {
                 let pwm1_enable = entry.path().join("pwm1_enable");
-                    match std::fs::OpenOptions::new().write(true).open(&pwm1_enable) {
-                        Ok(_) => {
-                            let fan_count = if entry.path().join("pwm3_enable").exists() {
-                                3
-                            } else if entry.path().join("pwm2_enable").exists() {
-                                2
-                            } else {
-                                1
-                            };
+                match std::fs::OpenOptions::new().write(true).open(&pwm1_enable) {
+                    Ok(_) => {
+                        let fan_count = if entry.path().join("pwm3_enable").exists() {
+                            3
+                        } else if entry.path().join("pwm2_enable").exists() {
+                            2
+                        } else {
+                            1
+                        };
 
-                            tracing::info!(
-                                "Discovered ROG WMI custom fan curves at {} (fans: {})",
-                                entry.path().display(),
-                                fan_count
-                            );
+                        tracing::info!(
+                            "Discovered ROG WMI custom fan curves at {} (fans: {})",
+                            entry.path().display(),
+                            fan_count
+                        );
 
-                            return Ok(Some(Self {
-                                backend: RogThermalBackend::Hwmon {
-                                    hwmon_path: entry.path(),
-                                },
-                                fan_count,
-                                cached_mode: ThermalMode::Balanced,
-                                platform_profile_path: PathBuf::from(
-                                    "/sys/firmware/acpi/platform_profile",
-                                ),
-                                debugfs_base: PathBuf::from(
-                                    crate::services::firmware_mode::DEBUGFS_BASE,
-                                ),
-                            }));
-                        }
-                        Err(e) => {
-                            tracing::warn!(
-                                "Found asus_custom_fan_curve at {} but cannot write: {}",
-                                entry.path().display(),
-                                e
-                            );
-                            return Ok(None);
-                        }
+                        return Ok(Some(Self {
+                            backend: RogThermalBackend::Hwmon {
+                                hwmon_path: entry.path(),
+                            },
+                            fan_count,
+                            cached_mode: ThermalMode::Balanced,
+                            platform_profile_path: PathBuf::from(
+                                "/sys/firmware/acpi/platform_profile",
+                            ),
+                            debugfs_base: PathBuf::from(
+                                crate::services::firmware_mode::DEBUGFS_BASE,
+                            ),
+                        }));
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            "Found asus_custom_fan_curve at {} but cannot write: {}",
+                            entry.path().display(),
+                            e
+                        );
+                        return Ok(None);
                     }
                 }
             }
+        }
 
-            Ok(None)
+        Ok(None)
     }
 
     /// Constructs a mock driver recording writes in an in-memory buffer.

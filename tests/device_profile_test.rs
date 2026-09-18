@@ -588,3 +588,88 @@ fn test_rog_wmi_fan_curve_and_fallback() {
         ("pwm2_enable".to_string(), "2".to_string())
     );
 }
+
+#[test]
+fn test_armoury_platform_driver_device_context() {
+    use alatus::hardware::capabilities::{CapabilityState, PowerLimitCapabilities};
+    use alatus::hardware::context::DeviceContext;
+    use alatus::hardware::drivers::{ArmouryPlatformDriver, AsusctlProxyDriver};
+    use alatus::hardware::DriverError;
+
+    // 1. Standalone mock Armoury driver validation
+    let (mut driver, writes) = ArmouryPlatformDriver::new_mock();
+    let attrs = driver.list_attributes();
+    assert!(attrs.contains(&"ppt_pl1_spl".to_string()));
+    assert!(attrs.contains(&"ppt_pl2_sppt".to_string()));
+    assert!(attrs.contains(&"ppt_fppt".to_string()));
+    assert!(attrs.contains(&"nv_dynamic_boost".to_string()));
+    assert!(attrs.contains(&"gpu_mux_mode".to_string()));
+    assert!(attrs.contains(&"panel_od".to_string()));
+
+    // Safe clamping checks on CPU SPL
+    driver.set_cpu_spl(250).expect("write clamped SPL");
+    assert_eq!(driver.get_cpu_spl().unwrap(), 125); // Clamped to max
+
+    driver.set_cpu_spl(10).expect("write clamped SPL");
+    assert_eq!(driver.get_cpu_spl().unwrap(), 35); // Clamped to min
+
+    // SPPT & FPPT tuning
+    driver.set_cpu_sppt(100).expect("write SPPT");
+    assert_eq!(driver.get_cpu_sppt().unwrap(), 100);
+
+    driver.set_cpu_fppt(115).expect("write FPPT");
+    assert_eq!(driver.get_cpu_fppt().unwrap(), 115);
+
+    // GPU Dynamic Boost tuning
+    driver
+        .set_gpu_dynamic_boost(25)
+        .expect("write dynamic boost");
+    assert_eq!(driver.get_gpu_dynamic_boost().unwrap(), 25);
+
+    // GPU MUX and Panel Overdrive switches
+    driver.set_gpu_mux_mode(0).expect("set discrete MUX");
+    assert_eq!(driver.get_gpu_mux_mode().unwrap(), 0);
+
+    driver.set_panel_od(true).expect("enable panel OD");
+    assert!(driver.get_panel_od().unwrap());
+
+    let logged = writes.lock().unwrap().clone();
+    assert_eq!(logged.len(), 7);
+
+    // 2. Integration with DeviceContext when platform is unsupported
+    let path = Path::new("assets/devices/rog_strix_g16.toml");
+    let content = fs::read_to_string(path).expect("read rog_strix_g16.toml");
+    let profile = DeviceProfile::from_toml_str(&content).expect("parse rog_strix_g16.toml");
+
+    let mock_proxy = AsusctlProxyDriver::new_mock();
+    let mut ctx = DeviceContext::from_profile_with_fallback(profile.clone(), Some(mock_proxy));
+
+    // In a test environment without physical /sys/class/firmware-attributes/asus-armoury,
+    // platform capability defaults cleanly to Unsupported without panicking.
+    if !ctx.capabilities.platform.is_supported() {
+        assert!(matches!(
+            ctx.platform_mut(),
+            Err(DriverError::Unsupported(_))
+        ));
+        assert!(ctx.platform().is_none());
+    }
+
+    // 3. Simulated DeviceContext with active ArmouryPlatformDriver
+    ctx.platform = Some(Box::new(driver));
+    ctx.capabilities.platform = CapabilityState::Supported(PowerLimitCapabilities {
+        supported_attributes: attrs,
+        has_cpu_ppt: true,
+        has_gpu_boost: true,
+        has_gpu_mux: true,
+        has_panel_od: true,
+    });
+
+    assert!(ctx.capabilities.platform.is_supported());
+    assert!(ctx.platform().is_some());
+
+    let plat = ctx.platform_mut().expect("platform driver access");
+    assert_eq!(plat.get_gpu_mux_mode().unwrap(), 0);
+    assert!(plat.get_panel_od().unwrap());
+    plat.set_panel_od(false).unwrap();
+    assert!(!plat.get_panel_od().unwrap());
+}

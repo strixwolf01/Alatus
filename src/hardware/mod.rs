@@ -12,15 +12,16 @@ pub mod profile;
 pub mod traits;
 
 pub use capabilities::{
-    BatteryCapabilityDetails, CapabilityState, DisplayCapabilityDetails, RgbCapabilityDetails,
-    SystemCapabilities, ThermalCapabilityDetails, UnavailableReason,
+    BatteryCapabilityDetails, CapabilityState, DisplayCapabilityDetails, PowerLimitCapabilities,
+    RgbCapabilityDetails, SystemCapabilities, ThermalCapabilityDetails, UnavailableReason,
 };
 pub use context::DeviceContext;
 pub use drivers::{
-    AsusWmiDriver, AsusctlProxyDriver, AuraHidDriver, FanCurve, FanCurvePoint, Ite5570Driver,
-    OledDisplayDriver, RogWmiThermalDriver, SysfsBatteryDriver, TufSysfsRgbDriver,
+    ArmouryAttribute, ArmouryPlatformDriver, AsusWmiDriver, AsusctlProxyDriver, AuraHidDriver,
+    FanCurve, FanCurvePoint, Ite5570Driver, OledDisplayDriver, RogWmiThermalDriver,
+    SysfsBatteryDriver, TufSysfsRgbDriver,
 };
 pub use error::DriverError;
 pub use mock::{MockBatteryDriver, MockDisplayDriver, MockRgbDriver, MockThermalDriver};
 pub use profile::{DeviceProfile, DmiMatcher, MatcherError};
-pub use traits::{BatteryDriver, DisplayDriver, RgbDriver, ThermalDriver};
+pub use traits::{BatteryDriver, DisplayDriver, PlatformPowerDriver, RgbDriver, ThermalDriver};

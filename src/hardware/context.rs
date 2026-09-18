@@ -2,16 +2,18 @@
 // Copyright (C) 2026 Alatus Contributors
 
 use crate::hardware::capabilities::{
-    BatteryCapabilityDetails, CapabilityState, DisplayCapabilityDetails, RgbCapabilityDetails,
-    SystemCapabilities, ThermalCapabilityDetails, UnavailableReason,
+    BatteryCapabilityDetails, CapabilityState, DisplayCapabilityDetails, PowerLimitCapabilities,
+    RgbCapabilityDetails, SystemCapabilities, ThermalCapabilityDetails, UnavailableReason,
 };
 use crate::hardware::drivers::{
-    AsusWmiDriver, AsusctlProxyDriver, AuraHidDriver, Ite5570Driver, OledDisplayDriver,
-    RogWmiThermalDriver, SysfsBatteryDriver, TufSysfsRgbDriver,
+    ArmouryPlatformDriver, AsusWmiDriver, AsusctlProxyDriver, AuraHidDriver, Ite5570Driver,
+    OledDisplayDriver, RogWmiThermalDriver, SysfsBatteryDriver, TufSysfsRgbDriver,
 };
 use crate::hardware::error::DriverError;
 use crate::hardware::profile::{DeviceMeta, DeviceProfile, DeviceProfileCapabilities, DmiMatcher};
-use crate::hardware::traits::{BatteryDriver, DisplayDriver, RgbDriver, ThermalDriver};
+use crate::hardware::traits::{
+    BatteryDriver, DisplayDriver, PlatformPowerDriver, RgbDriver, ThermalDriver,
+};
 use std::path::Path;
 
 const S5506MA_TOML: &str = include_str!("../../assets/devices/s5506ma.toml");
@@ -98,6 +100,7 @@ pub struct DeviceContext {
     pub thermal: Option<Box<dyn ThermalDriver>>,
     pub battery: Option<Box<dyn BatteryDriver>>,
     pub display: Option<Box<dyn DisplayDriver>>,
+    pub platform: Option<Box<dyn PlatformPowerDriver>>,
 }
 
 impl Default for DeviceContext {
@@ -136,13 +139,7 @@ impl DeviceContext {
         profile: DeviceProfile,
         fallback_proxy: Option<AsusctlProxyDriver>,
     ) -> Self {
-        let mut capabilities = SystemCapabilities {
-            schema_version: 1,
-            rgb: CapabilityState::Unsupported,
-            thermal: CapabilityState::Unsupported,
-            battery: CapabilityState::Unsupported,
-            display: CapabilityState::Unsupported,
-        };
+        let mut capabilities = SystemCapabilities::default();
 
         // Cache or probe fallback proxy lazily so we only probe system D-Bus once if needed
         let mut proxy_cache = fallback_proxy;
@@ -303,10 +300,41 @@ impl DeviceContext {
                 capabilities.display = CapabilityState::Supported(DisplayCapabilityDetails {
                     supports_flicker_free_dimming: disp_cfg.supports_flicker_free,
                     supported_refresh_rates: disp_cfg.refresh_rates.clone(),
+                    gpu_mux_mode: disp_cfg.gpu_mux_mode,
+                    panel_od: disp_cfg.panel_od,
                 });
                 Some(Box::new(driver))
             }
         };
+
+        // 5. Platform Power & Armoury Subsystem
+        let mut platform: Option<Box<dyn PlatformPowerDriver>> = None;
+        if let Ok(Some(armoury)) = ArmouryPlatformDriver::probe() {
+            let attrs = armoury.list_attributes();
+            let has_cpu_ppt = attrs.iter().any(|a| a.starts_with("ppt_"));
+            let has_gpu_boost = attrs.iter().any(|a| a.starts_with("nv_"));
+            let has_gpu_mux = attrs.iter().any(|a| a == "gpu_mux_mode");
+            let has_panel_od = attrs.iter().any(|a| a == "panel_od");
+
+            if let CapabilityState::Supported(ref mut disp) = capabilities.display {
+                if has_gpu_mux {
+                    disp.gpu_mux_mode = Some(true);
+                }
+                if has_panel_od {
+                    disp.panel_od = Some(true);
+                }
+            }
+
+            capabilities.platform = CapabilityState::Supported(PowerLimitCapabilities {
+                supported_attributes: attrs,
+                has_cpu_ppt,
+                has_gpu_boost,
+                has_gpu_mux,
+                has_panel_od,
+            });
+
+            platform = Some(Box::new(armoury));
+        }
 
         Self {
             profile,
@@ -315,6 +343,7 @@ impl DeviceContext {
             thermal,
             battery,
             display,
+            platform,
         }
     }
 
@@ -334,6 +363,7 @@ impl DeviceContext {
             thermal,
             battery,
             display,
+            platform: None,
         }
     }
 
@@ -395,6 +425,28 @@ impl DeviceContext {
                 ))
             }),
         }
+    }
+
+    /// Returns a mutable reference to the platform power driver if supported and operational.
+    pub fn platform_mut(
+        &mut self,
+    ) -> Result<&mut (dyn PlatformPowerDriver + 'static), DriverError> {
+        match &self.capabilities.platform {
+            CapabilityState::Unsupported => Err(DriverError::Unsupported(
+                "Platform power attributes unsupported on this device".to_string(),
+            )),
+            CapabilityState::Unavailable(reason) => Err(DriverError::Unavailable(reason.clone())),
+            CapabilityState::Supported(_) => self.platform.as_deref_mut().ok_or_else(|| {
+                DriverError::Unavailable(UnavailableReason::HardwareError(
+                    "Platform power driver missing".to_string(),
+                ))
+            }),
+        }
+    }
+
+    /// Returns a reference to the platform power driver if present.
+    pub fn platform(&self) -> Option<&(dyn PlatformPowerDriver + 'static)> {
+        self.platform.as_deref()
     }
 
     /// Re-probes the RGB backlighting controller and refreshes the driver instance
@@ -516,7 +568,10 @@ mod tests {
             display: CapabilityState::Supported(DisplayCapabilityDetails {
                 supports_flicker_free_dimming: true,
                 supported_refresh_rates: vec![60, 120],
+                gpu_mux_mode: None,
+                panel_od: None,
             }),
+            platform: CapabilityState::Unsupported,
         };
 
         let mock_rgb = MockRgbDriver::new();
