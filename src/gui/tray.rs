@@ -55,8 +55,8 @@ pub fn set_autostart_enabled(enabled: bool) {
         let content = r#"[Desktop Entry]
 Type=Application
 Name=Alatus
-GenericName=Hardware Control
-Comment=ASUS Vivobook Hardware Orchestration Suite
+GenericName=ASUS Hardware Control Center
+Comment=Hardware control suite for ASUS laptops on Linux
 Exec=alatus gui --tray
 Icon=io.strixwolf.alatus
 Terminal=false

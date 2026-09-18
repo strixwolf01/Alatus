@@ -1,0 +1,104 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Alatus Contributors
+
+export component M3Card inherits Rectangle {
+    background: #211f26;
+    border-radius: 14px;
+    clip: true;
+    horizontal-stretch: 1;
+    min-width: 0px;
+}
+
+export component StatCard inherits M3Card {
+    in property <string> title;
+    in property <string> value;
+    in property <string> subtitle: "";
+    in property <color> value_color: #d0bcff;
+    horizontal-stretch: 1;
+    min-width: 0px;
+
+    VerticalLayout {
+        padding: 14px;
+        spacing: 4px;
+        alignment: space-between;
+
+        Text {
+            text: root.title;
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 500;
+            vertical-alignment: center;
+        }
+
+        Text {
+            text: root.value;
+            color: root.value_color;
+            font-size: 20px;
+            font-weight: 700;
+            vertical-alignment: center;
+        }
+
+        if root.subtitle != "": Text {
+            text: root.subtitle;
+            color: #64748b;
+            font-size: 10px;
+            vertical-alignment: center;
+        }
+    }
+}
+
+export component ProfileCard inherits Rectangle {
+    in property <string> name;
+    in property <string> desc;
+    in property <bool> selected: false;
+    in property <color> accent_container: #4f378b;
+    in property <color> accent_color: #d0bcff;
+    in property <color> on_accent_container: #eaddff;
+    callback clicked();
+
+    horizontal-stretch: 1;
+    border-radius: 12px;
+    background: selected ? accent_container : (touch.has-hover ? #2b2930 : #211f26);
+    border-width: selected ? 1px : 0px;
+    border-color: accent_color;
+    animate background { duration: 150ms; }
+
+    HorizontalLayout {
+        padding-top: 10px;
+        padding-bottom: 10px;
+        padding-left: 14px;
+        padding-right: 14px;
+        spacing: 12px;
+        alignment: start;
+
+        VerticalLayout {
+            alignment: center;
+            @children
+        }
+
+        VerticalLayout {
+            spacing: 2px;
+            alignment: center;
+
+            Text {
+                text: root.name;
+                color: root.selected ? root.on_accent_container : #f1f5f9;
+                font-size: 13px;
+                font-weight: 600;
+            }
+
+            Text {
+                text: root.desc;
+                color: root.selected ? root.on_accent_container : #94a3b8;
+                font-size: 11px;
+            }
+        }
+    }
+
+    touch := TouchArea {
+        width: 100%;
+        height: 100%;
+        clicked => { root.clicked(); }
+    }
+}
+

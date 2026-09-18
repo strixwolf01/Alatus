@@ -1,0 +1,121 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Alatus Contributors
+
+import { M3Card } from "../components/cards.slint";
+import { M3Segment, M3Slider } from "../components/controls.slint";
+import { CapabilityPlaceholderCard, CapabilityUnavailableBanner } from "../components/capability_banner.slint";
+
+export component BatteryView inherits VerticalLayout {
+    in property <string> battery_capability: "supported";
+    in property <string> battery_unavailable_reason: "";
+    in property <int> charge_limit: 80;
+    in property <color> accent_color: #d0bcff;
+    in property <color> accent_container: #4f378b;
+    in property <color> on_accent_container: #eaddff;
+    callback set_charge_limit(int);
+
+    spacing: 14px;
+    alignment: start;
+
+    if root.battery_capability == "unsupported": CapabilityPlaceholderCard {
+        title: "Battery Health Protection Not Supported";
+        desc: "This hardware profile does not support battery charge limit control.";
+    }
+
+    if root.battery_capability == "unavailable": CapabilityUnavailableBanner {
+        title: "Battery Controller Unavailable";
+        reason: root.battery_unavailable_reason;
+        default_reason: "sysfs charge_control_end_threshold node not accessible.";
+    }
+
+    // Flexible Charge Limit Card
+    if root.battery_capability != "unsupported": M3Card {
+        VerticalLayout {
+            padding: 16px;
+            spacing: 14px;
+
+            HorizontalLayout {
+                alignment: space-between;
+                VerticalLayout {
+                    spacing: 2px;
+                    Text {
+                        text: "Battery Health Protection";
+                        color: #f1f5f9;
+                        font-size: 15px;
+                        font-weight: 600;
+                    }
+                    Text {
+                        text: "Caps maximum charge threshold to preserve battery cycle longevity";
+                        color: #94a3b8;
+                        font-size: 11px;
+                    }
+                }
+
+                Text {
+                    text: "Active Threshold: " + root.charge_limit + "%";
+                    color: root.accent_color;
+                    font-size: 14px;
+                    font-weight: 700;
+                }
+            }
+
+            // Material 3 Segmented Bar
+            Rectangle {
+                background: #18171d;
+                border-radius: 10px;
+                height: 38px;
+
+                HorizontalLayout {
+                    padding: 3px;
+                    spacing: 4px;
+
+                    M3Segment {
+                        text: "60% (Longevity)";
+                        selected: root.charge_limit == 60;
+                        accent_container: root.accent_container;
+                        on_accent_container: root.on_accent_container;
+                        clicked => {
+                            root.set_charge_limit(60);
+                        }
+                    }
+
+                    M3Segment {
+                        text: "80% (Balanced)";
+                        selected: root.charge_limit == 80;
+                        accent_container: root.accent_container;
+                        on_accent_container: root.on_accent_container;
+                        clicked => {
+                            root.set_charge_limit(80);
+                        }
+                    }
+
+                    M3Segment {
+                        text: "100% (Full)";
+                        selected: root.charge_limit == 100;
+                        accent_container: root.accent_container;
+                        on_accent_container: root.on_accent_container;
+                        clicked => {
+                            root.set_charge_limit(100);
+                        }
+                    }
+                }
+            }
+
+            // Smooth Slider
+            VerticalLayout {
+                spacing: 4px;
+                M3Slider {
+                    value: root.charge_limit;
+                    min: 50;
+                    max: 100;
+                    step: 1;
+                    fill_color: root.accent_color;
+                    value_changed(val) => {
+                        root.set_charge_limit(val);
+                    }
+                }
+            }
+        }
+    }
+}
+

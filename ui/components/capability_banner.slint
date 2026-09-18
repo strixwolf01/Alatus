@@ -1,0 +1,52 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Alatus Contributors
+
+import { M3Card } from "cards.slint";
+
+export component CapabilityPlaceholderCard inherits M3Card {
+    in property <string> title;
+    in property <string> desc;
+
+    VerticalLayout {
+        padding: 28px;
+        alignment: center;
+        spacing: 8px;
+        Text {
+            text: root.title;
+            color: #94a3b8;
+            font-size: 16px;
+            font-weight: 600;
+            horizontal-alignment: center;
+        }
+        Text {
+            text: root.desc;
+            color: #64748b;
+            font-size: 12px;
+            horizontal-alignment: center;
+        }
+    }
+}
+
+export component CapabilityUnavailableBanner inherits M3Card {
+    in property <string> title;
+    in property <string> reason;
+    in property <string> default_reason: "Feature is currently unavailable.";
+
+    background: #2a2015;
+    VerticalLayout {
+        padding: 14px;
+        spacing: 4px;
+        Text {
+            text: root.title;
+            color: #fab387;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        Text {
+            text: root.reason != "" ? root.reason : root.default_reason;
+            color: #e2cca8;
+            font-size: 12px;
+        }
+    }
+}
+

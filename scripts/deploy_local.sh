@@ -82,6 +82,12 @@ cd "${WORKSPACE_ROOT}"
 echo "=== 1. Building Release Binaries with GUI Feature ==="
 cargo build --release --bin alatus --bin alatusd --bin alatus-session --features gui
 
+echo "=== 1b. Generating Shell Completions ==="
+mkdir -p "${WORKSPACE_ROOT}/packaging/completions"
+"${WORKSPACE_ROOT}/target/release/alatus" completions bash > "${WORKSPACE_ROOT}/packaging/completions/alatus.bash"
+"${WORKSPACE_ROOT}/target/release/alatus" completions zsh > "${WORKSPACE_ROOT}/packaging/completions/_alatus"
+"${WORKSPACE_ROOT}/target/release/alatus" completions fish > "${WORKSPACE_ROOT}/packaging/completions/alatus.fish"
+
 PKG_FILE=""
 if [[ "${PKG_FORMAT}" == "rpm" ]]; then
     echo "=== 2. Generating RPM Package ==="
@@ -223,6 +229,16 @@ for size in 32 48 64 128 256; do
     ln -sf "io.strixwolf.alatus.png" "/usr/share/icons/hicolor/${size}x${size}/apps/alatus-gui.png" 2>/dev/null || true
 done
 
+WORKSPACE_ROOT="${3:-}"
+if [[ -n "${WORKSPACE_ROOT}" && -d "${WORKSPACE_ROOT}/assets/icons/modes" ]]; then
+    mkdir -p /usr/share/alatus/icons/modes 2>/dev/null || true
+    for mode in quiet balanced performance full_speed; do
+        cp -f "${WORKSPACE_ROOT}/assets/icons/modes/${mode}.svg" "/usr/share/alatus/icons/modes/${mode}.svg" 2>/dev/null || true
+        dash_mode="${mode//_/-}"
+        ln -sf "/usr/share/alatus/icons/modes/${mode}.svg" "/usr/share/icons/hicolor/scalable/apps/alatus-mode-${dash_mode}.svg" 2>/dev/null || true
+    done
+fi
+
 if [ -x /usr/bin/update-desktop-database ]; then
     /usr/bin/update-desktop-database /usr/share/applications 2>/dev/null || true
 fi
@@ -236,7 +252,7 @@ systemctl restart alatusd.service || true
 ROOT_EOF
 
 chmod 755 "${ROOT_SCRIPT}"
-${ELEVATE_CMD} "${ROOT_SCRIPT}" "${PKG_FORMAT}" "${PKG_FILE}"
+${ELEVATE_CMD} "${ROOT_SCRIPT}" "${PKG_FORMAT}" "${PKG_FILE}" "${WORKSPACE_ROOT}"
 rm -f "${ROOT_SCRIPT}"
 
 echo "=== 5. Finalizing User Session ==="

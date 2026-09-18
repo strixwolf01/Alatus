@@ -1,10 +1,10 @@
 # Alatus
 
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](LICENSE)
-[![Release: 1.2.0](https://img.shields.io/badge/release-1.2.0-blue.svg)](https://github.com/strixwolf01/Alatus/releases)
+[![Release: 2.0.0](https://img.shields.io/badge/release-2.0.0-blue.svg)](https://github.com/strixwolf01/Alatus/releases)
 [![Rust: 2024 Edition](https://img.shields.io/badge/rust-2024%20edition-orange.svg)](https://www.rust-lang.org)
 
-**Alatus** is an authoritative, memory-safe hardware orchestration suite engineered in Rust for ASUS laptops running Linux. It unifies low-level ACPI WMI DebugFS thermal management, ITE5570 LampArray keyboard backlighting, OLED Flicker-Free dimming, battery charge thresholds, and an intuitive Material 3 desktop application into a cohesive, zero-overhead architecture.
+**Alatus** is the definitive, memory-safe ASUS Hardware Control Center engineered in Rust for modern ASUS laptops running Linux. It unifies low-level platform thermal management, keyboard backlighting, OLED Flicker-Free dimming, battery charge thresholds, and an intuitive Material 3 desktop application into a cohesive, zero-overhead architecture.
 
 ---
 
@@ -12,7 +12,7 @@
 
 > [!CAUTION]
 > **Kernel Lockdown Mode Blocks Hardware DebugFS Registers**:
-> Alatus achieves direct, pure ACPI register orchestration by reading and writing to `/sys/kernel/debug/asus-nb-wmi/` (`dev_id`, `dsts`, `devs`).
+> Alatus achieves direct ACPI register orchestration by communicating with platform interfaces including `/sys/kernel/debug/asus-nb-wmi/` (`dev_id`, `dsts`, `devs`).
 >
 > When Linux **Kernel Lockdown** mode is active (enforced by default under UEFI Secure Boot with `lockdown=integrity` or `lockdown=confidentiality`), the Linux kernel strictly prohibits all processes—**including root and `systemd` system services**—from accessing DebugFS nodes.
 >
@@ -32,45 +32,45 @@ To enable Alatus to orchestrate hardware registers, you must allow DebugFS acces
 
 ---
 
-## Verified & Supported Hardware
+## Supported Hardware & Architecture Scope
 
 > [!IMPORTANT]
-> **Hardware Support Scope as of v1.2.0**:
-> Official hardware verification, continuous benchmarking, and active hardware testing for Alatus `v1.2.0` is strictly scoped to:
->
-> **`ASUS Vivobook S 15 OLED (S5506MA)`**
->
-> **Upcoming Multi-Device Roadmap**:
-> Generic fallback hardware providers and broader ASUS ROG/TUF gaming laptop integration are planned for subsequent minor releases. This future work may use an `asusd` / `asusctl` D-Bus bridge; Alatus does not currently depend on either project. Other manufacturers' laptops (Lenovo, Dell, HP, Framework) are detected via DMI and safely rejected.
+> **Validated Reference Platform vs. Extensible Architecture**:
+> - **Validated Reference Platform**: The **ASUS Vivobook S 15 OLED (S5506MA)** serves as the primary hardware-verified development platform, with 100% feature verification across all subsystems (ITE5570 LampArray RGB, ACPI WMI DebugFS thermal profiles with Full Speed 8100 RPM, OLED Care flicker-free dimming, battery charge limits, and hardware Fn+F hotkey handling).
+> - **Architecture Scope**: Alatus employs a modular, profile-driven architecture designed to orchestrate modern ASUS laptops across the **Vivobook**, **Zenbook**, **ROG**, **TUF Gaming**, and **ProArt Studiobook** series.
+> - **Extensibility Notice**: Alatus does **not** assume identical firmware interfaces on every laptop out of the box. Non-reference models leverage declarative device profiles (`assets/devices/*.toml`) and dynamic tri-state capability probing (`Supported`, `Unsupported`, `Unavailable`). Subsystem availability varies depending on the specific EC registers, WMI methods, and kernel driver modules exposed by each laptop model. Non-ASUS platforms (Lenovo, Dell, HP, etc.) are detected via DMI and safely rejected.
 
-| Target Platform | Validation Status | Validated Models | Feature Support |
+| Platform Tier | Validation Status | Laptop Models / Series | Subsystem Availability |
 | :--- | :--- | :--- | :--- |
-| **ASUS Vivobook S / Zenbook OLED** | **Officially Verified** | `S5506MA` (Vivobook S 15 OLED) | 4 ACPI Thermal Modes (incl. Full Speed 8100 RPM), Battery Thresholds, ITE5570 LampArray RGB, OLED Care, Auto Refresh, Hardware Fn+F Hotkey |
-| **ASUS ROG & TUF Gaming** | *Planned roadmap integration* | Zephyrus, Strix, TUF Gaming | *Future integration may use an external `asusctl`/`asusd` D-Bus bridge; no current dependency* |
+| **Reference Platform** | **Fully Verified** | ASUS Vivobook S 15 OLED (`S5506MA`) | Full 4 Thermal Modes (incl. Full Speed), Battery Thresholds, ITE5570 RGB, OLED Care, Hardware Fn+F Hotkey |
+| **Declarative Profiles** | **Profile-Driven** | ASUS Zenbook (`UM5302`), ROG (`G14`), TUF, Vivobook | Available subsystems adapt dynamically to device profile (`assets/devices/*.toml`) and kernel drivers |
+| **Generic ASUS Fallback** | **Runtime Detection** | Other ASUS Laptop Series | Standard ACPI platform profiles and sysfs battery charge limits where supported by kernel |
 | **Non-ASUS Hardware** | *Unsupported* | Generic PC hardware | Safely rejected on initialization |
 
 ---
 
 ## Core Features
 
-- **Pure ACPI WMI DebugFS Thermal Management**:
-  Direct hardware register orchestration via `/sys/kernel/debug/asus-nb-wmi/`, completely bypassing `power-profiles-daemon` (PPD) interference.
+- **ACPI Platform Thermal Management**:
+  Direct hardware register orchestration, completely bypassing `power-profiles-daemon` (PPD) interference.
   - **Quiet (0)**: Ultra-low fan acoustics (~1800–2400 RPM) with power capping.
   - **Balanced (1)**: Dynamic acoustic and thermal balancing (~2800–4200 RPM).
-  - **Performance (2)**: High-load thermal envelope for compiling and rendering (~4800–5600 RPM).
+  - **Performance (2)**: High-load thermal envelope for compiling, gaming, and rendering (~4800–5600 RPM).
   - **Full Speed (3)**: Unlocks the hardware maximum fan ceiling (~8100 RPM) for sustained compute workloads.
 - **Hardware `Fn+F` Evdev Hotkey Listener**:
-  Native multi-device evdev listener capturing ASUS WMI hotkey events (including ASUS keycode `482`) with instant desktop OSD notifications.
+  Native multi-device evdev listener capturing platform thermal switch hotkeys with instant desktop OSD notifications.
+- **Battery Health & Charge Thresholds**:
+  Configurable charge limits (50–100%) to prolong battery lifespan for desk-bound and travel workflows.
+- **OLED Care & Flicker-Free Dimming**:
+  Cumulative screen-on tracking, conditioning pixel refresh sweeps, and hardware-level flicker-free dimming for OLED displays.
+- **Keyboard Backlight & RGB Synchronization**:
+  Keyboard backlight controls, brightness stepping, inactivity timeout policies, and desktop accent color synchronization.
 - **Single-Instance Desktop Architecture (`alatus-gui`)**:
   Session D-Bus single-instance application guard (`io.strixwolf.alatus.Gui`) preventing redundant processes and duplicate tray icons. Re-launching Alatus instantly un-minimizes and raises the existing window.
 - **FreeDesktop StatusNotifierItem & DBusMenu Tray**:
   Universal system tray integration supporting minimize-to-tray, quick thermal mode selection, pixel refresh triggering, and clean application exit across KDE Plasma, GNOME, XFCE, and Wayland status bars (Waybar).
 - **Dedicated System Info & Hardware Diagnostics**:
-  Integrated hardware testing suite verifying ASUS WMI DebugFS, ITE5570 USB HID, battery health telemetry (cycles, degradation %, charge wattage), and system board serials.
-- **Flicker-Free OLED Care & Conditioning**:
-  Hardware-safe flicker-free brightness dimming and automated subpixel conditioning cycles to mitigate OLED burn-in without PWM eye strain.
-- **ITE5570 LampArray Single-Zone RGB Lighting**:
-  Direct USB HID feature report control with real-time XDG Desktop Portal system accent color synchronization.
+  Integrated hardware testing suite verifying platform thermal profiles, backlight controllers, battery health telemetry (cycles, degradation %, charge wattage), and system board serials.
 
 ---
 
@@ -86,7 +86,7 @@ To enable Alatus to orchestrate hardware registers, you must allow DebugFS acces
 ┌───────────────────▼────────────────────────────┐   │
 │         alatus-session (User Agent)            │   │
 │  Event-Driven Architecture with Periodic       │   │
-│  State Reconciliation (tokio::select!)          │   │
+│  State Reconciliation (tokio::select!)         │   │
 ├────────────────────────────────────────────────┤   │
 │ • Udev Netlink Hooks + Fail-Safe State Ticker  │   │
 │ • GNOME Mutter & KDE Display Refresh Switching │   │

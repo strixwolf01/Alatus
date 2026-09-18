@@ -268,7 +268,7 @@ pub async fn handle_oled(action: Option<OledAction>) -> Result<(), DaemonClientE
     match action.unwrap_or(OledAction::Status) {
         OledAction::Status => {
             let status = crate::services::desktop_session::query_session_status().await;
-            println!("ASUS OLED Display Care Status");
+            println!("OLED Display Care Status");
             println!("─────────────────────────────");
             println!(
                 "Session Daemon:     {}",

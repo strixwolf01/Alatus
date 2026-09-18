@@ -91,7 +91,7 @@ impl StatusNotifierItem {
         (
             "io.strixwolf.alatus",
             Vec::new(),
-            "Alatus Hardware Control Center",
+            "Alatus - ASUS Hardware Control Center",
             "Left-click: toggle window\nRight-click: options",
         )
     }

@@ -18,6 +18,12 @@ echo "=== 2. Building Release Binaries with GUI Feature ==="
 cd "${WORKSPACE_ROOT}"
 cargo build --release --bin alatus --bin alatusd --bin alatus-session --features gui
 
+echo "=== 2b. Generating Shell Completions ==="
+mkdir -p "${WORKSPACE_ROOT}/packaging/completions"
+"${WORKSPACE_ROOT}/target/release/alatus" completions bash > "${WORKSPACE_ROOT}/packaging/completions/alatus.bash"
+"${WORKSPACE_ROOT}/target/release/alatus" completions zsh > "${WORKSPACE_ROOT}/packaging/completions/_alatus"
+"${WORKSPACE_ROOT}/target/release/alatus" completions fish > "${WORKSPACE_ROOT}/packaging/completions/alatus.fish"
+
 echo "=== 3. Generating RPM Package ==="
 cargo generate-rpm
 

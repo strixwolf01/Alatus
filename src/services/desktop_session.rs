@@ -1003,6 +1003,79 @@ pub fn get_epoch_seconds() -> u64 {
         .unwrap_or(0)
 }
 
+/// Resolves the absolute path to a custom mode SVG icon, ensuring it exists on disk.
+/// Falls back to writing the embedded SVG to runtime cache if not yet installed in system dirs.
+pub fn resolve_mode_icon(mode_key: &str) -> String {
+    let installed_path = format!("/usr/share/alatus/icons/modes/{mode_key}.svg");
+    if std::path::Path::new(&installed_path).exists() {
+        return installed_path;
+    }
+
+    let hicolor_path = format!(
+        "/usr/share/icons/hicolor/scalable/apps/alatus-mode-{}.svg",
+        mode_key.replace('_', "-")
+    );
+    if std::path::Path::new(&hicolor_path).exists() {
+        return hicolor_path;
+    }
+
+    // Check workspace assets if running from source checkout
+    let dev_path = format!("assets/icons/modes/{mode_key}.svg");
+    if let Ok(canon) = std::fs::canonicalize(&dev_path)
+        && canon.exists()
+    {
+        return canon.to_string_lossy().to_string();
+    }
+
+    // Runtime cache fallback from embedded bytes
+    let runtime_dir = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_string());
+    let cache_dir = std::path::Path::new(&runtime_dir).join("alatus/icons/modes");
+    let _ = std::fs::create_dir_all(&cache_dir);
+    let cache_file = cache_dir.join(format!("{mode_key}.svg"));
+
+    let embedded_svg = match mode_key {
+        "quiet" => include_str!("../../assets/icons/modes/quiet.svg"),
+        "balanced" => include_str!("../../assets/icons/modes/balanced.svg"),
+        "performance" => include_str!("../../assets/icons/modes/performance.svg"),
+        "full_speed" => include_str!("../../assets/icons/modes/full_speed.svg"),
+        _ => include_str!("../../assets/icons/modes/balanced.svg"),
+    };
+
+    let _ = std::fs::write(&cache_file, embedded_svg);
+    cache_file.to_string_lossy().to_string()
+}
+
+/// Formats the notification title, description, and custom icon path for a thermal mode.
+pub fn thermal_mode_notification(mode: u32) -> (&'static str, &'static str, String) {
+    match mode {
+        0 => (
+            "Balanced Mode",
+            "Standard acoustic and power profile applied.",
+            resolve_mode_icon("balanced"),
+        ),
+        1 => (
+            "Quiet Mode",
+            "Silent fan curves and energy-saving profile applied.",
+            resolve_mode_icon("quiet"),
+        ),
+        2 => (
+            "Performance Mode",
+            "High boost clocks and dynamic cooling applied.",
+            resolve_mode_icon("performance"),
+        ),
+        3 => (
+            "Full Speed Mode",
+            "Maximum cooling and sustained high performance.",
+            resolve_mode_icon("full_speed"),
+        ),
+        _ => (
+            "Thermal Mode",
+            "Profile updated.",
+            resolve_mode_icon("balanced"),
+        ),
+    }
+}
+
 pub async fn send_desktop_notification(
     session_conn: &Connection,
     summary: &str,
@@ -1017,21 +1090,23 @@ pub async fn send_desktop_notification(
     .await?;
 
     let actions: Vec<&str> = Vec::new();
-    let hints: std::collections::HashMap<&str, zbus::zvariant::Value<'_>> =
+    let mut hints: std::collections::HashMap<&str, zbus::zvariant::Value<'_>> =
         std::collections::HashMap::new();
+
+    let icon_path = "/usr/share/icons/hicolor/scalable/apps/io.strixwolf.alatus.svg";
+    let icon_name = if std::path::Path::new(icon_path).exists() {
+        hints.insert("image-path", zbus::zvariant::Value::from(icon_path));
+        hints.insert("image_path", zbus::zvariant::Value::from(icon_path));
+        icon_path
+    } else {
+        "io.strixwolf.alatus"
+    };
 
     let id: u32 = proxy
         .call(
             "Notify",
             &(
-                "Alatus",
-                0u32,
-                "preferences-desktop-display",
-                summary,
-                body,
-                actions,
-                hints,
-                5000i32,
+                "Alatus", 0u32, icon_name, summary, body, actions, hints, 5000i32,
             ),
         )
         .await?;
@@ -1066,6 +1141,11 @@ pub async fn send_osd_notification(
         "x-canonical-private-synchronous",
         zbus::zvariant::Value::from("thermal-profile-osd"),
     );
+
+    if icon.starts_with('/') || icon.starts_with("file://") {
+        hints.insert("image-path", zbus::zvariant::Value::from(icon));
+        hints.insert("image_path", zbus::zvariant::Value::from(icon));
+    }
 
     let id: u32 = proxy
         .call(
@@ -1372,34 +1452,8 @@ impl SessionDbusInterface {
 
     #[zbus(name = "ShowThermalOsd")]
     async fn show_thermal_osd(&self, mode: u32) {
-        let (summary, body, icon) = match mode {
-            0 => (
-                "Balanced Mode",
-                "Standard acoustic and power profile applied.",
-                "power-profile-balanced-symbolic",
-            ),
-            1 => (
-                "Quiet Mode",
-                "Silent fan curves and energy-saving profile applied.",
-                "power-profile-power-saver-symbolic",
-            ),
-            2 => (
-                "Performance Mode",
-                "High boost clocks and dynamic cooling applied.",
-                "power-profile-performance-symbolic",
-            ),
-            3 => (
-                "Full Speed Mode",
-                "Maximum cooling and sustained high performance.",
-                "power-profile-performance-symbolic",
-            ),
-            _ => (
-                "Thermal Mode",
-                "Profile updated.",
-                "power-profile-balanced-symbolic",
-            ),
-        };
-        let _ = send_osd_notification(&self.session_conn, summary, body, icon).await;
+        let (summary, body, icon) = thermal_mode_notification(mode);
+        let _ = send_osd_notification(&self.session_conn, summary, body, &icon).await;
     }
 }
 
@@ -2214,34 +2268,8 @@ pub async fn run_desktop_session(
                 let Ok((mode,)) = msg.body().deserialize::<(u32,)>() else {
                     continue;
                 };
-                let (summary, body, icon) = match mode {
-                    0 => (
-                        "Balanced Mode",
-                        "Standard acoustic and power profile applied.",
-                        "power-profile-balanced-symbolic",
-                    ),
-                    1 => (
-                        "Quiet Mode",
-                        "Silent fan curves and energy-saving profile applied.",
-                        "power-profile-power-saver-symbolic",
-                    ),
-                    2 => (
-                        "Performance Mode",
-                        "High boost clocks and dynamic cooling applied.",
-                        "power-profile-performance-symbolic",
-                    ),
-                    3 => (
-                        "Full Speed Mode",
-                        "Maximum cooling and sustained high performance.",
-                        "power-profile-performance-symbolic",
-                    ),
-                    _ => (
-                        "Thermal Mode",
-                        "Profile updated.",
-                        "power-profile-balanced-symbolic",
-                    ),
-                };
-                let _ = send_osd_notification(&session_conn, summary, body, icon).await;
+                let (summary, body, icon) = thermal_mode_notification(mode);
+                let _ = send_osd_notification(&session_conn, summary, body, &icon).await;
             }
             Some(msg_res) = stream_screensaver_fdo.next() => {
                 let Ok(msg) = msg_res else { continue };

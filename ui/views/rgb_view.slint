@@ -1,0 +1,428 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Alatus Contributors
+
+import { M3Card } from "../components/cards.slint";
+import { M3Button, M3Chip, M3ColorChip, M3Slider } from "../components/controls.slint";
+import { CapabilityPlaceholderCard, CapabilityUnavailableBanner } from "../components/capability_banner.slint";
+
+export component RgbView inherits VerticalLayout {
+    in property <string> rgb_capability: "supported";
+    in property <string> rgb_unavailable_reason: "";
+    in property <int> rgb_brightness: 80;
+    in property <int> selected_rgb_preset: 0;
+    in property <int> rgb_timeout: 60;
+    in property <int> rgb_timeout_policy: 2;
+    in-out property <int> custom_red: 255;
+    in-out property <int> custom_green: 128;
+    in-out property <int> custom_blue: 0;
+    in property <color> accent_color: #d0bcff;
+    in property <color> accent_container: #4f378b;
+    in property <color> on_accent_container: #eaddff;
+    in property <color> on_accent: #381e72;
+
+    callback set_rgb_brightness(int);
+    callback set_rgb_preset(int);
+    callback set_rgb_timeout(int);
+    callback set_rgb_timeout_policy(int);
+    callback apply_custom_rgb(int, int, int);
+
+    horizontal-stretch: 1;
+    spacing: 14px;
+    alignment: start;
+
+    Text {
+        text: "Keyboard & Backlight Controls";
+        color: #f1f5f9;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    if root.rgb_capability == "unsupported": CapabilityPlaceholderCard {
+        title: "Keyboard RGB Not Equipped";
+        desc: "This hardware profile does not include customizable RGB backlighting.";
+    }
+
+    if root.rgb_capability == "unavailable": CapabilityUnavailableBanner {
+        title: "Keyboard RGB Controller Unavailable";
+        reason: root.rgb_unavailable_reason;
+        default_reason: "Driver interface or kernel module missing.";
+    }
+
+    if root.rgb_capability != "unsupported": VerticalLayout {
+        spacing: 14px;
+
+        // Brightness & Presets Card
+        M3Card {
+            VerticalLayout {
+                padding: 16px;
+                spacing: 12px;
+
+                // Brightness Slider
+                VerticalLayout {
+                    spacing: 6px;
+                    HorizontalLayout {
+                        alignment: space-between;
+                        Text {
+                            text: "Keyboard RGB Brightness";
+                            color: #f1f5f9;
+                            font-size: 14px;
+                            font-weight: 600;
+                        }
+                        Text {
+                            text: root.rgb_brightness + "%";
+                            color: root.accent_color;
+                            font-size: 13px;
+                            font-weight: 600;
+                        }
+                    }
+
+                    M3Slider {
+                        value: root.rgb_brightness;
+                        min: 0;
+                        max: 100;
+                        step: 1;
+                        fill_color: root.accent_color;
+                        value_changed(val) => {
+                            root.set_rgb_brightness(val);
+                        }
+                    }
+                }
+
+                Rectangle {
+                    height: 1px;
+                    background: #2b2930;
+                }
+
+                // Preset Color Chips
+                VerticalLayout {
+                    spacing: 8px;
+                    Text {
+                        text: "Color Presets";
+                        color: #f1f5f9;
+                        font-size: 13px;
+                        font-weight: 600;
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: start;
+
+                        M3ColorChip {
+                            text: "Cyan";
+                            dot_color: #3daee9;
+                            selected: root.selected_rgb_preset == 1;
+                            accent_color: root.accent_color;
+                            accent_container: root.accent_container;
+                            on_accent_container: root.on_accent_container;
+                            clicked => {
+                                root.set_rgb_preset(1);
+                            }
+                        }
+                        M3ColorChip {
+                            text: "Purple";
+                            dot_color: #ba68c8;
+                            selected: root.selected_rgb_preset == 2;
+                            accent_color: root.accent_color;
+                            accent_container: root.accent_container;
+                            on_accent_container: root.on_accent_container;
+                            clicked => {
+                                root.set_rgb_preset(2);
+                            }
+                        }
+                        M3ColorChip {
+                            text: "White";
+                            dot_color: #ffffff;
+                            selected: root.selected_rgb_preset == 3;
+                            accent_color: root.accent_color;
+                            accent_container: root.accent_container;
+                            on_accent_container: root.on_accent_container;
+                            clicked => {
+                                root.set_rgb_preset(3);
+                            }
+                        }
+                        M3ColorChip {
+                            text: "Amber";
+                            dot_color: #ff8c00;
+                            selected: root.selected_rgb_preset == 4;
+                            accent_color: root.accent_color;
+                            accent_container: root.accent_container;
+                            on_accent_container: root.on_accent_container;
+                            clicked => {
+                                root.set_rgb_preset(4);
+                            }
+                        }
+                        M3ColorChip {
+                            text: "Auto Sync (Desktop)";
+                            is_auto: true;
+                            selected: root.selected_rgb_preset == 0;
+                            accent_color: root.accent_color;
+                            accent_container: root.accent_container;
+                            on_accent_container: root.on_accent_container;
+                            clicked => {
+                                root.set_rgb_preset(0);
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    height: 1px;
+                    background: #2b2930;
+                }
+
+                // Inactivity Timeout
+                VerticalLayout {
+                    spacing: 12px;
+
+                    // Condition
+                    VerticalLayout {
+                        spacing: 8px;
+                        HorizontalLayout {
+                            alignment: space-between;
+                            Text {
+                                text: "Inactivity Timeout Condition";
+                                color: #f1f5f9;
+                                font-size: 13px;
+                                font-weight: 600;
+                            }
+                            Text {
+                                text: root.rgb_timeout_policy == 0 ? "Disabled" : (root.rgb_timeout_policy == 1 ? "Battery Only" : "Always");
+                                color: #94a3b8;
+                                font-size: 12px;
+                            }
+                        }
+
+                        HorizontalLayout {
+                            spacing: 8px;
+                            alignment: start;
+
+                            M3Chip {
+                                text: "Never";
+                                selected: root.rgb_timeout_policy == 0;
+                                accent_color: root.accent_color;
+                                accent_container: root.accent_container;
+                                on_accent_container: root.on_accent_container;
+                                clicked => {
+                                    root.set_rgb_timeout_policy(0);
+                                }
+                            }
+                            M3Chip {
+                                text: "On Battery";
+                                selected: root.rgb_timeout_policy == 1;
+                                accent_color: root.accent_color;
+                                accent_container: root.accent_container;
+                                on_accent_container: root.on_accent_container;
+                                clicked => {
+                                    root.set_rgb_timeout_policy(1);
+                                }
+                            }
+                            M3Chip {
+                                text: "Always";
+                                selected: root.rgb_timeout_policy == 2;
+                                accent_color: root.accent_color;
+                                accent_container: root.accent_container;
+                                on_accent_container: root.on_accent_container;
+                                clicked => {
+                                    root.set_rgb_timeout_policy(2);
+                                }
+                            }
+                        }
+                    }
+
+                    // Delay
+                    if root.rgb_timeout_policy != 0: VerticalLayout {
+                        spacing: 8px;
+                        HorizontalLayout {
+                            alignment: space-between;
+                            Text {
+                                text: "Inactivity Delay";
+                                color: #f1f5f9;
+                                font-size: 13px;
+                                font-weight: 600;
+                            }
+                            Text {
+                                text: root.rgb_timeout < 60 ? root.rgb_timeout + "s" : (root.rgb_timeout / 60) + " min";
+                                color: #94a3b8;
+                                font-size: 12px;
+                            }
+                        }
+
+                        HorizontalLayout {
+                            spacing: 8px;
+                            alignment: start;
+
+                            M3Chip {
+                                text: "10s";
+                                selected: root.rgb_timeout == 10;
+                                accent_color: root.accent_color;
+                                accent_container: root.accent_container;
+                                on_accent_container: root.on_accent_container;
+                                clicked => {
+                                    root.set_rgb_timeout(10);
+                                }
+                            }
+                            M3Chip {
+                                text: "30s";
+                                selected: root.rgb_timeout == 30;
+                                accent_color: root.accent_color;
+                                accent_container: root.accent_container;
+                                on_accent_container: root.on_accent_container;
+                                clicked => {
+                                    root.set_rgb_timeout(30);
+                                }
+                            }
+                            M3Chip {
+                                text: "1 min";
+                                selected: root.rgb_timeout == 60;
+                                accent_color: root.accent_color;
+                                accent_container: root.accent_container;
+                                on_accent_container: root.on_accent_container;
+                                clicked => {
+                                    root.set_rgb_timeout(60);
+                                }
+                            }
+                            M3Chip {
+                                text: "2 min";
+                                selected: root.rgb_timeout == 120;
+                                accent_color: root.accent_color;
+                                accent_container: root.accent_container;
+                                on_accent_container: root.on_accent_container;
+                                clicked => {
+                                    root.set_rgb_timeout(120);
+                                }
+                            }
+                            M3Chip {
+                                text: "5 min";
+                                selected: root.rgb_timeout == 300;
+                                accent_color: root.accent_color;
+                                accent_container: root.accent_container;
+                                on_accent_container: root.on_accent_container;
+                                clicked => {
+                                    root.set_rgb_timeout(300);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Custom RGB Color Picker Card
+        M3Card {
+            VerticalLayout {
+                padding: 16px;
+                spacing: 12px;
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    Text {
+                        text: "Custom RGB Color Picker";
+                        color: #f1f5f9;
+                        font-size: 14px;
+                        font-weight: 600;
+                    }
+                    Text {
+                        text: "R: " + root.custom_red + "  G: " + root.custom_green + "  B: " + root.custom_blue;
+                        color: root.accent_color;
+                        font-size: 12px;
+                        font-weight: 600;
+                    }
+                }
+
+                // 3 Channel Sliders
+                VerticalLayout {
+                    spacing: 8px;
+
+                    HorizontalLayout {
+                        spacing: 10px;
+                        Text {
+                            text: "Red";
+                            color: #f87171;
+                            font-size: 12px;
+                            width: 44px;
+                        }
+                        M3Slider {
+                            value: root.custom_red;
+                            min: 0;
+                            max: 255;
+                            step: 1;
+                            fill_color: #ef4444;
+                            value_changed(val) => { root.custom_red = val; }
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 10px;
+                        Text {
+                            text: "Green";
+                            color: #4ade80;
+                            font-size: 12px;
+                            width: 44px;
+                        }
+                        M3Slider {
+                            value: root.custom_green;
+                            min: 0;
+                            max: 255;
+                            step: 1;
+                            fill_color: #22c55e;
+                            value_changed(val) => { root.custom_green = val; }
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 10px;
+                        Text {
+                            text: "Blue";
+                            color: #60a5fa;
+                            font-size: 12px;
+                            width: 44px;
+                        }
+                        M3Slider {
+                            value: root.custom_blue;
+                            min: 0;
+                            max: 255;
+                            step: 1;
+                            fill_color: #3b82f6;
+                            value_changed(val) => { root.custom_blue = val; }
+                        }
+                    }
+                }
+
+                // Live Preview Swatch & Apply Button
+                HorizontalLayout {
+                    alignment: space-between;
+                    spacing: 12px;
+
+                    HorizontalLayout {
+                        spacing: 10px;
+                        alignment: start;
+                        Rectangle {
+                            width: 50px;
+                            height: 32px;
+                            border-radius: 6px;
+                            background: rgb(root.custom_red, root.custom_green, root.custom_blue);
+                            border-width: 1px;
+                            border-color: #ffffff44;
+                        }
+                        Text {
+                            text: "Live Color Swatch Preview";
+                            color: #94a3b8;
+                            font-size: 12px;
+                        }
+                    }
+
+                    M3Button {
+                        text: "Apply Custom Color";
+                        primary: true;
+                        primary_bg: root.accent_color;
+                        primary_text: root.on_accent;
+                        clicked => {
+                            root.apply_custom_rgb(root.custom_red, root.custom_green, root.custom_blue);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

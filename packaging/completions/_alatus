@@ -15,6 +15,8 @@ _alatus() {
 
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" : \
+'--gui[Launch the Slint graphical user interface]' \
+'--tray[Start GUI minimized to system tray]' \
 '-h[Print help]' \
 '--help[Print help]' \
 '-V[Print version]' \
@@ -28,12 +30,29 @@ _alatus() {
         (( CURRENT += 1 ))
         curcontext="${curcontext%:*:*}:alatus-command-$line[1]:"
         case $line[1] in
-            (status)
+            (gui)
+_arguments "${_arguments_options[@]}" : \
+'-m[Start GUI minimized to system tray]' \
+'--minimized[Start GUI minimized to system tray]' \
+'--tray[Start GUI minimized to system tray]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(status)
 _arguments "${_arguments_options[@]}" : \
 '-j[Output status formatted as JSON for scripting and Waybar integration]' \
 '--json[Output status formatted as JSON for scripting and Waybar integration]' \
 '-w[Stream live JSON status line-by-line on events / ticker (ideal for Waybar)]' \
 '--watch[Stream live JSON status line-by-line on events / ticker (ideal for Waybar)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(capabilities)
+_arguments "${_arguments_options[@]}" : \
+'-j[Output capabilities formatted as JSON]' \
+'--json[Output capabilities formatted as JSON]' \
 '-h[Print help]' \
 '--help[Print help]' \
 && ret=0
@@ -53,6 +72,252 @@ _arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (mode)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_alatus__subcmd__mode_commands" \
+"*::: :->mode" \
+&& ret=0
+
+    case $state in
+    (mode)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-mode-command-$line[1]:"
+        case $line[1] in
+            (get)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+':name -- Mode profile name:((balanced\:"Balanced standard performance"
+quiet\:"Quiet / silent operation"
+performance\:"High performance boost"
+full\:"Maximum fan speed"))' \
+&& ret=0
+;;
+(balanced)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(quiet)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(performance)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(full)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(cycle)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(auto)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'::enable -- Enable or disable auto switching (on/off, true/false):_default' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__mode__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-mode-help-command-$line[1]:"
+        case $line[1] in
+            (get)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(balanced)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(quiet)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(performance)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(full)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(cycle)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(auto)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(thermal)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_alatus__subcmd__mode_commands" \
+"*::: :->mode" \
+&& ret=0
+
+    case $state in
+    (mode)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-mode-command-$line[1]:"
+        case $line[1] in
+            (get)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+':name -- Mode profile name:((balanced\:"Balanced standard performance"
+quiet\:"Quiet / silent operation"
+performance\:"High performance boost"
+full\:"Maximum fan speed"))' \
+&& ret=0
+;;
+(balanced)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(quiet)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(performance)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(full)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(cycle)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(auto)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'::enable -- Enable or disable auto switching (on/off, true/false):_default' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__mode__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-mode-help-command-$line[1]:"
+        case $line[1] in
+            (get)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(set)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(balanced)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(quiet)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(performance)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(full)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(cycle)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(auto)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(profile)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
@@ -311,6 +576,12 @@ _arguments "${_arguments_options[@]}" : \
 '--help[Print help]' \
 && ret=0
 ;;
+(performance)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
 (full)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
@@ -466,6 +737,20 @@ _arguments "${_arguments_options[@]}" : \
 ':percentage -- Battery charge threshold percentage (0-100):_default' \
 && ret=0
 ;;
+(battery)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':percentage -- Battery charge threshold percentage (0-100):_default' \
+&& ret=0
+;;
+(charge)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':percentage -- Battery charge threshold percentage (0-100):_default' \
+&& ret=0
+;;
 (rgb)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
@@ -512,12 +797,83 @@ _arguments "${_arguments_options[@]}" : \
 '--help[Print help]' \
 && ret=0
 ;;
+(wake)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
 (sync)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
 '::enable -- Enable or disable accent sync (on/off, true/false):_default' \
 && ret=0
+;;
+(timeout)
+_arguments "${_arguments_options[@]}" : \
+'-p+[Inactivity timeout policy (never, battery, always)]:POLICY:_default' \
+'--policy=[Inactivity timeout policy (never, battery, always)]:POLICY:_default' \
+'-d+[Inactivity timeout delay in seconds]:DELAY:_default' \
+'--delay=[Inactivity timeout delay in seconds]:DELAY:_default' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::seconds -- Optional timeout delay in seconds (shortcut for delay):_default' \
+":: :_alatus__subcmd__rgb__subcmd__timeout_commands" \
+"*::: :->timeout" \
+&& ret=0
+
+    case $state in
+    (timeout)
+        words=($line[2] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-rgb-timeout-command-$line[2]:"
+        case $line[2] in
+            (policy)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':policy -- Policy value\: never, battery (or battery_only), always:_default' \
+&& ret=0
+;;
+(delay)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':seconds -- Duration in seconds (e.g. 10, 30, 60, 120, 300):_default' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__rgb__subcmd__timeout__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-rgb-timeout-help-command-$line[1]:"
+        case $line[1] in
+            (policy)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(delay)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
 ;;
 (help)
 _arguments "${_arguments_options[@]}" : \
@@ -551,9 +907,37 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
+(wake)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
 (sync)
 _arguments "${_arguments_options[@]}" : \
 && ret=0
+;;
+(timeout)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__rgb__subcmd__help__subcmd__timeout_commands" \
+"*::: :->timeout" \
+&& ret=0
+
+    case $state in
+    (timeout)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-rgb-help-timeout-command-$line[1]:"
+        case $line[1] in
+            (policy)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(delay)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
 ;;
 (help)
 _arguments "${_arguments_options[@]}" : \
@@ -959,7 +1343,15 @@ _arguments "${_arguments_options[@]}" : \
         (( CURRENT += 1 ))
         curcontext="${curcontext%:*:*}:alatus-help-command-$line[1]:"
         case $line[1] in
-            (status)
+            (gui)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(capabilities)
 _arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
@@ -1175,9 +1567,37 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
+(wake)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
 (sync)
 _arguments "${_arguments_options[@]}" : \
 && ret=0
+;;
+(timeout)
+_arguments "${_arguments_options[@]}" : \
+":: :_alatus__subcmd__help__subcmd__rgb__subcmd__timeout_commands" \
+"*::: :->timeout" \
+&& ret=0
+
+    case $state in
+    (timeout)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:alatus-help-rgb-timeout-command-$line[1]:"
+        case $line[1] in
+            (policy)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(delay)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
 ;;
         esac
     ;;
@@ -1323,19 +1743,26 @@ esac
 (( $+functions[_alatus_commands] )) ||
 _alatus_commands() {
     local commands; commands=(
+'gui:Launch the Slint graphical user interface dashboard' \
 'status:Show system, firmware, battery, and lighting status' \
+'capabilities:Display tri-state runtime hardware capabilities' \
 'watch:Stream live JSON status line-by-line (alias for '\''alatus status -j -w'\'')' \
 'monitor:Live real-time hardware telemetry monitor' \
 'mode:Query or set firmware power/fan mode' \
+'thermal:Query or set firmware power/fan mode' \
+'profile:Query or set firmware power/fan mode' \
 'fan:Query or set fan profile' \
 'cycle:Cycle through thermal profiles\: Quiet -> Balanced -> Performance -> Full -> Quiet' \
 'quiet:Shortcut\: Switch directly to Quiet thermal profile' \
 'balanced:Shortcut\: Switch directly to Balanced thermal profile' \
 'perf:Shortcut\: Switch directly to Performance thermal profile' \
+'performance:Shortcut\: Switch directly to Performance thermal profile' \
 'full:Shortcut\: Switch directly to Full speed thermal profile' \
 'oled:OLED panel care, cumulative usage hours, idle dimming, and pixel refresh' \
 'display:Display panel resolution, refresh rate switching, and auto power-matching' \
 'charge-limit:Set battery charge limit threshold (0-100%)' \
+'battery:Set battery charge limit threshold (0-100%)' \
+'charge:Set battery charge limit threshold (0-100%)' \
 'rgb:Control keyboard RGB backlight and desktop accent color sync' \
 'daemon:Manage system hardware daemon and user desktop session background services' \
 'completions:Generate shell auto-completion scripts for Bash, Zsh, or Fish' \
@@ -1348,6 +1775,11 @@ _alatus_commands() {
 _alatus__subcmd__balanced_commands() {
     local commands; commands=()
     _describe -t commands 'alatus balanced commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__capabilities_commands] )) ||
+_alatus__subcmd__capabilities_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus capabilities commands' commands "$@"
 }
 (( $+functions[_alatus__subcmd__charge-limit_commands] )) ||
 _alatus__subcmd__charge-limit_commands() {
@@ -1792,10 +2224,17 @@ _alatus__subcmd__full_commands() {
     local commands; commands=()
     _describe -t commands 'alatus full commands' commands "$@"
 }
+(( $+functions[_alatus__subcmd__gui_commands] )) ||
+_alatus__subcmd__gui_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus gui commands' commands "$@"
+}
 (( $+functions[_alatus__subcmd__help_commands] )) ||
 _alatus__subcmd__help_commands() {
     local commands; commands=(
+'gui:Launch the Slint graphical user interface dashboard' \
 'status:Show system, firmware, battery, and lighting status' \
+'capabilities:Display tri-state runtime hardware capabilities' \
 'watch:Stream live JSON status line-by-line (alias for '\''alatus status -j -w'\'')' \
 'monitor:Live real-time hardware telemetry monitor' \
 'mode:Query or set firmware power/fan mode' \
@@ -1820,6 +2259,11 @@ _alatus__subcmd__help_commands() {
 _alatus__subcmd__help__subcmd__balanced_commands() {
     local commands; commands=()
     _describe -t commands 'alatus help balanced commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__capabilities_commands] )) ||
+_alatus__subcmd__help__subcmd__capabilities_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help capabilities commands' commands "$@"
 }
 (( $+functions[_alatus__subcmd__help__subcmd__charge-limit_commands] )) ||
 _alatus__subcmd__help__subcmd__charge-limit_commands() {
@@ -1999,6 +2443,11 @@ _alatus__subcmd__help__subcmd__full_commands() {
     local commands; commands=()
     _describe -t commands 'alatus help full commands' commands "$@"
 }
+(( $+functions[_alatus__subcmd__help__subcmd__gui_commands] )) ||
+_alatus__subcmd__help__subcmd__gui_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help gui commands' commands "$@"
+}
 (( $+functions[_alatus__subcmd__help__subcmd__help_commands] )) ||
 _alatus__subcmd__help__subcmd__help_commands() {
     local commands; commands=()
@@ -2105,7 +2554,9 @@ _alatus__subcmd__help__subcmd__rgb_commands() {
 'set-brightness:Set RGB brightness level (0-100% or 0-3)' \
 'off:Turn off keyboard RGB backlight' \
 'on:Turn on keyboard RGB backlight' \
+'wake:Wake keyboard RGB backlight from inactivity sleep immediately' \
 'sync:Toggle desktop accent color synchronization with keyboard backlighting' \
+'timeout:Configure keyboard RGB inactivity timeout policy and delay duration' \
     )
     _describe -t commands 'alatus help rgb commands' commands "$@"
 }
@@ -2138,6 +2589,29 @@ _alatus__subcmd__help__subcmd__rgb__subcmd__status_commands() {
 _alatus__subcmd__help__subcmd__rgb__subcmd__sync_commands() {
     local commands; commands=()
     _describe -t commands 'alatus help rgb sync commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__rgb__subcmd__timeout_commands] )) ||
+_alatus__subcmd__help__subcmd__rgb__subcmd__timeout_commands() {
+    local commands; commands=(
+'policy:Set timeout policy (never, battery, always)' \
+'delay:Set timeout delay duration in seconds' \
+    )
+    _describe -t commands 'alatus help rgb timeout commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__rgb__subcmd__timeout__subcmd__delay_commands] )) ||
+_alatus__subcmd__help__subcmd__rgb__subcmd__timeout__subcmd__delay_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help rgb timeout delay commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__rgb__subcmd__timeout__subcmd__policy_commands] )) ||
+_alatus__subcmd__help__subcmd__rgb__subcmd__timeout__subcmd__policy_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help rgb timeout policy commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__help__subcmd__rgb__subcmd__wake_commands] )) ||
+_alatus__subcmd__help__subcmd__rgb__subcmd__wake_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus help rgb wake commands' commands "$@"
 }
 (( $+functions[_alatus__subcmd__help__subcmd__session_commands] )) ||
 _alatus__subcmd__help__subcmd__session_commands() {
@@ -2366,7 +2840,9 @@ _alatus__subcmd__rgb_commands() {
 'set-brightness:Set RGB brightness level (0-100% or 0-3)' \
 'off:Turn off keyboard RGB backlight' \
 'on:Turn on keyboard RGB backlight' \
+'wake:Wake keyboard RGB backlight from inactivity sleep immediately' \
 'sync:Toggle desktop accent color synchronization with keyboard backlighting' \
+'timeout:Configure keyboard RGB inactivity timeout policy and delay duration' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
     _describe -t commands 'alatus rgb commands' commands "$@"
@@ -2379,7 +2855,9 @@ _alatus__subcmd__rgb__subcmd__help_commands() {
 'set-brightness:Set RGB brightness level (0-100% or 0-3)' \
 'off:Turn off keyboard RGB backlight' \
 'on:Turn on keyboard RGB backlight' \
+'wake:Wake keyboard RGB backlight from inactivity sleep immediately' \
 'sync:Toggle desktop accent color synchronization with keyboard backlighting' \
+'timeout:Configure keyboard RGB inactivity timeout policy and delay duration' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
     _describe -t commands 'alatus rgb help commands' commands "$@"
@@ -2419,6 +2897,29 @@ _alatus__subcmd__rgb__subcmd__help__subcmd__sync_commands() {
     local commands; commands=()
     _describe -t commands 'alatus rgb help sync commands' commands "$@"
 }
+(( $+functions[_alatus__subcmd__rgb__subcmd__help__subcmd__timeout_commands] )) ||
+_alatus__subcmd__rgb__subcmd__help__subcmd__timeout_commands() {
+    local commands; commands=(
+'policy:Set timeout policy (never, battery, always)' \
+'delay:Set timeout delay duration in seconds' \
+    )
+    _describe -t commands 'alatus rgb help timeout commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__help__subcmd__timeout__subcmd__delay_commands] )) ||
+_alatus__subcmd__rgb__subcmd__help__subcmd__timeout__subcmd__delay_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb help timeout delay commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__help__subcmd__timeout__subcmd__policy_commands] )) ||
+_alatus__subcmd__rgb__subcmd__help__subcmd__timeout__subcmd__policy_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb help timeout policy commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__help__subcmd__wake_commands] )) ||
+_alatus__subcmd__rgb__subcmd__help__subcmd__wake_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb help wake commands' commands "$@"
+}
 (( $+functions[_alatus__subcmd__rgb__subcmd__off_commands] )) ||
 _alatus__subcmd__rgb__subcmd__off_commands() {
     local commands; commands=()
@@ -2448,6 +2949,54 @@ _alatus__subcmd__rgb__subcmd__status_commands() {
 _alatus__subcmd__rgb__subcmd__sync_commands() {
     local commands; commands=()
     _describe -t commands 'alatus rgb sync commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__timeout_commands] )) ||
+_alatus__subcmd__rgb__subcmd__timeout_commands() {
+    local commands; commands=(
+'policy:Set timeout policy (never, battery, always)' \
+'delay:Set timeout delay duration in seconds' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus rgb timeout commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__timeout__subcmd__delay_commands] )) ||
+_alatus__subcmd__rgb__subcmd__timeout__subcmd__delay_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb timeout delay commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__timeout__subcmd__help_commands] )) ||
+_alatus__subcmd__rgb__subcmd__timeout__subcmd__help_commands() {
+    local commands; commands=(
+'policy:Set timeout policy (never, battery, always)' \
+'delay:Set timeout delay duration in seconds' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'alatus rgb timeout help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__timeout__subcmd__help__subcmd__delay_commands] )) ||
+_alatus__subcmd__rgb__subcmd__timeout__subcmd__help__subcmd__delay_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb timeout help delay commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__timeout__subcmd__help__subcmd__help_commands] )) ||
+_alatus__subcmd__rgb__subcmd__timeout__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb timeout help help commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__timeout__subcmd__help__subcmd__policy_commands] )) ||
+_alatus__subcmd__rgb__subcmd__timeout__subcmd__help__subcmd__policy_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb timeout help policy commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__timeout__subcmd__policy_commands] )) ||
+_alatus__subcmd__rgb__subcmd__timeout__subcmd__policy_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb timeout policy commands' commands "$@"
+}
+(( $+functions[_alatus__subcmd__rgb__subcmd__wake_commands] )) ||
+_alatus__subcmd__rgb__subcmd__wake_commands() {
+    local commands; commands=()
+    _describe -t commands 'alatus rgb wake commands' commands "$@"
 }
 (( $+functions[_alatus__subcmd__session_commands] )) ||
 _alatus__subcmd__session_commands() {

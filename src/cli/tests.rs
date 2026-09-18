@@ -758,4 +758,63 @@ fn test_cli_parse_shortcuts_and_aliases() {
             watch: true
         })
     ));
+
+    // Visible aliases: thermal, profile -> Mode
+    let cli_thermal = Cli::try_parse_from(["alatus", "thermal", "balanced"]).unwrap();
+    assert!(matches!(
+        cli_thermal.command,
+        Some(Commands::Mode {
+            action: Some(ModeAction::Balanced)
+        })
+    ));
+
+    let cli_profile = Cli::try_parse_from(["alatus", "profile", "quiet"]).unwrap();
+    assert!(matches!(
+        cli_profile.command,
+        Some(Commands::Mode {
+            action: Some(ModeAction::Quiet)
+        })
+    ));
+
+    // Visible alias: performance -> Perf
+    let cli_perf_long = Cli::try_parse_from(["alatus", "performance"]).unwrap();
+    assert!(matches!(cli_perf_long.command, Some(Commands::Perf)));
+
+    // Visible aliases: battery, charge -> ChargeLimit
+    let cli_bat = Cli::try_parse_from(["alatus", "battery", "80"]).unwrap();
+    assert!(matches!(
+        cli_bat.command,
+        Some(Commands::ChargeLimit { percentage: 80 })
+    ));
+
+    let cli_chg = Cli::try_parse_from(["alatus", "charge", "75"]).unwrap();
+    assert!(matches!(
+        cli_chg.command,
+        Some(Commands::ChargeLimit { percentage: 75 })
+    ));
+
+    // Completions subcommand
+    let cli_comp_bash = Cli::try_parse_from(["alatus", "completions", "bash"]).unwrap();
+    assert!(matches!(
+        cli_comp_bash.command,
+        Some(Commands::Completions {
+            shell: clap_complete::Shell::Bash
+        })
+    ));
+
+    let cli_comp_fish = Cli::try_parse_from(["alatus", "completions", "fish"]).unwrap();
+    assert!(matches!(
+        cli_comp_fish.command,
+        Some(Commands::Completions {
+            shell: clap_complete::Shell::Fish
+        })
+    ));
+
+    let cli_comp_zsh = Cli::try_parse_from(["alatus", "completions", "zsh"]).unwrap();
+    assert!(matches!(
+        cli_comp_zsh.command,
+        Some(Commands::Completions {
+            shell: clap_complete::Shell::Zsh
+        })
+    ));
 }

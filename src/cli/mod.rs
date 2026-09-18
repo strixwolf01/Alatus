@@ -3,7 +3,7 @@
 
 //! Standalone native command-line interface for Alatus.
 //!
-//! Provides CLI controls for ASUS Linux hardware management including power/fan profiles,
+//! Provides CLI controls for Linux hardware management including power/fan profiles,
 //! battery charge limiting, deep sleep states, keyboard RGB lighting, and status diagnostics via D-Bus.
 
 pub mod battery;
@@ -26,7 +26,7 @@ use std::process;
 #[command(name = "alatus")]
 #[command(author = "Alatus Contributors")]
 #[command(version)]
-#[command(about = "ASUS Linux hardware control CLI and GUI", long_about = None)]
+#[command(about = "ASUS Hardware Control Center CLI and GUI for Linux", long_about = None)]
 pub struct Cli {
     /// Launch the Slint graphical user interface
     #[arg(long, default_value_t = false)]
@@ -78,7 +78,7 @@ pub enum Commands {
     },
 
     /// Query or set firmware power/fan mode
-    #[command(alias = "m")]
+    #[command(alias = "m", visible_alias = "thermal", visible_alias = "profile")]
     Mode {
         #[command(subcommand)]
         action: Option<ModeAction>,
@@ -102,7 +102,7 @@ pub enum Commands {
     Balanced,
 
     /// Shortcut: Switch directly to Performance thermal profile
-    #[command(alias = "high", alias = "performance")]
+    #[command(alias = "high", visible_alias = "performance")]
     Perf,
 
     /// Shortcut: Switch directly to Full speed thermal profile
@@ -123,7 +123,7 @@ pub enum Commands {
     },
 
     /// Set battery charge limit threshold (0-100%)
-    #[command(alias = "c", alias = "charge")]
+    #[command(alias = "c", visible_alias = "battery", visible_alias = "charge")]
     ChargeLimit {
         /// Battery charge threshold percentage (0-100)
         #[arg(value_parser = clap::value_parser!(u32))]

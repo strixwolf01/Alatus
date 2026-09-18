@@ -183,6 +183,21 @@ impl DaemonInterface {
         Ok(())
     }
 
+    #[zbus(property(emits_changed_signal = "false"))]
+    async fn thermal_mode(&self) -> zbus::fdo::Result<u32> {
+        self.firmware_mode().await
+    }
+
+    #[zbus(property)]
+    async fn set_thermal_mode(
+        &self,
+        #[zbus(header)] header: Option<zbus::message::Header<'_>>,
+        #[zbus(connection)] conn: &Connection,
+        value: u32,
+    ) -> zbus::Result<()> {
+        self.set_firmware_mode(header, conn, value).await
+    }
+
     #[zbus(property)]
     async fn charge_limit(&self) -> zbus::fdo::Result<u32> {
         let ctx = self.device_context.lock().await;

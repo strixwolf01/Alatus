@@ -1,0 +1,265 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Alatus Contributors
+
+import { M3Card, StatCard } from "../components/cards.slint";
+import { M3Badge, M3Button, M3Slider, M3Segment } from "../components/controls.slint";
+import { CapabilityPlaceholderCard, CapabilityUnavailableBanner } from "../components/capability_banner.slint";
+
+export component DisplayView inherits VerticalLayout {
+    in property <string> display_capability: "supported";
+    in property <string> display_unavailable_reason: "";
+    in property <string> oled_screen_hours: "0.0";
+    in property <int> oled_refresh_count: 0;
+    in property <string> refresh_status_text: "";
+    in property <int> oled_dim_level: 100;
+    in property <string> active_connector: "eDP-1";
+    in property <string> refresh_rate: "120.0 Hz";
+    in property <int> selected_refresh_rate: 120;
+    in property <color> accent_color: #d0bcff;
+    in property <color> accent_container: #4f378b;
+    in property <color> on_accent_container: #eaddff;
+    in property <color> on_accent: #381e72;
+
+    callback trigger_pixel_refresh();
+    callback set_oled_dim_level(int);
+    callback set_refresh_rate(int);
+
+    horizontal-stretch: 1;
+    spacing: 14px;
+    alignment: start;
+
+    Text {
+        text: "Display";
+        color: #f1f5f9;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    if root.display_capability == "unsupported": CapabilityPlaceholderCard {
+        title: "Display Controls Not Supported";
+        desc: "This hardware profile does not declare software-controllable display or OLED features.";
+    }
+
+    if root.display_capability == "unavailable": CapabilityUnavailableBanner {
+        title: "Display Controller Unavailable";
+        reason: root.display_unavailable_reason;
+        default_reason: "Compositor or kernel driver interface missing.";
+    }
+
+    if root.display_capability != "unsupported": VerticalLayout {
+        spacing: 14px;
+
+        // OLED Health Card
+        M3Card {
+            VerticalLayout {
+                padding: 16px;
+                spacing: 12px;
+
+                // Title Header
+                VerticalLayout {
+                    spacing: 2px;
+                    Text {
+                        text: "OLED Care";
+                        color: #f1f5f9;
+                        font-size: 15px;
+                        font-weight: 600;
+                    }
+                    Text {
+                        text: "Pixel refresh health monitoring, screen conditioning & idle dimming";
+                        color: #94a3b8;
+                        font-size: 11px;
+                    }
+                }
+
+                Rectangle {
+                    height: 1px;
+                    background: #2b2930;
+                }
+
+                // Stats Row
+                HorizontalLayout {
+                    spacing: 14px;
+                    StatCard {
+                        title: "Cumulative Screen-On";
+                        value: root.oled_screen_hours + " hrs";
+                        subtitle: "Recommended cycle at 4+ hrs";
+                        value_color: #a6e3a1;
+                    }
+                    StatCard {
+                        title: "Conditioning Cycles";
+                        value: root.oled_refresh_count;
+                        subtitle: "Pixel refresh sweeps executed";
+                        value_color: root.accent_color;
+                    }
+                }
+
+                // Pixel Refresh Trigger
+                HorizontalLayout {
+                    alignment: space-between;
+                    VerticalLayout {
+                        spacing: 2px;
+                        Text {
+                            text: "Pixel Refresh Routine";
+                            color: #f1f5f9;
+                            font-size: 13px;
+                            font-weight: 600;
+                        }
+                        Text {
+                            text: "Gentle subpixel sweep to relieve static charge";
+                            color: #94a3b8;
+                            font-size: 11px;
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: end;
+                        if root.refresh_status_text != "": M3Badge {
+                            text: root.refresh_status_text;
+                            badge_color: #1e382b;
+                            text_color: #a6e3a1;
+                        }
+                        M3Button {
+                            text: "Refresh Pixels";
+                            primary: true;
+                            primary_bg: root.accent_color;
+                            primary_text: root.on_accent;
+                            clicked => { root.trigger_pixel_refresh(); }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    height: 1px;
+                    background: #2b2930;
+                }
+
+                // Flicker-Free Dimming Level Slider
+                VerticalLayout {
+                    spacing: 6px;
+                    HorizontalLayout {
+                        alignment: space-between;
+                        Text {
+                            text: "Flicker-Free Dimming Level";
+                            color: #f1f5f9;
+                            font-size: 13px;
+                            font-weight: 600;
+                        }
+                        Text {
+                            text: "Target Level: " + root.oled_dim_level + "%";
+                            color: root.accent_color;
+                            font-size: 13px;
+                            font-weight: 600;
+                        }
+                    }
+                    Text {
+                        text: "Instant compositor-level luminance scaling (10% - 100%). Eliminates PWM flicker and saves battery.";
+                        color: #94a3b8;
+                        font-size: 11px;
+                    }
+                    M3Slider {
+                        value: root.oled_dim_level;
+                        min: 10;
+                        max: 100;
+                        step: 5;
+                        fill_color: root.accent_color;
+                        value_changed(val) => {
+                            root.set_oled_dim_level(val);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Display Panel Orchestration Card
+        M3Card {
+            VerticalLayout {
+                padding: 16px;
+                spacing: 12px;
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    VerticalLayout {
+                        spacing: 2px;
+                        Text {
+                            text: "Display Panel Orchestration";
+                            color: #f1f5f9;
+                            font-size: 15px;
+                            font-weight: 600;
+                        }
+                        Text {
+                            text: "Active Connector: " + root.active_connector + " (" + root.refresh_rate + ")";
+                            color: #94a3b8;
+                            font-size: 11px;
+                        }
+                    }
+                }
+
+                Rectangle {
+                    height: 1px;
+                    background: #2b2930;
+                }
+
+                // Refresh Rate Segmented Control
+                HorizontalLayout {
+                    alignment: space-between;
+                    VerticalLayout {
+                        spacing: 2px;
+                        Text {
+                            text: "Panel Refresh Rate";
+                            color: #f1f5f9;
+                            font-size: 13px;
+                            font-weight: 600;
+                        }
+                        Text {
+                            text: root.selected_refresh_rate == 0 ? "Dynamic switching (120 Hz on AC, 60 Hz on Battery)" :
+                                  "Fixed refresh rate";
+                            color: #94a3b8;
+                            font-size: 11px;
+                        }
+                    }
+
+                    Rectangle {
+                        background: #18171d;
+                        border-radius: 10px;
+                        height: 38px;
+
+                        HorizontalLayout {
+                            padding: 3px;
+                            spacing: 4px;
+
+                            M3Segment {
+                                text: "60 Hz";
+                                selected: root.selected_refresh_rate == 60;
+                                accent_container: root.accent_container;
+                                on_accent_container: root.on_accent_container;
+                                clicked => {
+                                    root.set_refresh_rate(60);
+                                }
+                            }
+                            M3Segment {
+                                text: "120 Hz";
+                                selected: root.selected_refresh_rate == 120;
+                                accent_container: root.accent_container;
+                                on_accent_container: root.on_accent_container;
+                                clicked => {
+                                    root.set_refresh_rate(120);
+                                }
+                            }
+                            M3Segment {
+                                text: "Auto Power";
+                                selected: root.selected_refresh_rate == 0;
+                                accent_container: root.accent_container;
+                                on_accent_container: root.on_accent_container;
+                                clicked => {
+                                    root.set_refresh_rate(0);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

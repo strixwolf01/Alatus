@@ -1,0 +1,852 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Alatus Contributors
+
+import { M3Card } from "../components/cards.slint";
+import { M3Badge, M3Button, M3Switch } from "../components/controls.slint";
+import { ShieldIcon, BatteryIcon, RefreshIcon, EyeIcon, CopyIcon } from "../components/icons.slint";
+
+export component DiagnosticsView inherits VerticalLayout {
+    in property <string> hw_model: "Hardware Device";
+    in property <string> hw_motherboard: "--";
+    in property <string> hw_cpu: "--";
+    in property <string> hw_ram: "--";
+    in property <string> hw_gpu: "--";
+    in property <string> hw_bios_detailed: "--";
+    in property <string> hw_kernel: "Kernel: --";
+    in property <string> hw_compositor: "Compositor: --";
+    in property <string> hw_serial: "••••••••••••";
+    in property <bool> hw_serial_revealed: false;
+    in property <string> hw_copy_status: "";
+
+    in property <string> hw_battery_status: "--";
+    in property <string> hw_battery_pct: "--%";
+    in property <string> hw_battery_health: "--%";
+    in property <string> hw_battery_cycles: "--";
+    in property <string> hw_battery_id: "Battery: --";
+    in property <string> hw_battery_manufacturer: "--";
+
+    in property <bool> is_diagnosing: false;
+    in property <string> diag_wmi_status: "Checking...";
+    in property <string> diag_wmi_desc: "";
+    in property <string> diag_rgb_status: "Checking...";
+    in property <string> diag_rgb_desc: "";
+    in property <string> diag_oled_status: "Checking...";
+    in property <string> diag_oled_desc: "";
+    in property <string> diag_hotkey_status: "Checking...";
+    in property <string> diag_hotkey_desc: "";
+    in property <string> diag_charge_status: "Checking...";
+    in property <string> diag_charge_desc: "";
+
+    in-out property <bool> tray_enabled: true;
+    in-out property <bool> autostart_enabled: false;
+
+    in property <color> accent_color: #d0bcff;
+    in property <color> accent_container: #4f378b;
+    in property <color> on_accent_container: #eaddff;
+
+    callback reveal_serial();
+    callback copy_serial();
+    callback run_diagnostics();
+    callback toggle_tray(bool);
+    callback toggle_autostart(bool);
+
+    horizontal-stretch: 1;
+    spacing: 16px;
+    alignment: start;
+
+    Text {
+        text: "System Information & Diagnostics";
+        color: #f1f5f9;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    // Detailed Specifications Card
+    M3Card {
+        VerticalLayout {
+            padding: 16px;
+            spacing: 14px;
+
+            HorizontalLayout {
+                alignment: space-between;
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+                    ShieldIcon {
+                        icon_color: root.accent_color;
+                    }
+                    Text {
+                        text: "System Specifications";
+                        color: #f1f5f9;
+                        font-size: 15px;
+                        font-weight: 600;
+                    }
+                }
+                if root.hw_copy_status != "": M3Badge {
+                    text: root.hw_copy_status;
+                    badge_color: #1e382b;
+                    text_color: #a6e3a1;
+                }
+            }
+
+            Rectangle {
+                height: 1px;
+                background: #2b2930;
+            }
+
+            VerticalLayout {
+                spacing: 12px;
+
+                HorizontalLayout {
+                    spacing: 16px;
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        min-height: 46px;
+                        spacing: 2px;
+                        alignment: start;
+                        Text { text: "Device Model"; color: #94a3b8; font-size: 11px; }
+                        Text { text: root.hw_model; color: #f1f5f9; font-size: 13px; font-weight: 600; wrap: word-wrap; }
+                    }
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        min-height: 46px;
+                        spacing: 2px;
+                        alignment: start;
+                        Text { text: "Motherboard"; color: #94a3b8; font-size: 11px; }
+                        Text { text: root.hw_motherboard; color: #f1f5f9; font-size: 13px; font-weight: 600; wrap: word-wrap; }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 16px;
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        min-height: 46px;
+                        spacing: 2px;
+                        alignment: start;
+                        Text { text: "Processor (CPU)"; color: #94a3b8; font-size: 11px; }
+                        Text { text: root.hw_cpu; color: #f1f5f9; font-size: 13px; font-weight: 600; wrap: word-wrap; }
+                    }
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        min-height: 46px;
+                        spacing: 2px;
+                        alignment: start;
+                        Text { text: "Memory (RAM)"; color: #94a3b8; font-size: 11px; }
+                        Text { text: root.hw_ram; color: #f1f5f9; font-size: 13px; font-weight: 600; wrap: word-wrap; }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 16px;
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        min-height: 46px;
+                        spacing: 2px;
+                        alignment: start;
+                        Text { text: "Graphics (GPU)"; color: #94a3b8; font-size: 11px; }
+                        Text { text: root.hw_gpu; color: #f1f5f9; font-size: 13px; font-weight: 600; wrap: word-wrap; }
+                    }
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        min-height: 46px;
+                        spacing: 2px;
+                        alignment: start;
+                        Text { text: "BIOS Version"; color: #94a3b8; font-size: 11px; }
+                        Text { text: root.hw_bios_detailed; color: #f1f5f9; font-size: 13px; font-weight: 600; wrap: word-wrap; }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 16px;
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        min-height: 46px;
+                        spacing: 2px;
+                        alignment: start;
+                        Text { text: "Linux Kernel"; color: #94a3b8; font-size: 11px; }
+                        Text { text: root.hw_kernel; color: #f1f5f9; font-size: 13px; font-weight: 600; wrap: word-wrap; }
+                    }
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        min-height: 46px;
+                        spacing: 2px;
+                        alignment: start;
+                        Text { text: "Desktop / Compositor"; color: #94a3b8; font-size: 11px; }
+                        Text { text: root.hw_compositor; color: #f1f5f9; font-size: 13px; font-weight: 600; wrap: word-wrap; }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 16px;
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        min-height: 46px;
+                        spacing: 2px;
+                        alignment: start;
+                        Text { text: "Hardware Serial (Polkit Protected)"; color: #94a3b8; font-size: 11px; }
+                        HorizontalLayout {
+                            spacing: 8px;
+                            alignment: start;
+                            Text {
+                                text: root.hw_serial;
+                                color: root.hw_serial_revealed ? root.accent_color : #64748b;
+                                font-size: 13px;
+                                font-weight: 600;
+                            }
+                            if !root.hw_serial_revealed: M3Button {
+                                text: "Reveal";
+                                primary: true;
+                                primary_bg: root.accent_container;
+                                primary_text: root.on_accent_container;
+                                clicked => { root.reveal_serial(); }
+                                EyeIcon { icon_color: root.on_accent_container; }
+                            }
+                            if root.hw_serial_revealed: M3Button {
+                                text: "Copy";
+                                primary: false;
+                                clicked => { root.copy_serial(); }
+                                CopyIcon { icon_color: #e8def8; }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Dedicated Battery Health & Telemetry Card
+    M3Card {
+        VerticalLayout {
+            padding: 16px;
+            spacing: 14px;
+
+            HorizontalLayout {
+                alignment: space-between;
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+                    BatteryIcon {
+                        icon_color: root.accent_color;
+                    }
+                    Text {
+                        text: "Battery Health & Telemetry";
+                        color: #f1f5f9;
+                        font-size: 15px;
+                        font-weight: 600;
+                    }
+                }
+                M3Badge {
+                    text: root.hw_battery_status;
+                    badge_color: root.hw_battery_status == "Charging" ? #1e382b : (root.hw_battery_status == "Full" ? #1e382b : #2d263b);
+                    text_color: root.hw_battery_status == "Charging" ? #a6e3a1 : (root.hw_battery_status == "Full" ? #a6e3a1 : #d0bcff);
+                }
+            }
+
+            Rectangle {
+                height: 1px;
+                background: #2b2930;
+            }
+
+            VerticalLayout {
+                spacing: 12px;
+
+                HorizontalLayout {
+                    spacing: 16px;
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        spacing: 2px;
+                        Text { text: "Charge Level"; color: #94a3b8; font-size: 11px; }
+                        Text { text: root.hw_battery_pct; color: #f1f5f9; font-size: 14px; font-weight: 700; }
+                    }
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        spacing: 2px;
+                        Text { text: "Battery Health"; color: #94a3b8; font-size: 11px; }
+                        Text { text: root.hw_battery_health; color: #a6e3a1; font-size: 14px; font-weight: 700; }
+                    }
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        spacing: 2px;
+                        Text { text: "Cycle Count"; color: #94a3b8; font-size: 11px; }
+                        Text { text: root.hw_battery_cycles; color: #f1f5f9; font-size: 14px; font-weight: 700; }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 16px;
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        spacing: 2px;
+                        Text { text: "Battery Model"; color: #94a3b8; font-size: 11px; }
+                        Text { text: root.hw_battery_id; color: #f1f5f9; font-size: 13px; font-weight: 600; }
+                    }
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        spacing: 2px;
+                        Text { text: "Manufacturer"; color: #94a3b8; font-size: 11px; }
+                        Text { text: root.hw_battery_manufacturer; color: #f1f5f9; font-size: 13px; font-weight: 600; }
+                    }
+                }
+            }
+        }
+    }
+
+    // Hardware Compatibility Test Suite Card
+    M3Card {
+        VerticalLayout {
+            padding: 16px;
+            spacing: 14px;
+
+            HorizontalLayout {
+                alignment: space-between;
+                VerticalLayout {
+                    spacing: 2px;
+                    Text {
+                        text: "Hardware Compatibility Test Suite";
+                        color: #f1f5f9;
+                        font-size: 15px;
+                        font-weight: 600;
+                    }
+                    Text {
+                        text: "Platform Interface, RGB Controller, Compositor Dimming & Hotkey Validation";
+                        color: #94a3b8;
+                        font-size: 11px;
+                    }
+                }
+
+                M3Button {
+                    text: root.is_diagnosing ? "Testing..." : "Run Diagnostics";
+                    primary: true;
+                    primary_bg: root.accent_container;
+                    primary_text: root.on_accent_container;
+                    clicked => { root.run_diagnostics(); }
+                    RefreshIcon { icon_color: root.on_accent_container; }
+                }
+            }
+
+            Rectangle {
+                height: 1px;
+                background: #2b2930;
+            }
+
+            VerticalLayout {
+                spacing: 8px;
+
+                // 1. Platform Thermal Profile Backend
+                Rectangle {
+                    background: touch_wmi.has-hover ? #201e26 : #18171d;
+                    border-radius: 8px;
+                    border-width: 1px;
+                    border-color: touch_wmi.has-hover ? #3e3b46 : #2b2930;
+                    animate background { duration: 150ms; }
+                    animate border-color { duration: 150ms; }
+
+                    touch_wmi := TouchArea {}
+
+                    VerticalLayout {
+                        padding-left: 14px;
+                        padding-right: 14px;
+                        padding-top: 10px;
+                        padding-bottom: 10px;
+                        spacing: 6px;
+
+                        HorizontalLayout {
+                            spacing: 12px;
+
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                min-width: 0px;
+                                alignment: center;
+                                spacing: 3px;
+
+                                Text {
+                                    text: "Platform Power & Thermal Backend";
+                                    color: #f1f5f9;
+                                    font-size: 13px;
+                                    font-weight: 600;
+                                    overflow: elide;
+                                }
+                                Text {
+                                    text: "Controls CPU performance modes and platform power profiles";
+                                    color: #94a3b8;
+                                    font-size: 11px;
+                                    wrap: word-wrap;
+                                }
+                            }
+
+                            VerticalLayout {
+                                horizontal-stretch: 0;
+                                alignment: center;
+
+                                M3Badge {
+                                    text: root.diag_wmi_status;
+                                    badge_color: root.diag_wmi_status == "Supported" ? #1e382b : (root.diag_wmi_status == "Degraded" ? #3b2d18 : #381a1a);
+                                    text_color: root.diag_wmi_status == "Supported" ? #a6e3a1 : (root.diag_wmi_status == "Degraded" ? #fab387 : #f38ba8);
+                                }
+                            }
+                        }
+
+                        if touch_wmi.has-hover && root.diag_wmi_desc != "" : Rectangle {
+                            background: #111015;
+                            border-radius: 4px;
+                            border-width: 1px;
+                            border-color: #2b2930;
+
+                            HorizontalLayout {
+                                padding-left: 8px;
+                                padding-right: 8px;
+                                padding-top: 4px;
+                                padding-bottom: 4px;
+                                spacing: 6px;
+
+                                Text {
+                                    text: "Endpoint:";
+                                    color: #64748b;
+                                    font-size: 10px;
+                                    font-weight: 600;
+                                }
+                                Text {
+                                    text: root.diag_wmi_desc;
+                                    color: #cbd5e1;
+                                    font-size: 10px;
+                                    overflow: elide;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 2. Hardware RGB Lighting Controller
+                Rectangle {
+                    background: touch_rgb.has-hover ? #201e26 : #18171d;
+                    border-radius: 8px;
+                    border-width: 1px;
+                    border-color: touch_rgb.has-hover ? #3e3b46 : #2b2930;
+                    animate background { duration: 150ms; }
+                    animate border-color { duration: 150ms; }
+
+                    touch_rgb := TouchArea {}
+
+                    VerticalLayout {
+                        padding-left: 14px;
+                        padding-right: 14px;
+                        padding-top: 10px;
+                        padding-bottom: 10px;
+                        spacing: 6px;
+
+                        HorizontalLayout {
+                            spacing: 12px;
+
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                min-width: 0px;
+                                alignment: center;
+                                spacing: 3px;
+
+                                Text {
+                                    text: "Hardware RGB Lighting Controller";
+                                    color: #f1f5f9;
+                                    font-size: 13px;
+                                    font-weight: 600;
+                                    overflow: elide;
+                                }
+                                Text {
+                                    text: "Manages keyboard backlight effects and RGB lighting";
+                                    color: #94a3b8;
+                                    font-size: 11px;
+                                    wrap: word-wrap;
+                                }
+                            }
+
+                            VerticalLayout {
+                                horizontal-stretch: 0;
+                                alignment: center;
+
+                                M3Badge {
+                                    text: root.diag_rgb_status;
+                                    badge_color: root.diag_rgb_status == "Supported" ? #1e382b : (root.diag_rgb_status == "Degraded" ? #3b2d18 : #381a1a);
+                                    text_color: root.diag_rgb_status == "Supported" ? #a6e3a1 : (root.diag_rgb_status == "Degraded" ? #fab387 : #f38ba8);
+                                }
+                            }
+                        }
+
+                        if touch_rgb.has-hover && root.diag_rgb_desc != "" : Rectangle {
+                            background: #111015;
+                            border-radius: 4px;
+                            border-width: 1px;
+                            border-color: #2b2930;
+
+                            HorizontalLayout {
+                                padding-left: 8px;
+                                padding-right: 8px;
+                                padding-top: 4px;
+                                padding-bottom: 4px;
+                                spacing: 6px;
+
+                                Text {
+                                    text: "Controller:";
+                                    color: #64748b;
+                                    font-size: 10px;
+                                    font-weight: 600;
+                                }
+                                Text {
+                                    text: root.diag_rgb_desc;
+                                    color: #cbd5e1;
+                                    font-size: 10px;
+                                    overflow: elide;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 3. OLED Flicker-Free Dimming
+                Rectangle {
+                    background: touch_oled.has-hover ? #201e26 : #18171d;
+                    border-radius: 8px;
+                    border-width: 1px;
+                    border-color: touch_oled.has-hover ? #3e3b46 : #2b2930;
+                    animate background { duration: 150ms; }
+                    animate border-color { duration: 150ms; }
+
+                    touch_oled := TouchArea {}
+
+                    VerticalLayout {
+                        padding-left: 14px;
+                        padding-right: 14px;
+                        padding-top: 10px;
+                        padding-bottom: 10px;
+                        spacing: 6px;
+
+                        HorizontalLayout {
+                            spacing: 12px;
+
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                min-width: 0px;
+                                alignment: center;
+                                spacing: 3px;
+
+                                Text {
+                                    text: "OLED Flicker-Free Compositor Dimming";
+                                    color: #f1f5f9;
+                                    font-size: 13px;
+                                    font-weight: 600;
+                                    overflow: elide;
+                                }
+                                Text {
+                                    text: "Desktop-level brightness control without panel flicker";
+                                    color: #94a3b8;
+                                    font-size: 11px;
+                                    wrap: word-wrap;
+                                }
+                            }
+
+                            VerticalLayout {
+                                horizontal-stretch: 0;
+                                alignment: center;
+
+                                M3Badge {
+                                    text: root.diag_oled_status;
+                                    badge_color: root.diag_oled_status == "Supported" ? #1e382b : (root.diag_oled_status == "Degraded" ? #3b2d18 : #381a1a);
+                                    text_color: root.diag_oled_status == "Supported" ? #a6e3a1 : (root.diag_oled_status == "Degraded" ? #fab387 : #f38ba8);
+                                }
+                            }
+                        }
+
+                        if touch_oled.has-hover && root.diag_oled_desc != "" : Rectangle {
+                            background: #111015;
+                            border-radius: 4px;
+                            border-width: 1px;
+                            border-color: #2b2930;
+
+                            HorizontalLayout {
+                                padding-left: 8px;
+                                padding-right: 8px;
+                                padding-top: 4px;
+                                padding-bottom: 4px;
+                                spacing: 6px;
+
+                                Text {
+                                    text: "Backend:";
+                                    color: #64748b;
+                                    font-size: 10px;
+                                    font-weight: 600;
+                                }
+                                Text {
+                                    text: root.diag_oled_desc;
+                                    color: #cbd5e1;
+                                    font-size: 10px;
+                                    overflow: elide;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 4. ACPI Hotkeys (Fn+F)
+                Rectangle {
+                    background: touch_hotkey.has-hover ? #201e26 : #18171d;
+                    border-radius: 8px;
+                    border-width: 1px;
+                    border-color: touch_hotkey.has-hover ? #3e3b46 : #2b2930;
+                    animate background { duration: 150ms; }
+                    animate border-color { duration: 150ms; }
+
+                    touch_hotkey := TouchArea {}
+
+                    VerticalLayout {
+                        padding-left: 14px;
+                        padding-right: 14px;
+                        padding-top: 10px;
+                        padding-bottom: 10px;
+                        spacing: 6px;
+
+                        HorizontalLayout {
+                            spacing: 12px;
+
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                min-width: 0px;
+                                alignment: center;
+                                spacing: 3px;
+
+                                Text {
+                                    text: "Fn+F ACPI / Evdev Hotkey Listener";
+                                    color: #f1f5f9;
+                                    font-size: 13px;
+                                    font-weight: 600;
+                                    overflow: elide;
+                                }
+                                Text {
+                                    text: "Handles hardware hotkeys for instant fan and power profile switching";
+                                    color: #94a3b8;
+                                    font-size: 11px;
+                                    wrap: word-wrap;
+                                }
+                            }
+
+                            VerticalLayout {
+                                horizontal-stretch: 0;
+                                alignment: center;
+
+                                M3Badge {
+                                    text: root.diag_hotkey_status;
+                                    badge_color: root.diag_hotkey_status == "Supported" ? #1e382b : (root.diag_hotkey_status == "Degraded" ? #3b2d18 : #381a1a);
+                                    text_color: root.diag_hotkey_status == "Supported" ? #a6e3a1 : (root.diag_hotkey_status == "Degraded" ? #fab387 : #f38ba8);
+                                }
+                            }
+                        }
+
+                        if touch_hotkey.has-hover && root.diag_hotkey_desc != "" : Rectangle {
+                            background: #111015;
+                            border-radius: 4px;
+                            border-width: 1px;
+                            border-color: #2b2930;
+
+                            HorizontalLayout {
+                                padding-left: 8px;
+                                padding-right: 8px;
+                                padding-top: 4px;
+                                padding-bottom: 4px;
+                                spacing: 6px;
+
+                                Text {
+                                    text: "Interface:";
+                                    color: #64748b;
+                                    font-size: 10px;
+                                    font-weight: 600;
+                                }
+                                Text {
+                                    text: root.diag_hotkey_desc;
+                                    color: #cbd5e1;
+                                    font-size: 10px;
+                                    overflow: elide;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 5. Battery Charge Limit
+                Rectangle {
+                    background: touch_charge.has-hover ? #201e26 : #18171d;
+                    border-radius: 8px;
+                    border-width: 1px;
+                    border-color: touch_charge.has-hover ? #3e3b46 : #2b2930;
+                    animate background { duration: 150ms; }
+                    animate border-color { duration: 150ms; }
+
+                    touch_charge := TouchArea {}
+
+                    VerticalLayout {
+                        padding-left: 14px;
+                        padding-right: 14px;
+                        padding-top: 10px;
+                        padding-bottom: 10px;
+                        spacing: 6px;
+
+                        HorizontalLayout {
+                            spacing: 12px;
+
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                min-width: 0px;
+                                alignment: center;
+                                spacing: 3px;
+
+                                Text {
+                                    text: "Battery Hardware Charge Threshold";
+                                    color: #f1f5f9;
+                                    font-size: 13px;
+                                    font-weight: 600;
+                                    overflow: elide;
+                                }
+                                Text {
+                                    text: "Limits maximum battery charge level to prolong hardware lifespan";
+                                    color: #94a3b8;
+                                    font-size: 11px;
+                                    wrap: word-wrap;
+                                }
+                            }
+
+                            VerticalLayout {
+                                horizontal-stretch: 0;
+                                alignment: center;
+
+                                M3Badge {
+                                    text: root.diag_charge_status;
+                                    badge_color: root.diag_charge_status == "Supported" ? #1e382b : (root.diag_charge_status == "Degraded" ? #3b2d18 : #381a1a);
+                                    text_color: root.diag_charge_status == "Supported" ? #a6e3a1 : (root.diag_charge_status == "Degraded" ? #fab387 : #f38ba8);
+                                }
+                            }
+                        }
+
+                        if touch_charge.has-hover && root.diag_charge_desc != "" : Rectangle {
+                            background: #111015;
+                            border-radius: 4px;
+                            border-width: 1px;
+                            border-color: #2b2930;
+
+                            HorizontalLayout {
+                                padding-left: 8px;
+                                padding-right: 8px;
+                                padding-top: 4px;
+                                padding-bottom: 4px;
+                                spacing: 6px;
+
+                                Text {
+                                    text: "Sysfs Node:";
+                                    color: #64748b;
+                                    font-size: 10px;
+                                    font-weight: 600;
+                                }
+                                Text {
+                                    text: root.diag_charge_desc;
+                                    color: #cbd5e1;
+                                    font-size: 10px;
+                                    overflow: elide;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Application Preferences & System Integration Card
+    M3Card {
+        VerticalLayout {
+            padding: 16px;
+            spacing: 14px;
+
+            HorizontalLayout {
+                alignment: space-between;
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+                    ShieldIcon {
+                        icon_color: root.accent_color;
+                    }
+                    Text {
+                        text: "Application Preferences & System Integration";
+                        color: #f1f5f9;
+                        font-size: 15px;
+                        font-weight: 600;
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 1px;
+                background: #2b2930;
+            }
+
+            VerticalLayout {
+                spacing: 12px;
+
+                // 1. System Tray Toggle
+                HorizontalLayout {
+                    alignment: space-between;
+                    VerticalLayout {
+                        spacing: 2px;
+                        Text {
+                            text: "Enable Universal System Tray Icon";
+                            color: #f1f5f9;
+                            font-size: 13px;
+                            font-weight: 600;
+                        }
+                        Text {
+                            text: "Keeps Alatus in the system notification area. Closing the window minimizes to tray instead of exiting.";
+                            color: #94a3b8;
+                            font-size: 11px;
+                        }
+                    }
+                    M3Switch {
+                        checked: root.tray_enabled;
+                        active_color: root.accent_color;
+                        toggled(val) => {
+                            root.tray_enabled = val;
+                            root.toggle_tray(val);
+                        }
+                    }
+                }
+
+                Rectangle {
+                    height: 1px;
+                    background: #1f1d24;
+                }
+
+                // 2. Autostart Toggle
+                HorizontalLayout {
+                    alignment: space-between;
+                    VerticalLayout {
+                        spacing: 2px;
+                        Text {
+                            text: "Launch on System Startup";
+                            color: #f1f5f9;
+                            font-size: 13px;
+                            font-weight: 600;
+                        }
+                        Text {
+                            text: "Automatically launches Alatus minimized in system tray upon desktop login (~/.config/autostart).";
+                            color: #94a3b8;
+                            font-size: 11px;
+                        }
+                    }
+                    M3Switch {
+                        checked: root.autostart_enabled;
+                        active_color: root.accent_color;
+                        toggled(val) => {
+                            root.autostart_enabled = val;
+                            root.toggle_autostart(val);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

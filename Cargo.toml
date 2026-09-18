@@ -1,10 +1,10 @@
 [package]
 name = "alatus"
-version = "1.2.0"
+version = "2.0.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
 repository = "https://github.com/strixwolf01/Alatus"
-description = "ASUS Hardware Orchestration Suite for Linux"
+description = "Modern hardware orchestration suite for ASUS laptops on Linux"
 authors = ["Alatus Contributors"]
 
 [lib]
@@ -88,6 +88,14 @@ assets = [
     ["packaging/autostart/io.strixwolf.alatus.desktop", "etc/xdg/autostart/io.strixwolf.alatus.desktop", "644"],
     ["packaging/io.strixwolf.alatus.conf", "usr/share/dbus-1/system.d/io.strixwolf.alatus.Daemon.conf", "644"],
     ["packaging/udev/99-alatus-rgb.rules", "usr/lib/udev/rules.d/99-alatus-rgb.rules", "644"],
+    ["assets/icons/modes/quiet.svg", "usr/share/alatus/icons/modes/quiet.svg", "644"],
+    ["assets/icons/modes/balanced.svg", "usr/share/alatus/icons/modes/balanced.svg", "644"],
+    ["assets/icons/modes/performance.svg", "usr/share/alatus/icons/modes/performance.svg", "644"],
+    ["assets/icons/modes/full_speed.svg", "usr/share/alatus/icons/modes/full_speed.svg", "644"],
+    ["assets/icons/modes/quiet.svg", "usr/share/icons/hicolor/scalable/apps/alatus-mode-quiet.svg", "644"],
+    ["assets/icons/modes/balanced.svg", "usr/share/icons/hicolor/scalable/apps/alatus-mode-balanced.svg", "644"],
+    ["assets/icons/modes/performance.svg", "usr/share/icons/hicolor/scalable/apps/alatus-mode-performance.svg", "644"],
+    ["assets/icons/modes/full_speed.svg", "usr/share/icons/hicolor/scalable/apps/alatus-mode-full-speed.svg", "644"],
 ]
 
 [package.metadata.generate-rpm]
@@ -120,7 +128,15 @@ assets = [
     { source = "packaging/graphical-session.target.wants/alatus-session.service", dest = "/usr/lib/systemd/user/graphical-session.target.wants/alatus-session.service", mode = "644" },
     { source = "packaging/autostart/io.strixwolf.alatus.desktop", dest = "/etc/xdg/autostart/io.strixwolf.alatus.desktop", mode = "644" },
     { source = "packaging/io.strixwolf.alatus.conf", dest = "/usr/share/dbus-1/system.d/io.strixwolf.alatus.Daemon.conf", mode = "644" },
-    { source = "packaging/udev/99-alatus-rgb.rules", dest = "/usr/lib/udev/rules.d/99-alatus-rgb.rules", mode = "644" }
+    { source = "packaging/udev/99-alatus-rgb.rules", dest = "/usr/lib/udev/rules.d/99-alatus-rgb.rules", mode = "644" },
+    { source = "assets/icons/modes/quiet.svg", dest = "/usr/share/alatus/icons/modes/quiet.svg", mode = "644" },
+    { source = "assets/icons/modes/balanced.svg", dest = "/usr/share/alatus/icons/modes/balanced.svg", mode = "644" },
+    { source = "assets/icons/modes/performance.svg", dest = "/usr/share/alatus/icons/modes/performance.svg", mode = "644" },
+    { source = "assets/icons/modes/full_speed.svg", dest = "/usr/share/alatus/icons/modes/full_speed.svg", mode = "644" },
+    { source = "assets/icons/modes/quiet.svg", dest = "/usr/share/icons/hicolor/scalable/apps/alatus-mode-quiet.svg", mode = "644" },
+    { source = "assets/icons/modes/balanced.svg", dest = "/usr/share/icons/hicolor/scalable/apps/alatus-mode-balanced.svg", mode = "644" },
+    { source = "assets/icons/modes/performance.svg", dest = "/usr/share/icons/hicolor/scalable/apps/alatus-mode-performance.svg", mode = "644" },
+    { source = "assets/icons/modes/full_speed.svg", dest = "/usr/share/icons/hicolor/scalable/apps/alatus-mode-full-speed.svg", mode = "644" },
 ]
 post_install_script = """
 if ! getent group alatus-rgb >/dev/null; then

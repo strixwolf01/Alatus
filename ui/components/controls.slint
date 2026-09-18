@@ -1,0 +1,326 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Alatus Contributors
+
+export component M3Badge inherits Rectangle {
+    in property <string> text;
+    in property <color> badge_color: #4a4458;
+    in property <color> text_color: #e8def8;
+    background: badge_color;
+    border-radius: 6px;
+    height: 24px;
+
+    HorizontalLayout {
+        padding-left: 10px;
+        padding-right: 10px;
+        spacing: 6px;
+        alignment: center;
+
+        VerticalLayout {
+            alignment: center;
+            @children
+        }
+
+        Text {
+            text: root.text;
+            color: root.text_color;
+            font-size: 11px;
+            font-weight: 600;
+            vertical-alignment: center;
+        }
+    }
+}
+
+export component NavItem inherits Rectangle {
+    in property <string> label;
+    in property <bool> selected: false;
+    in property <color> accent_container: #4f378b;
+    in property <color> on_accent_container: #eaddff;
+    callback clicked();
+
+    height: 40px;
+    border-radius: 20px;
+    background: selected ? accent_container : (touch.has-hover ? #211f26 : transparent);
+    animate background { duration: 150ms; }
+
+    HorizontalLayout {
+        padding-left: 14px;
+        padding-right: 14px;
+        spacing: 12px;
+        alignment: start;
+
+        VerticalLayout {
+            alignment: center;
+            @children
+        }
+
+        Text {
+            text: root.label;
+            color: root.selected ? root.on_accent_container : #94a3b8;
+            font-size: 13px;
+            font-weight: root.selected ? 700 : 500;
+            vertical-alignment: center;
+        }
+    }
+
+    touch := TouchArea {
+        width: 100%;
+        height: 100%;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component M3Button inherits Rectangle {
+    in property <string> text;
+    in property <bool> primary: false;
+    in property <color> primary_bg: #d0bcff;
+    in property <color> primary_text: #381e72;
+    callback clicked();
+
+    height: 32px;
+    border-radius: 16px;
+    background: primary ? (touch.pressed ? primary_bg.darker(15%) : (touch.has-hover ? primary_bg.darker(8%) : primary_bg))
+                        : (touch.pressed ? #3b3842 : (touch.has-hover ? #2e2b34 : #24222a));
+    animate background { duration: 150ms; }
+
+    HorizontalLayout {
+        padding-left: 14px;
+        padding-right: 14px;
+        alignment: center;
+        spacing: 6px;
+
+        VerticalLayout {
+            alignment: center;
+            @children
+        }
+
+        Text {
+            text: root.text;
+            color: root.primary ? root.primary_text : #e8def8;
+            font-size: 12px;
+            font-weight: 600;
+            vertical-alignment: center;
+        }
+    }
+
+    touch := TouchArea {
+        width: 100%;
+        height: 100%;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component M3Segment inherits Rectangle {
+    in property <string> text;
+    in property <bool> selected: false;
+    in property <color> accent_container: #4f378b;
+    in property <color> on_accent_container: #eaddff;
+    callback clicked();
+
+    horizontal-stretch: 1;
+    border-radius: 8px;
+    background: selected ? accent_container : (touch.has-hover ? #2b2930 : transparent);
+    animate background { duration: 150ms; }
+
+    HorizontalLayout {
+        padding-top: 6px;
+        padding-bottom: 6px;
+        padding-left: 12px;
+        padding-right: 12px;
+        alignment: center;
+        Text {
+            text: root.text;
+            color: root.selected ? root.on_accent_container : #94a3b8;
+            font-size: 12px;
+            font-weight: root.selected ? 700 : 500;
+            vertical-alignment: center;
+        }
+    }
+
+    touch := TouchArea {
+        width: 100%;
+        height: 100%;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component M3Chip inherits Rectangle {
+    in property <string> text;
+    in property <bool> selected: false;
+    in property <color> accent_color: #d0bcff;
+    in property <color> accent_container: #4f378b;
+    in property <color> on_accent_container: #eaddff;
+    callback clicked();
+
+    height: 32px;
+    border-radius: 8px;
+    background: selected ? accent_container : (touch.has-hover ? #2b2930 : #211f26);
+    border-width: selected ? 1px : 0px;
+    border-color: accent_color;
+    animate background { duration: 150ms; }
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        alignment: center;
+
+        Text {
+            text: root.text;
+            color: root.selected ? root.on_accent_container : #cbd5e1;
+            font-size: 12px;
+            font-weight: root.selected ? 600 : 400;
+            vertical-alignment: center;
+        }
+    }
+
+    touch := TouchArea {
+        width: 100%;
+        height: 100%;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component M3ColorChip inherits Rectangle {
+    in property <string> text;
+    in property <color> dot_color: transparent;
+    in property <bool> is_auto: false;
+    in property <bool> selected: false;
+    in property <color> accent_color: #d0bcff;
+    in property <color> accent_container: #4f378b;
+    in property <color> on_accent_container: #eaddff;
+    callback clicked();
+
+    height: 32px;
+    border-radius: 8px;
+    background: selected ? accent_container : (touch.has-hover ? #2b2930 : #211f26);
+    border-width: selected ? 1px : 0px;
+    border-color: accent_color;
+    animate background { duration: 150ms; }
+
+    HorizontalLayout {
+        padding-left: 10px;
+        padding-right: 12px;
+        spacing: 8px;
+        alignment: center;
+
+        if !root.is_auto: VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 10px;
+                height: 10px;
+                border-radius: 5px;
+                background: root.dot_color;
+                border-width: 1px;
+                border-color: #ffffff33;
+            }
+        }
+
+        Text {
+            text: root.text;
+            color: root.selected ? root.on_accent_container : #cbd5e1;
+            font-size: 12px;
+            font-weight: root.selected ? 600 : 400;
+            vertical-alignment: center;
+        }
+    }
+
+    touch := TouchArea {
+        width: 100%;
+        height: 100%;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component M3Slider inherits Rectangle {
+    in-out property <int> value: 50;
+    in property <int> min: 0;
+    in property <int> max: 100;
+    in property <int> step: 1;
+    in property <color> fill_color: #d0bcff;
+    in property <color> track_color: #3b3842;
+    callback value_changed(int);
+
+    height: 28px;
+
+    // Background track
+    track := Rectangle {
+        x: 0;
+        y: (parent.height - self.height) / 2;
+        width: parent.width;
+        height: 6px;
+        border-radius: 3px;
+        background: root.track_color;
+
+        // Filled active track
+        fill := Rectangle {
+            x: 0;
+            width: parent.width * Math.max(0.0, Math.min(1.0, ((root.value - root.min) * 1.0) / Math.max(1.0, (root.max - root.min) * 1.0)));
+            height: parent.height;
+            border-radius: 3px;
+            background: root.fill_color;
+        }
+    }
+
+    // Thumb
+    thumb := Rectangle {
+        x: Math.max(0px, Math.min(parent.width - self.width, parent.width * Math.max(0.0, Math.min(1.0, ((root.value - root.min) * 1.0) / Math.max(1.0, (root.max - root.min) * 1.0))) - self.width / 2));
+        y: (parent.height - self.height) / 2;
+        width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        background: root.fill_color;
+        border-width: 2px;
+        border-color: #141218;
+    }
+
+    TouchArea {
+        width: 100%;
+        height: 100%;
+        moved => {
+            if (self.pressed) {
+                let ratio = Math.max(0.0, Math.min(1.0, self.mouse-x / parent.width));
+                let raw = root.min + ratio * (root.max - root.min);
+                let stepped = Math.round(raw / root.step) * root.step;
+                root.value = Math.max(root.min, Math.min(root.max, stepped));
+                root.value_changed(root.value);
+            }
+        }
+        clicked => {
+            let ratio = Math.max(0.0, Math.min(1.0, self.mouse-x / parent.width));
+            let raw = root.min + ratio * (root.max - root.min);
+            let stepped = Math.round(raw / root.step) * root.step;
+            root.value = Math.max(root.min, Math.min(root.max, stepped));
+            root.value_changed(root.value);
+        }
+    }
+}
+
+export component M3Switch inherits Rectangle {
+    in-out property <bool> checked: false;
+    in property <color> active_color: #d0bcff;
+    callback toggled(bool);
+
+    width: 46px;
+    height: 26px;
+    border-radius: 13px;
+    background: root.checked ? root.active_color : #2b2930;
+    animate background { duration: 150ms; }
+
+    Rectangle {
+        width: 20px;
+        height: 20px;
+        border-radius: 10px;
+        background: root.checked ? #1e1035 : #938f99;
+        x: root.checked ? parent.width - self.width - 3px : 3px;
+        y: 3px;
+        animate x { duration: 150ms; easing: ease-out; }
+        animate background { duration: 150ms; }
+    }
+
+    TouchArea {
+        clicked => {
+            root.checked = !root.checked;
+            root.toggled(root.checked);
+        }
+    }
+}
+

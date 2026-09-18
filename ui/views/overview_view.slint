@@ -1,0 +1,269 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Alatus Contributors
+
+import { M3Card, StatCard } from "../components/cards.slint";
+import { M3Badge, M3Segment } from "../components/controls.slint";
+import { BoltIcon, BatteryIcon, ShieldIcon } from "../components/icons.slint";
+
+export component OverviewView inherits VerticalLayout {
+    in property <string> power_source: "AC";
+    in property <string> hw_model: "Hardware Device";
+    in property <string> hw_bios: "BIOS: --";
+    in property <string> cpu_temp: "--°C";
+    in property <string> fan_rpm: "-- RPM";
+    in property <int> thermal_mode: 1;
+    in property <string> oled_screen_hours: "0.0";
+    in property <color> accent_color: #d0bcff;
+    in property <color> accent_container: #4f378b;
+    in property <color> on_accent_container: #eaddff;
+    in property <string> thermal_capability: "supported";
+    in property <string> thermal_unavailable_reason: "";
+    callback set_thermal_mode(int);
+
+    horizontal-stretch: 1;
+    spacing: 14px;
+    alignment: start;
+
+    // Telemetry Header Row
+    HorizontalLayout {
+        alignment: space-between;
+        VerticalLayout {
+            spacing: 2px;
+            Text {
+                text: "System Overview";
+                color: #f1f5f9;
+                font-size: 18px;
+                font-weight: 700;
+            }
+            Text {
+                text: "Live real-time telemetry and hardware status";
+                color: #94a3b8;
+                font-size: 11px;
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: end;
+            M3Badge {
+                text: root.power_source;
+                badge_color: root.power_source == "AC" ? #1e382b : #211f26;
+                text_color: root.power_source == "AC" ? #a6e3a1 : #e8def8;
+                if root.power_source == "AC": BoltIcon {
+                    icon_color: #a6e3a1;
+                }
+                if root.power_source != "AC": BatteryIcon {
+                    icon_color: #e8def8;
+                }
+            }
+        }
+    }
+
+    // Hardware Specifications Card (Model, BIOS)
+    M3Card {
+        VerticalLayout {
+            padding: 14px;
+            spacing: 10px;
+
+            HorizontalLayout {
+                alignment: space-between;
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+                    ShieldIcon {
+                        icon_color: root.accent_color;
+                    }
+                    Text {
+                        text: "Hardware Specifications";
+                        color: #f1f5f9;
+                        font-size: 14px;
+                        font-weight: 600;
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 1px;
+                background: #2b2930;
+            }
+
+            HorizontalLayout {
+                spacing: 24px;
+                alignment: start;
+
+                // Model
+                VerticalLayout {
+                    spacing: 2px;
+                    Text {
+                        text: "Product Model";
+                        color: #94a3b8;
+                        font-size: 11px;
+                    }
+                    Text {
+                        text: root.hw_model;
+                        color: #f1f5f9;
+                        font-size: 13px;
+                        font-weight: 600;
+                    }
+                }
+
+                // BIOS
+                VerticalLayout {
+                    spacing: 2px;
+                    Text {
+                        text: "BIOS Version";
+                        color: #94a3b8;
+                        font-size: 11px;
+                    }
+                    Text {
+                        text: root.hw_bios;
+                        color: #f1f5f9;
+                        font-size: 13px;
+                        font-weight: 600;
+                    }
+                }
+            }
+        }
+    }
+
+    // 2x2 Telemetry Grid (Adaptive without horizontal scroll)
+    VerticalLayout {
+        spacing: 12px;
+        HorizontalLayout {
+            spacing: 12px;
+            StatCard {
+                title: "CPU Temperature";
+                value: root.cpu_temp;
+                subtitle: "Thermal Sensors";
+                value_color: #fab387;
+            }
+            StatCard {
+                title: "Cooling Fan";
+                value: root.fan_rpm;
+                subtitle: "Active Speed";
+                value_color: #89b4fa;
+            }
+        }
+        HorizontalLayout {
+            spacing: 12px;
+            StatCard {
+                title: "Thermal Profile";
+                value: root.thermal_mode == 0 ? "Quiet" :
+                       root.thermal_mode == 1 ? "Balanced" :
+                       root.thermal_mode == 2 ? "Performance" : "Full Speed";
+                subtitle: "Platform Thermal Profile";
+                value_color: root.accent_color;
+            }
+            StatCard {
+                title: "Screen-On Time";
+                value: root.oled_screen_hours + " hrs";
+                subtitle: "OLED Care Tracker";
+                value_color: #a6e3a1;
+            }
+        }
+    }
+
+    // Quick Thermal Profile Selector
+    M3Card {
+        VerticalLayout {
+            padding: 14px;
+            spacing: 10px;
+
+            HorizontalLayout {
+                alignment: space-between;
+                Text {
+                    text: "Quick Thermal Mode";
+                    color: #f1f5f9;
+                    font-size: 14px;
+                    font-weight: 600;
+                }
+                Text {
+                    text: root.thermal_mode == 0 ? "Quiet (Silent Acoustic Priority)" :
+                          root.thermal_mode == 1 ? "Balanced (Standard Dynamic)" :
+                          root.thermal_mode == 2 ? "Performance (Elevated TDP)" : "Full Speed (Maximum Fan Curve)";
+                    color: root.accent_color;
+                    font-size: 12px;
+                }
+            }
+
+            if root.thermal_capability == "unavailable": Rectangle {
+                background: #2a2015;
+                border-radius: 8px;
+                HorizontalLayout {
+                    padding: 8px;
+                    spacing: 8px;
+                    alignment: start;
+                    Text {
+                        text: "⚠️ Thermal controls unavailable: " + (root.thermal_unavailable_reason != "" ? root.thermal_unavailable_reason : "Kernel interface missing");
+                        color: #fab387;
+                        font-size: 11px;
+                    }
+                }
+            }
+            if root.thermal_capability == "unsupported": Rectangle {
+                background: #1c1a22;
+                border-radius: 8px;
+                HorizontalLayout {
+                    padding: 8px;
+                    spacing: 8px;
+                    alignment: center;
+                    Text {
+                        text: "Thermal mode switching not supported on this profile";
+                        color: #94a3b8;
+                        font-size: 12px;
+                    }
+                }
+            }
+
+            // 4 Mode Segment Selector
+            Rectangle {
+                background: #18171d;
+                border-radius: 10px;
+                height: 42px;
+
+                HorizontalLayout {
+                    padding: 3px;
+                    spacing: 4px;
+
+                    M3Segment {
+                        text: "Quiet";
+                        selected: root.thermal_mode == 0;
+                        accent_container: root.accent_container;
+                        on_accent_container: root.on_accent_container;
+                        clicked => {
+                            root.set_thermal_mode(0);
+                        }
+                    }
+                    M3Segment {
+                        text: "Balanced";
+                        selected: root.thermal_mode == 1;
+                        accent_container: root.accent_container;
+                        on_accent_container: root.on_accent_container;
+                        clicked => {
+                            root.set_thermal_mode(1);
+                        }
+                    }
+                    M3Segment {
+                        text: "Performance";
+                        selected: root.thermal_mode == 2;
+                        accent_container: root.accent_container;
+                        on_accent_container: root.on_accent_container;
+                        clicked => {
+                            root.set_thermal_mode(2);
+                        }
+                    }
+                    M3Segment {
+                        text: "Full Speed";
+                        selected: root.thermal_mode == 3;
+                        accent_container: root.accent_container;
+                        on_accent_container: root.on_accent_container;
+                        clicked => {
+                            root.set_thermal_mode(3);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

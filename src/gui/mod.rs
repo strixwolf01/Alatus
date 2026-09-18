@@ -31,7 +31,7 @@ use tracing::{error, info, warn};
 
 pub async fn run_gui(minimized: bool) -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
-    info!("Starting Alatus Hardware Control Center GUI...");
+    info!("Starting Alatus - ASUS Hardware Control Center GUI...");
 
     let args: Vec<String> = std::env::args().collect();
     let start_minimized = minimized
@@ -405,7 +405,7 @@ pub async fn run_gui(minimized: bool) -> Result<(), Box<dyn std::error::Error>> 
                             if let Ok(conn) = zbus::Connection::session().await {
                                 let _ = send_desktop_notification(
                                     &conn,
-                                    "ASUS OLED Care: Pixel Refresh Started",
+                                    "OLED Care: Pixel Refresh Started",
                                     "Conditioning OLED panel to relieve subpixel stress...",
                                 )
                                 .await;
@@ -418,7 +418,7 @@ pub async fn run_gui(minimized: bool) -> Result<(), Box<dyn std::error::Error>> 
                                 if let Ok(conn) = zbus::Connection::session().await {
                                     let _ = send_desktop_notification(
                                         &conn,
-                                        "ASUS OLED Care: Pixel Refresh Completed",
+                                        "OLED Care: Pixel Refresh Completed",
                                         "Panel conditioning cycle finished successfully.",
                                     )
                                     .await;

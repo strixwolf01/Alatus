@@ -19,6 +19,15 @@ _alatus() {
             alatus,balanced)
                 cmd="alatus__subcmd__balanced"
                 ;;
+            alatus,battery)
+                cmd="alatus__subcmd__charge__subcmd__limit"
+                ;;
+            alatus,capabilities)
+                cmd="alatus__subcmd__capabilities"
+                ;;
+            alatus,charge)
+                cmd="alatus__subcmd__charge__subcmd__limit"
+                ;;
             alatus,charge-limit)
                 cmd="alatus__subcmd__charge__subcmd__limit"
                 ;;
@@ -40,6 +49,9 @@ _alatus() {
             alatus,full)
                 cmd="alatus__subcmd__full"
                 ;;
+            alatus,gui)
+                cmd="alatus__subcmd__gui"
+                ;;
             alatus,help)
                 cmd="alatus__subcmd__help"
                 ;;
@@ -55,6 +67,12 @@ _alatus() {
             alatus,perf)
                 cmd="alatus__subcmd__perf"
                 ;;
+            alatus,performance)
+                cmd="alatus__subcmd__perf"
+                ;;
+            alatus,profile)
+                cmd="alatus__subcmd__mode"
+                ;;
             alatus,quiet)
                 cmd="alatus__subcmd__quiet"
                 ;;
@@ -66,6 +84,9 @@ _alatus() {
                 ;;
             alatus,status)
                 cmd="alatus__subcmd__status"
+                ;;
+            alatus,thermal)
+                cmd="alatus__subcmd__mode"
                 ;;
             alatus,watch)
                 cmd="alatus__subcmd__watch"
@@ -271,6 +292,9 @@ _alatus() {
             alatus__subcmd__help,balanced)
                 cmd="alatus__subcmd__help__subcmd__balanced"
                 ;;
+            alatus__subcmd__help,capabilities)
+                cmd="alatus__subcmd__help__subcmd__capabilities"
+                ;;
             alatus__subcmd__help,charge-limit)
                 cmd="alatus__subcmd__help__subcmd__charge__subcmd__limit"
                 ;;
@@ -291,6 +315,9 @@ _alatus() {
                 ;;
             alatus__subcmd__help,full)
                 cmd="alatus__subcmd__help__subcmd__full"
+                ;;
+            alatus__subcmd__help,gui)
+                cmd="alatus__subcmd__help__subcmd__gui"
                 ;;
             alatus__subcmd__help,help)
                 cmd="alatus__subcmd__help__subcmd__help"
@@ -442,6 +469,18 @@ _alatus() {
             alatus__subcmd__help__subcmd__rgb,sync)
                 cmd="alatus__subcmd__help__subcmd__rgb__subcmd__sync"
                 ;;
+            alatus__subcmd__help__subcmd__rgb,timeout)
+                cmd="alatus__subcmd__help__subcmd__rgb__subcmd__timeout"
+                ;;
+            alatus__subcmd__help__subcmd__rgb,wake)
+                cmd="alatus__subcmd__help__subcmd__rgb__subcmd__wake"
+                ;;
+            alatus__subcmd__help__subcmd__rgb__subcmd__timeout,delay)
+                cmd="alatus__subcmd__help__subcmd__rgb__subcmd__timeout__subcmd__delay"
+                ;;
+            alatus__subcmd__help__subcmd__rgb__subcmd__timeout,policy)
+                cmd="alatus__subcmd__help__subcmd__rgb__subcmd__timeout__subcmd__policy"
+                ;;
             alatus__subcmd__help__subcmd__session,pixel-refresh)
                 cmd="alatus__subcmd__help__subcmd__session__subcmd__pixel__subcmd__refresh"
                 ;;
@@ -550,6 +589,12 @@ _alatus() {
             alatus__subcmd__rgb,sync)
                 cmd="alatus__subcmd__rgb__subcmd__sync"
                 ;;
+            alatus__subcmd__rgb,timeout)
+                cmd="alatus__subcmd__rgb__subcmd__timeout"
+                ;;
+            alatus__subcmd__rgb,wake)
+                cmd="alatus__subcmd__rgb__subcmd__wake"
+                ;;
             alatus__subcmd__rgb__subcmd__help,help)
                 cmd="alatus__subcmd__rgb__subcmd__help__subcmd__help"
                 ;;
@@ -570,6 +615,36 @@ _alatus() {
                 ;;
             alatus__subcmd__rgb__subcmd__help,sync)
                 cmd="alatus__subcmd__rgb__subcmd__help__subcmd__sync"
+                ;;
+            alatus__subcmd__rgb__subcmd__help,timeout)
+                cmd="alatus__subcmd__rgb__subcmd__help__subcmd__timeout"
+                ;;
+            alatus__subcmd__rgb__subcmd__help,wake)
+                cmd="alatus__subcmd__rgb__subcmd__help__subcmd__wake"
+                ;;
+            alatus__subcmd__rgb__subcmd__help__subcmd__timeout,delay)
+                cmd="alatus__subcmd__rgb__subcmd__help__subcmd__timeout__subcmd__delay"
+                ;;
+            alatus__subcmd__rgb__subcmd__help__subcmd__timeout,policy)
+                cmd="alatus__subcmd__rgb__subcmd__help__subcmd__timeout__subcmd__policy"
+                ;;
+            alatus__subcmd__rgb__subcmd__timeout,delay)
+                cmd="alatus__subcmd__rgb__subcmd__timeout__subcmd__delay"
+                ;;
+            alatus__subcmd__rgb__subcmd__timeout,help)
+                cmd="alatus__subcmd__rgb__subcmd__timeout__subcmd__help"
+                ;;
+            alatus__subcmd__rgb__subcmd__timeout,policy)
+                cmd="alatus__subcmd__rgb__subcmd__timeout__subcmd__policy"
+                ;;
+            alatus__subcmd__rgb__subcmd__timeout__subcmd__help,delay)
+                cmd="alatus__subcmd__rgb__subcmd__timeout__subcmd__help__subcmd__delay"
+                ;;
+            alatus__subcmd__rgb__subcmd__timeout__subcmd__help,help)
+                cmd="alatus__subcmd__rgb__subcmd__timeout__subcmd__help__subcmd__help"
+                ;;
+            alatus__subcmd__rgb__subcmd__timeout__subcmd__help,policy)
+                cmd="alatus__subcmd__rgb__subcmd__timeout__subcmd__help__subcmd__policy"
                 ;;
             alatus__subcmd__session,help)
                 cmd="alatus__subcmd__session__subcmd__help"
@@ -602,7 +677,7 @@ _alatus() {
 
     case "${cmd}" in
         alatus)
-            opts="-h -V --help --version status watch monitor mode fan cycle quiet balanced perf full oled display charge-limit rgb daemon completions session help"
+            opts="-h -V --gui --tray --help --version gui status capabilities watch monitor mode thermal profile fan cycle quiet balanced perf performance full oled display charge-limit battery charge rgb daemon completions session help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -617,6 +692,20 @@ _alatus() {
             ;;
         alatus__subcmd__balanced)
             opts="-h --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__capabilities)
+            opts="-j -h --json --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -1651,8 +1740,22 @@ _alatus() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
+        alatus__subcmd__gui)
+            opts="-m -h --tray --minimized --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
         alatus__subcmd__help)
-            opts="status watch monitor mode fan cycle quiet balanced perf full oled display charge-limit rgb daemon completions session help"
+            opts="gui status capabilities watch monitor mode fan cycle quiet balanced perf full oled display charge-limit rgb daemon completions session help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -1666,6 +1769,20 @@ _alatus() {
             return 0
             ;;
         alatus__subcmd__help__subcmd__balanced)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__help__subcmd__capabilities)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -2099,6 +2216,20 @@ _alatus() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
+        alatus__subcmd__help__subcmd__gui)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
         alatus__subcmd__help__subcmd__help)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
@@ -2338,7 +2469,7 @@ _alatus() {
             return 0
             ;;
         alatus__subcmd__help__subcmd__rgb)
-            opts="status set-color set-brightness off on sync"
+            opts="status set-color set-brightness off on wake sync timeout"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -2422,6 +2553,62 @@ _alatus() {
             return 0
             ;;
         alatus__subcmd__help__subcmd__rgb__subcmd__sync)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__help__subcmd__rgb__subcmd__timeout)
+            opts="policy delay"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__help__subcmd__rgb__subcmd__timeout__subcmd__delay)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 5 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__help__subcmd__rgb__subcmd__timeout__subcmd__policy)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 5 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__help__subcmd__rgb__subcmd__wake)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -2970,7 +3157,7 @@ _alatus() {
             return 0
             ;;
         alatus__subcmd__rgb)
-            opts="-h --help status set-color set-brightness off on sync help"
+            opts="-h --help status set-color set-brightness off on wake sync timeout help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -2984,7 +3171,7 @@ _alatus() {
             return 0
             ;;
         alatus__subcmd__rgb__subcmd__help)
-            opts="status set-color set-brightness off on sync help"
+            opts="status set-color set-brightness off on wake sync timeout help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -3095,6 +3282,62 @@ _alatus() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
+        alatus__subcmd__rgb__subcmd__help__subcmd__timeout)
+            opts="policy delay"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__rgb__subcmd__help__subcmd__timeout__subcmd__delay)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 5 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__rgb__subcmd__help__subcmd__timeout__subcmd__policy)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 5 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__rgb__subcmd__help__subcmd__wake)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
         alatus__subcmd__rgb__subcmd__off)
             opts="-h --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
@@ -3166,6 +3409,134 @@ _alatus() {
             return 0
             ;;
         alatus__subcmd__rgb__subcmd__sync)
+            opts="-h --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__rgb__subcmd__timeout)
+            opts="-p -d -h --policy --delay --help policy delay help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                --policy)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -p)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --delay)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -d)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__rgb__subcmd__timeout__subcmd__delay)
+            opts="-h --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__rgb__subcmd__timeout__subcmd__help)
+            opts="policy delay help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__rgb__subcmd__timeout__subcmd__help__subcmd__delay)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 5 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__rgb__subcmd__timeout__subcmd__help__subcmd__help)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 5 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__rgb__subcmd__timeout__subcmd__help__subcmd__policy)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 5 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__rgb__subcmd__timeout__subcmd__policy)
+            opts="-h --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        alatus__subcmd__rgb__subcmd__wake)
             opts="-h --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )

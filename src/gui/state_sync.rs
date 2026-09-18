@@ -70,7 +70,7 @@ pub fn sanitize_product_model(raw: &str) -> String {
 
 pub fn get_product_model() -> String {
     let raw = std::fs::read_to_string("/sys/class/dmi/id/product_name")
-        .unwrap_or_else(|_| "ASUS Zenbook / Vivobook".to_string());
+        .unwrap_or_else(|_| "Hardware Device".to_string());
     sanitize_product_model(&raw)
 }
 
@@ -157,12 +157,12 @@ pub async fn run_hardware_diagnostics() -> HardwareDiagnostics {
         None
     };
 
-    // 1. ASUS WMI DebugFS / ACPI Platform Thermal
+    // 1. Platform Power & Thermal Profile Backend
     let wmi = if let Some(ref caps) = caps_opt {
         match &caps.thermal {
             CapabilityState::Supported(_) => DiagResult {
                 status: "Supported",
-                desc: "ASUS ACPI / WMI platform profile active".to_string(),
+                desc: "Platform thermal profile active".to_string(),
             },
             CapabilityState::Unavailable(reason) => DiagResult {
                 status: "Degraded",
@@ -193,17 +193,17 @@ pub async fn run_hardware_diagnostics() -> HardwareDiagnostics {
         if debugfs_path.exists() {
             DiagResult {
                 status: "Supported",
-                desc: "ASUS WMI DebugFS active (/sys/kernel/debug/asus-nb-wmi)".to_string(),
+                desc: "Platform thermal profile interface active".to_string(),
             }
         } else if std::path::Path::new("/sys/devices/platform/asus-nb-wmi").exists() {
             DiagResult {
                 status: "Degraded",
-                desc: "Daemon offline; DebugFS requires root daemon permissions".to_string(),
+                desc: "Daemon offline; interface requires root daemon permissions".to_string(),
             }
         } else {
             DiagResult {
                 status: "Missing",
-                desc: "No ASUS WMI platform or DebugFS endpoints detected".to_string(),
+                desc: "No platform thermal profile endpoints detected".to_string(),
             }
         }
     };
@@ -290,18 +290,18 @@ pub async fn run_hardware_diagnostics() -> HardwareDiagnostics {
         }
     };
 
-    // 4. ACPI Hotkeys (Fn+F)
+    // 4. Platform Hotkeys (Fn+F)
     let hotkey = {
         let asus_nb = std::path::Path::new("/sys/devices/platform/asus-nb-wmi");
         if asus_nb.exists() {
             DiagResult {
                 status: "Supported",
-                desc: "asus-nb-wmi evdev input active (Fn+F / code 482)".to_string(),
+                desc: "Platform thermal hotkey input active (Fn+F / code 482)".to_string(),
             }
         } else {
             DiagResult {
                 status: "Degraded",
-                desc: "asus-nb-wmi driver missing; falling back to generic keyboard evdev"
+                desc: "Platform hotkey driver missing; falling back to generic keyboard evdev"
                     .to_string(),
             }
         }

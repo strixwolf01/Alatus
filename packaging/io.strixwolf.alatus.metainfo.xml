@@ -2,7 +2,7 @@
 <component type="desktop-application">
   <id>io.strixwolf.alatus</id>
   <name>Alatus</name>
-  <summary>ASUS Control for Linux</summary>
+  <summary>ASUS Hardware Control Center for Linux</summary>
 
   <metadata_license>FSFAP</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
@@ -12,14 +12,14 @@
 
   <description>
     <p>
-      Alatus is a lightweight, native Linux control center for modern ASUS Vivobook and Zenbook laptops.
-      It allows you to tweak deep hardware settings that are usually only available on Windows.
+      Alatus is a lightweight, native Linux control center for modern ASUS laptops (including Vivobook, Zenbook, ROG, TUF, and ProArt series).
+      It allows you to tweak deep hardware settings that are usually only available on Windows, featuring dynamic capability detection and tri-state hardware awareness.
     </p>
     <p>
       This is a community package and is not officially supported by ASUS.
     </p>
     <ul>
-      <li>Battery Care: Set charging limits to 80% to prolong battery lifespan.</li>
+      <li>Battery Care: Set charging limits to prolong battery lifespan.</li>
       <li>Fan Profiles: Switch between Quiet, Balanced, Performance, and Full Speed modes.</li>
       <li>OLED Care: Manage flicker-free dimming and pixel refresh conditioning.</li>
       <li>Keyboard Backlight: Single-zone RGB and desktop accent color sync.</li>
@@ -35,6 +35,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="2.0.0" date="2026-09-18">
+      <description>
+        <p>Alatus 2.0.0 Major Architectural Refactor: Dynamic DeviceContext hardware layer, tri-state capability awareness across CLI and Slint UI, dynamic policy engine with AC debounce and battery hysteresis, startup state reconciliation, declarative multi-model device profile expansion, and characterization test suite.</p>
+      </description>
+    </release>
     <release version="1.2.0" date="2026-09-17">
       <description>
         <p>Unified binary consolidation, modular architecture, keyboard RGB inactivity timeout policy (Never, Battery Only, Always), single-instance advisory lock, and multi-distro packaging automation (RPM/DEB).</p>

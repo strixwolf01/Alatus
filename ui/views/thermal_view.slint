@@ -1,0 +1,100 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Alatus Contributors
+
+import { ProfileCard } from "../components/cards.slint";
+import { LeafIcon, BalanceIcon, RocketIcon, TurbineIcon } from "../components/icons.slint";
+import { CapabilityPlaceholderCard, CapabilityUnavailableBanner } from "../components/capability_banner.slint";
+
+export component ThermalView inherits VerticalLayout {
+    in property <string> thermal_capability: "supported";
+    in property <string> thermal_unavailable_reason: "";
+    in property <int> thermal_mode: 1;
+    in property <color> accent_color: #d0bcff;
+    in property <color> accent_container: #4f378b;
+    in property <color> on_accent_container: #eaddff;
+    callback set_thermal_mode(int);
+
+    spacing: 14px;
+    alignment: start;
+
+    Text {
+        text: "System & Thermal Modes";
+        color: #f1f5f9;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    if root.thermal_capability == "unsupported": CapabilityPlaceholderCard {
+        title: "Thermal Modes Not Supported";
+        desc: "This hardware profile does not declare platform thermal profile control.";
+    }
+
+    if root.thermal_capability == "unavailable": CapabilityUnavailableBanner {
+        title: "Thermal Driver Unavailable";
+        reason: root.thermal_unavailable_reason;
+        default_reason: "Platform thermal profile interface unavailable.";
+    }
+
+    // Thermal Performance Modes
+    if root.thermal_capability != "unsupported": VerticalLayout {
+        spacing: 8px;
+
+        ProfileCard {
+            name: "Quiet Mode";
+            desc: "Reduced TDP, silent acoustic priority, battery conservation";
+            selected: root.thermal_mode == 0;
+            accent_color: root.accent_color;
+            accent_container: root.accent_container;
+            on_accent_container: root.on_accent_container;
+            clicked => {
+                root.set_thermal_mode(0);
+            }
+            LeafIcon {
+                icon_color: root.thermal_mode == 0 ? root.on_accent_container : #a6e3a1;
+            }
+        }
+        ProfileCard {
+            name: "Balanced Mode";
+            desc: "Dynamic fan curve balancing acoustic comfort and thermal headroom";
+            selected: root.thermal_mode == 1;
+            accent_color: root.accent_color;
+            accent_container: root.accent_container;
+            on_accent_container: root.on_accent_container;
+            clicked => {
+                root.set_thermal_mode(1);
+            }
+            BalanceIcon {
+                icon_color: root.thermal_mode == 1 ? root.on_accent_container : #89b4fa;
+            }
+        }
+        ProfileCard {
+            name: "Performance Mode";
+            desc: "Elevated power ceilings and aggressive cooling for heavy compute";
+            selected: root.thermal_mode == 2;
+            accent_color: root.accent_color;
+            accent_container: root.accent_container;
+            on_accent_container: root.on_accent_container;
+            clicked => {
+                root.set_thermal_mode(2);
+            }
+            RocketIcon {
+                icon_color: root.thermal_mode == 2 ? root.on_accent_container : #fab387;
+            }
+        }
+        ProfileCard {
+            name: "Full Speed Mode";
+            desc: "Maximum fan RPM regardless of temperature sensors for sustained loads";
+            selected: root.thermal_mode == 3;
+            accent_color: root.accent_color;
+            accent_container: root.accent_container;
+            on_accent_container: root.on_accent_container;
+            clicked => {
+                root.set_thermal_mode(3);
+            }
+            TurbineIcon {
+                icon_color: root.thermal_mode == 3 ? root.on_accent_container : #f38ba8;
+            }
+        }
+    }
+}
+
