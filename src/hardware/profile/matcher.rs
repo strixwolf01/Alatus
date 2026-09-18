@@ -51,18 +51,27 @@ impl DmiMatcher {
         let prod_clean = product.trim();
         let board_clean = board.map(|b| b.trim());
 
+        let matches_pattern = |pat: &str, target: &str| -> bool {
+            let trimmed = pat.trim_end_matches('*');
+            pat.eq_ignore_ascii_case(target)
+                || target.contains(pat)
+                || (!trimmed.is_empty()
+                    && (target
+                        .to_ascii_lowercase()
+                        .contains(&trimmed.to_ascii_lowercase())
+                        || trimmed.eq_ignore_ascii_case(target)))
+        };
+
         // First pass: exact or substring match for BOTH product and board
         for profile in profiles {
             let product_matched = profile
                 .device
                 .match_product
                 .iter()
-                .any(|p| p.eq_ignore_ascii_case(prod_clean) || prod_clean.contains(p));
+                .any(|p| matches_pattern(p, prod_clean));
 
             let board_matched = match (&profile.device.match_board, board_clean) {
-                (Some(boards), Some(b_clean)) => boards
-                    .iter()
-                    .any(|b| b.eq_ignore_ascii_case(b_clean) || b_clean.contains(b)),
+                (Some(boards), Some(b_clean)) => boards.iter().any(|b| matches_pattern(b, b_clean)),
                 _ => false,
             };
 
@@ -77,9 +86,22 @@ impl DmiMatcher {
                 .device
                 .match_product
                 .iter()
-                .any(|p| p.eq_ignore_ascii_case(prod_clean) || prod_clean.contains(p));
+                .any(|p| matches_pattern(p, prod_clean));
 
             if product_matched && profile.device.match_board.is_none() {
+                return Some(profile);
+            }
+        }
+
+        // Third pass: product match fallback even if board constraint was specified
+        for profile in profiles {
+            let product_matched = profile
+                .device
+                .match_product
+                .iter()
+                .any(|p| matches_pattern(p, prod_clean));
+
+            if product_matched {
                 return Some(profile);
             }
         }

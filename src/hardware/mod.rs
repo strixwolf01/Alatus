@@ -16,7 +16,9 @@ pub use capabilities::{
     SystemCapabilities, ThermalCapabilityDetails, UnavailableReason,
 };
 pub use context::DeviceContext;
-pub use drivers::{AsusWmiDriver, Ite5570Driver, OledDisplayDriver, SysfsBatteryDriver};
+pub use drivers::{
+    AsusWmiDriver, AsusctlProxyDriver, Ite5570Driver, OledDisplayDriver, SysfsBatteryDriver,
+};
 pub use error::DriverError;
 pub use mock::{MockBatteryDriver, MockDisplayDriver, MockRgbDriver, MockThermalDriver};
 pub use profile::{DeviceProfile, DmiMatcher, MatcherError};

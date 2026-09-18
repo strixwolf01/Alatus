@@ -61,6 +61,7 @@ pub struct RgbProfileConfig {
 pub struct ThermalProfileConfig {
     pub driver: String,
     pub profiles: Vec<String>,
+    #[serde(default, alias = "has_fan_curves")]
     pub has_fan_curve: bool,
 }
 
@@ -78,6 +79,10 @@ pub struct DisplayProfileConfig {
     pub has_oled: bool,
     pub supports_flicker_free: bool,
     pub refresh_rates: Vec<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gpu_mux_mode: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub panel_od: Option<bool>,
 }
 
 #[cfg(test)]

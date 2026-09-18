@@ -16,6 +16,10 @@ use std::path::Path;
 const S5506MA_TOML: &str = include_str!("../../assets/devices/s5506ma.toml");
 const ZENBOOK_UM5302_TOML: &str = include_str!("../../assets/devices/zenbook_um5302.toml");
 const ROG_G14_TOML: &str = include_str!("../../assets/devices/rog_g14.toml");
+const ROG_ZEPHYRUS_G14_TOML: &str = include_str!("../../assets/devices/rog_zephyrus_g14.toml");
+const ROG_STRIX_G16_TOML: &str = include_str!("../../assets/devices/rog_strix_g16.toml");
+const TUF_GAMING_A15_TOML: &str = include_str!("../../assets/devices/tuf_gaming_a15.toml");
+const ZENBOOK_OLED_TOML: &str = include_str!("../../assets/devices/zenbook_oled.toml");
 
 /// Returns the compiled-in device profiles.
 pub fn builtin_profiles() -> Vec<DeviceProfile> {
@@ -27,6 +31,18 @@ pub fn builtin_profiles() -> Vec<DeviceProfile> {
         profiles.push(p);
     }
     if let Ok(p) = DeviceProfile::from_toml_str(ROG_G14_TOML) {
+        profiles.push(p);
+    }
+    if let Ok(p) = DeviceProfile::from_toml_str(ROG_ZEPHYRUS_G14_TOML) {
+        profiles.push(p);
+    }
+    if let Ok(p) = DeviceProfile::from_toml_str(ROG_STRIX_G16_TOML) {
+        profiles.push(p);
+    }
+    if let Ok(p) = DeviceProfile::from_toml_str(TUF_GAMING_A15_TOML) {
+        profiles.push(p);
+    }
+    if let Ok(p) = DeviceProfile::from_toml_str(ZENBOOK_OLED_TOML) {
         profiles.push(p);
     }
     profiles
@@ -66,6 +82,8 @@ pub fn fallback_profile() -> DeviceProfile {
                 has_oled: true,
                 supports_flicker_free: true,
                 refresh_rates: vec![60, 120],
+                gpu_mux_mode: None,
+                panel_od: None,
             }),
         },
     }

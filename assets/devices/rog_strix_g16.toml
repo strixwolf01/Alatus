@@ -1,0 +1,27 @@
+[device]
+name = "ROG Strix G16 / G18"
+vendor = "ASUSTeK COMPUTER INC."
+match_product = ["G614*", "G814*", "G513*", "G533*", "ROG Strix*"]
+match_board = ["G614*", "G814*", "G513*", "G533*"]
+
+[capabilities.rgb]
+driver = "aura_hid"
+zones = 4
+supports_timeout = true
+default_timeout_policy = "Always"
+
+[capabilities.thermal]
+driver = "asus_wmi_debugfs"
+profiles = ["quiet", "balanced", "performance", "full_speed"]
+has_fan_curve = true
+
+[capabilities.battery]
+driver = "asus_charge_control"
+
+[capabilities.display]
+has_oled = false
+supports_flicker_free = false
+refresh_rates = [60, 165, 240]
+gpu_mux_mode = true
+panel_od = true
+
