@@ -44,11 +44,16 @@ pub async fn handle_power(action: PowerAction) -> Result<(), DaemonClientError> 
                         Ok(attr) => {
                             println!(
                                 "✓ Set PPT limit for '{attribute}' to {}W (requested: {value}W, bounds: {}W..={}W, default: {}W)",
-                                attr.current_value, attr.min_value, attr.max_value, attr.default_value
+                                attr.current_value,
+                                attr.min_value,
+                                attr.max_value,
+                                attr.default_value
                             );
                         }
                         Err(_) => {
-                            println!("✓ Successfully committed PPT limit for '{attribute}' to {value}W");
+                            println!(
+                                "✓ Successfully committed PPT limit for '{attribute}' to {value}W"
+                            );
                         }
                     }
                 }
@@ -105,4 +110,3 @@ async fn display_ppt_attributes(
 
     Ok(())
 }
-

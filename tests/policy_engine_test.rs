@@ -307,3 +307,49 @@ fn test_end_to_end_startup_reconciliation_dispatch() {
         ThermalMode::Quiet
     );
 }
+
+// ============================================================================
+// Test 9: Sleep/Resume Preserves Manual Thermal Override
+// ============================================================================
+
+#[test]
+fn test_resume_preserves_manual_thermal_override() {
+    let mut engine = PolicyEngine::new();
+    let now = Instant::now();
+
+    // Default: no override, resume evaluates to Balanced on AC
+    engine.on_ac = true;
+    let decision = engine.evaluate_event_at(SystemEvent::ResumeFromSuspend, now);
+    assert!(decision.is_some());
+    let d = decision.unwrap();
+    assert_eq!(
+        d.action,
+        PolicyAction::SetThermalMode(ThermalMode::Balanced)
+    );
+    assert_eq!(d.reason, "resume-reconcile");
+
+    // With manual override enabled (e.g. user chose Performance)
+    engine.manual_thermal_override = true;
+    engine.last_applied_thermal_mode = Some(ThermalMode::Performance);
+
+    // Resume when on AC
+    let decision_ac = engine.evaluate_event_at(SystemEvent::ResumeFromSuspend, now);
+    assert!(decision_ac.is_some());
+    let d_ac = decision_ac.unwrap();
+    assert_eq!(
+        d_ac.action,
+        PolicyAction::SetThermalMode(ThermalMode::Performance)
+    );
+    assert_eq!(d_ac.reason, "resume-manual-restore");
+
+    // Resume when on Battery
+    engine.on_ac = false;
+    let decision_bat = engine.evaluate_event_at(SystemEvent::ResumeFromSuspend, now);
+    assert!(decision_bat.is_some());
+    let d_bat = decision_bat.unwrap();
+    assert_eq!(
+        d_bat.action,
+        PolicyAction::SetThermalMode(ThermalMode::Performance)
+    );
+    assert_eq!(d_bat.reason, "resume-manual-restore");
+}

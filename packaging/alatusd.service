@@ -14,7 +14,8 @@ Environment=RUST_LOG=info
 # Production security sandbox hardening
 ProtectHome=true
 ProtectSystem=strict
-ReadWritePaths=/sys /dev
+StateDirectory=alatus
+ReadWritePaths=/sys /dev /var/lib/alatus
 PrivateTmp=true
 ProtectKernelLogs=true
 ProtectControlGroups=true

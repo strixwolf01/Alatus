@@ -19,6 +19,7 @@ pub struct PolicyEngine {
     pub last_ac_event_time: Option<Instant>,
     pub last_ac_state: Option<bool>,
     pub last_applied_thermal_mode: Option<ThermalMode>,
+    pub manual_thermal_override: bool,
 }
 
 impl Default for PolicyEngine {
@@ -39,6 +40,7 @@ impl PolicyEngine {
             last_ac_event_time: None,
             last_ac_state: None,
             last_applied_thermal_mode: None,
+            manual_thermal_override: false,
         }
     }
 
@@ -53,6 +55,7 @@ impl PolicyEngine {
             last_ac_event_time: None,
             last_ac_state: None,
             last_applied_thermal_mode: None,
+            manual_thermal_override: false,
         }
     }
 
@@ -190,22 +193,29 @@ impl PolicyEngine {
             }
 
             SystemEvent::ResumeFromSuspend => {
-                let target_mode = if self.on_ac {
-                    ThermalMode::Balanced
+                let (target_mode, reason) = if self.manual_thermal_override {
+                    (
+                        self.last_applied_thermal_mode
+                            .or(self.current_thermal_mode)
+                            .unwrap_or(ThermalMode::Balanced),
+                        "resume-manual-restore",
+                    )
+                } else if self.on_ac {
+                    (ThermalMode::Balanced, "resume-reconcile")
                 } else if self.low_battery_quiet_active
                     || self.battery_level.is_some_and(|l| l <= 15)
                 {
                     self.low_battery_quiet_active = true;
-                    ThermalMode::Quiet
+                    (ThermalMode::Quiet, "resume-reconcile")
                 } else {
-                    ThermalMode::Balanced
+                    (ThermalMode::Balanced, "resume-reconcile")
                 };
 
                 self.last_applied_thermal_mode = Some(target_mode);
                 self.current_thermal_mode = Some(target_mode);
                 Some(PolicyDecision::with_timestamp(
                     PolicyAction::SetThermalMode(target_mode),
-                    "resume-reconcile",
+                    reason,
                     75,
                     now,
                 ))

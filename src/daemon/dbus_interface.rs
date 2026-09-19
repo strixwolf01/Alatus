@@ -6,6 +6,7 @@ use super::power::{
     DaemonError, check_conflicting_power_daemons_sync, check_is_on_ac, check_polkit,
     read_deep_sleep, read_product_serial, write_deep_sleep,
 };
+use super::state::DaemonPersistentState;
 use crate::hardware::DeviceContext;
 use crate::hardware::capabilities::CapabilityState;
 use crate::services::config::RgbTimeoutPolicy;
@@ -25,6 +26,7 @@ pub struct DaemonState {
     pub auto_thermal_profile: bool,
     pub ac_thermal_mode: u32,
     pub battery_thermal_mode: u32,
+    pub persistent_state: DaemonPersistentState,
 }
 
 impl DaemonState {
@@ -38,6 +40,7 @@ impl DaemonState {
         auto_thermal_profile: bool,
         ac_thermal_mode: u32,
         battery_thermal_mode: u32,
+        persistent_state: DaemonPersistentState,
     ) -> Self {
         Self {
             device_context,
@@ -48,6 +51,13 @@ impl DaemonState {
             auto_thermal_profile,
             ac_thermal_mode,
             battery_thermal_mode,
+            persistent_state,
+        }
+    }
+
+    pub fn save_state(&self) {
+        if let Err(e) = self.persistent_state.save_atomic() {
+            tracing::warn!("Failed to persist daemon state: {e}");
         }
     }
 }
@@ -159,12 +169,16 @@ impl DaemonInterface {
         {
             let mut s = self.state.lock().await;
             s.last_firmware_mode = Some(value);
+            s.persistent_state.thermal_mode = Some(thermal_mode);
+            s.persistent_state.manual_thermal_override = true;
+            s.save_state();
         }
 
         {
             let mut engine = self.policy_engine.lock().await;
             engine.last_applied_thermal_mode = Some(thermal_mode);
             engine.current_thermal_mode = Some(thermal_mode);
+            engine.manual_thermal_override = true;
         }
 
         // Emit PropertiesChanged signal and ThermalModeChanged signal
@@ -279,6 +293,8 @@ impl DaemonInterface {
 
         let mut state = self.state.lock().await;
         state.last_charge_limit = Some(value);
+        state.persistent_state.charge_limit = Some(value);
+        state.save_state();
 
         // Emit PropertiesChanged signal
         let interface_ref = conn
@@ -369,6 +385,8 @@ impl DaemonInterface {
         let (on_ac, target_mode) = {
             let mut state = self.state.lock().await;
             state.auto_thermal_profile = value;
+            state.persistent_state.manual_thermal_override = !value;
+            state.save_state();
             let target = if state.on_ac {
                 state.ac_thermal_mode
             } else {
@@ -376,6 +394,11 @@ impl DaemonInterface {
             };
             (state.on_ac, target)
         };
+
+        {
+            let mut engine = self.policy_engine.lock().await;
+            engine.manual_thermal_override = !value;
+        }
 
         let interface_ref = conn
             .object_server()
@@ -476,6 +499,10 @@ impl DaemonInterface {
                     rgb.set_color(crate::domain::ColorRgb::new(r, g, b))
                         .map_err(|e| DaemonError::IoError(e.to_string()))?;
                     let _ = self.rgb_service.set_color(r, g, b);
+                    drop(ctx);
+                    let mut s = self.state.lock().await;
+                    s.persistent_state.rgb_color = Some(crate::domain::ColorRgb::new(r, g, b));
+                    s.save_state();
                     Ok(())
                 } else {
                     Err(DaemonError::CapabilityUnavailable("RGB driver missing".to_string()).into())
@@ -521,6 +548,10 @@ impl DaemonInterface {
                         .map_err(|e| DaemonError::IoError(e.to_string()))?;
                     let _ = self.rgb_service.set_brightness(brightness);
                     self.inactivity.record_activity(&self.rgb_service);
+                    drop(ctx);
+                    let mut s = self.state.lock().await;
+                    s.persistent_state.rgb_brightness = Some(brightness as u8);
+                    s.save_state();
                     Ok(())
                 } else {
                     Err(DaemonError::CapabilityUnavailable("RGB driver missing".to_string()).into())
@@ -554,6 +585,11 @@ impl DaemonInterface {
             .timeout_seconds
             .store(seconds, Ordering::Relaxed);
         self.inactivity.record_activity(&self.rgb_service);
+        {
+            let mut s = self.state.lock().await;
+            s.persistent_state.rgb_timeout_seconds = Some(seconds);
+            s.save_state();
+        }
         Ok(())
     }
 
@@ -588,6 +624,11 @@ impl DaemonInterface {
 
         tracing::info!("D-Bus: Setting RGB inactivity timeout policy to '{policy}'");
         self.inactivity.set_policy(policy, &self.rgb_service, on_ac);
+        {
+            let mut s = self.state.lock().await;
+            s.persistent_state.rgb_timeout_policy = Some(policy.to_string());
+            s.save_state();
+        }
         Ok(())
     }
 
@@ -703,6 +744,12 @@ impl DaemonInterface {
             }
         }
 
+        {
+            let mut s = self.state.lock().await;
+            s.persistent_state.gpu_mux_mode = Some(value);
+            s.save_state();
+        }
+
         // Emit PropertiesChanged signal
         let interface_ref = conn
             .object_server()
@@ -784,6 +831,12 @@ impl DaemonInterface {
             }
         }
 
+        {
+            let mut s = self.state.lock().await;
+            s.persistent_state.panel_overdrive = Some(value);
+            s.save_state();
+        }
+
         // Emit PropertiesChanged signal
         let interface_ref = conn
             .object_server()
@@ -828,6 +881,10 @@ impl DaemonInterface {
                 if let Some(ref mut plat) = ctx.platform {
                     plat.set_attribute(&attribute, value)
                         .map_err(|e| DaemonError::IoError(e.to_string()))?;
+                    drop(ctx);
+                    let mut s = self.state.lock().await;
+                    s.persistent_state.ppt_limits.insert(attribute, value);
+                    s.save_state();
                     Ok(())
                 } else {
                     Err(
@@ -1122,12 +1179,14 @@ pub async fn run_background_listener(
                             crate::services::telemetry::reset_telemetry_cache();
 
                             // 2. Hardware re-enumeration on DeviceContext
-                            let (limit, policy_engine, device_context) = {
+                            let (limit, policy_engine, device_context, ppt_limits, panel_overdrive) = {
                                 let s = state_clone.lock().await;
                                 (
                                     s.last_charge_limit,
                                     Arc::clone(&s.policy_engine),
                                     Arc::clone(&s.device_context),
+                                    s.persistent_state.ppt_limits.clone(),
+                                    s.persistent_state.panel_overdrive,
                                 )
                             };
 
@@ -1135,10 +1194,11 @@ pub async fn run_background_listener(
                                 let mut ctx = device_context.lock().await;
                                 ctx.re_enumerate();
                                 tracing::info!(
-                                    "Hardware drivers re-enumerated on resume: thermal={:?}, battery={:?}, rgb={:?}",
+                                    "Hardware drivers re-enumerated on resume: thermal={:?}, battery={:?}, rgb={:?}, platform={:?}",
                                     ctx.capabilities.thermal,
                                     ctx.capabilities.battery,
-                                    ctx.capabilities.rgb
+                                    ctx.capabilities.rgb,
+                                    ctx.capabilities.platform,
                                 );
                             }
 
@@ -1199,6 +1259,31 @@ pub async fn run_background_listener(
                                         }
                                         drop(ctx);
                                         tokio::time::sleep(Duration::from_millis(400)).await;
+                                    }
+                                }
+                            }
+
+                            // 4b. Re-apply platform attributes (PPT limits & panel overdrive)
+                            if !ppt_limits.is_empty() {
+                                let mut ctx = device_context.lock().await;
+                                if let Some(ref mut plat) = ctx.platform {
+                                    for (attr, val) in &ppt_limits {
+                                        if let Err(e) = plat.set_attribute(attr, *val) {
+                                            tracing::warn!("Failed to re-apply PPT attribute '{attr}' on resume: {e}");
+                                        } else {
+                                            tracing::info!("Re-applied PPT attribute '{attr}'={val} on resume");
+                                        }
+                                    }
+                                }
+                            }
+
+                            if let Some(od) = panel_overdrive {
+                                let mut ctx = device_context.lock().await;
+                                if let Some(ref mut plat) = ctx.platform {
+                                    if let Err(e) = plat.set_panel_od(od) {
+                                        tracing::warn!("Failed to re-apply panel overdrive on resume: {e}");
+                                    } else {
+                                        tracing::info!("Re-applied panel overdrive={od} on resume");
                                     }
                                 }
                             }

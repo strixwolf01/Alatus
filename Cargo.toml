@@ -139,6 +139,8 @@ assets = [
     { source = "assets/icons/modes/full_speed.svg", dest = "/usr/share/icons/hicolor/scalable/apps/alatus-mode-full-speed.svg", mode = "644" },
 ]
 post_install_script = """
+mkdir -p /var/lib/alatus 2>/dev/null || true
+chmod 755 /var/lib/alatus 2>/dev/null || true
 if ! getent group alatus-rgb >/dev/null; then
     groupadd -r alatus-rgb 2>/dev/null || true
 fi
