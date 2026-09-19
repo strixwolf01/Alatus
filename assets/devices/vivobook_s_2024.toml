@@ -1,5 +1,5 @@
 [device]
-name = "ASUS Vivobook S / Zenbook 14 (2024)"
+name = "ASUS Vivobook S (2024)"
 vendor = "ASUSTeK COMPUTER INC."
 match_product = [
     "ASUS Vivobook S 1* S5406*",
@@ -9,13 +9,12 @@ match_product = [
     "ASUS Vivobook S 1* M5506*",
     "ASUS Vivobook S 1* M5606*",
     "Vivobook_ASUSLaptop S5506*",
+    "Vivobook_ASUSLaptop S5406*",
     "Vivobook_ASUSLaptop S5606*",
     "Vivobook_ASUSLaptop M5506*",
     "Vivobook_ASUSLaptop_S5506*",
     "Vivobook_ASUSLaptop_S5606*",
     "Vivobook_ASUSLaptop_M5506*",
-    "Zenbook 14 UX3405*",
-    "Zenbook 14 UM3406*",
     "S5506MA*",
 ]
 match_board = [
@@ -25,8 +24,6 @@ match_board = [
     "M5406*",
     "M5506*",
     "M5606*",
-    "UX3405*",
-    "UM3406*",
 ]
 
 [capabilities.display]
@@ -52,4 +49,3 @@ default_timeout_policy = "battery"
 driver = "asus_charge_control"
 charge_control = true
 range = [50, 100]
-

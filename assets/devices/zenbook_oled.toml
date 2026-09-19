@@ -1,8 +1,21 @@
 [device]
 name = "ASUS Zenbook OLED Series"
 vendor = "ASUSTeK COMPUTER INC."
-match_product = ["UM5302*", "UX3402*", "UX5401*", "Zenbook*"]
-match_board = ["UM5302*", "UX3402*", "UX5401*"]
+match_product = [
+    "UM5302*",
+    "UX3402*",
+    "UX5401*",
+    "Zenbook 14 UX3405*",
+    "Zenbook 14 UM3406*",
+    "Zenbook*",
+]
+match_board = [
+    "UM5302*",
+    "UX3402*",
+    "UX5401*",
+    "UX3405*",
+    "UM3406*",
+]
 
 [capabilities.rgb]
 driver = "ite5570"
@@ -11,15 +24,18 @@ supports_timeout = true
 default_timeout_policy = "Always"
 
 [capabilities.thermal]
-driver = "asus_wmi_debugfs"
-profiles = ["quiet", "balanced", "performance"]
+driver = "platform_profile"
+profiles = ["quiet", "balanced", "performance", "full_speed"]
 has_fan_curve = false
 
 [capabilities.battery]
 driver = "asus_charge_control"
+charge_control = true
+range = [50, 100]
 
 [capabilities.display]
 has_oled = true
 supports_flicker_free = true
 refresh_rates = [60, 90, 120]
-
+gpu_mux_mode = false
+panel_od = false

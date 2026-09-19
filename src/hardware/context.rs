@@ -634,7 +634,7 @@ mod tests {
         std::fs::write(dmi_dir.join("board_name"), "S5506MA\n").unwrap();
 
         let ctx = DeviceContext::new_with_dmi_root(dmi_dir);
-        assert_eq!(ctx.profile.device.name, "ASUS Vivobook S / Zenbook 14 (2024)");
+        assert_eq!(ctx.profile.device.name, "ASUS Vivobook S (2024)");
         assert_eq!(ctx.capabilities.schema_version, 1);
     }
 

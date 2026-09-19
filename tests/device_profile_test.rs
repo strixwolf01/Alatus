@@ -15,7 +15,7 @@ fn test_vivobook_s_2024_reference_profile_asset_parsing() {
         .unwrap_or_else(|e| panic!("Failed to parse {}: {e}", asset_path.display()));
 
     // Device metadata assertions
-    assert_eq!(profile.device.name, "ASUS Vivobook S / Zenbook 14 (2024)");
+    assert_eq!(profile.device.name, "ASUS Vivobook S (2024)");
     assert_eq!(profile.device.vendor, "ASUSTeK COMPUTER INC.");
     assert!(
         profile
@@ -25,11 +25,18 @@ fn test_vivobook_s_2024_reference_profile_asset_parsing() {
             .any(|p| p.contains("S5506"))
     );
     assert!(
-        profile
+        !profile
             .device
             .match_product
             .iter()
             .any(|p| p.contains("UX3405"))
+    );
+    assert!(
+        !profile
+            .device
+            .match_product
+            .iter()
+            .any(|p| p.contains("Zenbook"))
     );
     assert!(
         profile
@@ -46,6 +53,15 @@ fn test_vivobook_s_2024_reference_profile_asset_parsing() {
             .unwrap()
             .iter()
             .any(|b| b.contains("S5506"))
+    );
+    assert!(
+        !profile
+            .device
+            .match_board
+            .as_ref()
+            .unwrap()
+            .iter()
+            .any(|b| b.contains("UX3405"))
     );
 
     // RGB capabilities
@@ -105,15 +121,15 @@ fn test_vivobook_s_2024_reference_profile_asset_parsing() {
         Some("S5506MA"),
     );
     assert!(matched_intel.is_some());
-    assert_eq!(
-        matched_intel.unwrap().device.name,
-        "ASUS Vivobook S / Zenbook 14 (2024)"
-    );
+    assert_eq!(matched_intel.unwrap().device.name, "ASUS Vivobook S (2024)");
 
-    // Zenbook 14 OLED (Intel)
+    // Zenbook 14 OLED (Intel) must NOT match Vivobook profile
     let matched_zenbook =
         DmiMatcher::match_profile(&profiles, "Zenbook 14 UX3405MA", Some("UX3405MA"));
-    assert!(matched_zenbook.is_some());
+    assert!(
+        matched_zenbook.is_none(),
+        "Zenbook 14 UX3405 must not match Vivobook S profile"
+    );
 
     // AMD Vivobook S14
     let matched_amd =
@@ -447,11 +463,60 @@ fn test_zenbook_oled_declarative_profile() {
     assert_eq!(disp.refresh_rates, vec![60, 90, 120]);
 
     // DMI matching
-    let profiles = vec![profile];
+    let profiles = vec![profile.clone()];
     let matched = DmiMatcher::match_profile(&profiles, "UX3402VA", Some("UX3402VA"));
     assert!(matched.is_some());
     let matched_zen = DmiMatcher::match_profile(&profiles, "Zenbook OLED UX5401ZA", None);
     assert!(matched_zen.is_some());
+
+    // 2024 Zenbook 14 models
+    let matched_ux3405 =
+        DmiMatcher::match_profile(&profiles, "Zenbook 14 UX3405MA", Some("UX3405MA"));
+    assert!(matched_ux3405.is_some());
+    assert_eq!(
+        matched_ux3405.unwrap().device.name,
+        "ASUS Zenbook OLED Series"
+    );
+
+    let matched_um3406 =
+        DmiMatcher::match_profile(&profiles, "Zenbook 14 UM3406HA", Some("UM3406HA"));
+    assert!(matched_um3406.is_some());
+    assert_eq!(
+        matched_um3406.unwrap().device.name,
+        "ASUS Zenbook OLED Series"
+    );
+
+    // Overlap prevention verification:
+    // When both Vivobook S and Zenbook OLED profiles are registered, they must match their respective models unambiguously.
+    let vivobook_path = Path::new("assets/devices/vivobook_s_2024.toml");
+    let vivobook_content = fs::read_to_string(vivobook_path).expect("read vivobook_s_2024.toml");
+    let vivobook_profile =
+        DeviceProfile::from_toml_str(&vivobook_content).expect("parse vivobook_s_2024.toml");
+
+    let combined = vec![vivobook_profile, profile];
+
+    // Vivobook models must match Vivobook S
+    let match_vivo = DmiMatcher::match_profile(
+        &combined,
+        "ASUS Vivobook S 15 S5506MA_S5506MA",
+        Some("S5506MA"),
+    );
+    assert_eq!(match_vivo.unwrap().device.name, "ASUS Vivobook S (2024)");
+
+    // Zenbook models must match Zenbook OLED
+    let match_zen_ux =
+        DmiMatcher::match_profile(&combined, "Zenbook 14 UX3405MA", Some("UX3405MA"));
+    assert_eq!(
+        match_zen_ux.unwrap().device.name,
+        "ASUS Zenbook OLED Series"
+    );
+
+    let match_zen_um =
+        DmiMatcher::match_profile(&combined, "Zenbook 14 UM3406HA", Some("UM3406HA"));
+    assert_eq!(
+        match_zen_um.unwrap().device.name,
+        "ASUS Zenbook OLED Series"
+    );
 }
 
 #[test]
