@@ -52,14 +52,51 @@ impl DmiMatcher {
         let board_clean = board.map(|b| b.trim());
 
         let matches_pattern = |pat: &str, target: &str| -> bool {
-            let trimmed = pat.trim_end_matches('*');
-            pat.eq_ignore_ascii_case(target)
-                || target.contains(pat)
-                || (!trimmed.is_empty()
-                    && (target
-                        .to_ascii_lowercase()
-                        .contains(&trimmed.to_ascii_lowercase())
-                        || trimmed.eq_ignore_ascii_case(target)))
+            let pat_clean = pat.trim();
+            let tgt_clean = target.trim();
+
+            if pat_clean.is_empty() || tgt_clean.is_empty() {
+                return false;
+            }
+
+            let pat_lower = pat_clean.to_ascii_lowercase();
+            let tgt_lower = tgt_clean.to_ascii_lowercase();
+
+            if pat_lower == tgt_lower || tgt_lower.contains(&pat_lower) {
+                return true;
+            }
+
+            if !pat_lower.contains('*') {
+                return false;
+            }
+
+            let parts: Vec<&str> = pat_lower.split('*').collect();
+            let mut search_idx = 0;
+
+            for (i, part) in parts.iter().enumerate() {
+                if part.is_empty() {
+                    continue;
+                }
+                if i == 0 && !pat_lower.starts_with('*') {
+                    if !tgt_lower.starts_with(part) {
+                        return false;
+                    }
+                    search_idx = part.len();
+                } else if let Some(pos) = tgt_lower[search_idx..].find(part) {
+                    search_idx += pos + part.len();
+                } else {
+                    return false;
+                }
+            }
+
+            if !pat_lower.ends_with('*')
+                && let Some(last) = parts.last()
+                && !last.is_empty()
+            {
+                tgt_lower.ends_with(last)
+            } else {
+                true
+            }
         };
 
         // First pass: exact or substring match for BOTH product and board

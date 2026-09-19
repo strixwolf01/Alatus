@@ -16,7 +16,7 @@ use crate::hardware::traits::{
 };
 use std::path::Path;
 
-const S5506MA_TOML: &str = include_str!("../../assets/devices/s5506ma.toml");
+const VIVOBOOK_S_2024_TOML: &str = include_str!("../../assets/devices/vivobook_s_2024.toml");
 const ZENBOOK_UM5302_TOML: &str = include_str!("../../assets/devices/zenbook_um5302.toml");
 const ROG_G14_TOML: &str = include_str!("../../assets/devices/rog_g14.toml");
 const ROG_ZEPHYRUS_G14_TOML: &str = include_str!("../../assets/devices/rog_zephyrus_g14.toml");
@@ -27,7 +27,7 @@ const ZENBOOK_OLED_TOML: &str = include_str!("../../assets/devices/zenbook_oled.
 /// Returns the compiled-in device profiles.
 pub fn builtin_profiles() -> Vec<DeviceProfile> {
     let mut profiles = Vec::new();
-    if let Ok(p) = DeviceProfile::from_toml_str(S5506MA_TOML) {
+    if let Ok(p) = DeviceProfile::from_toml_str(VIVOBOOK_S_2024_TOML) {
         profiles.push(p);
     }
     if let Ok(p) = DeviceProfile::from_toml_str(ZENBOOK_UM5302_TOML) {
@@ -65,6 +65,7 @@ pub fn fallback_profile() -> DeviceProfile {
                 driver: "ite5570".to_string(),
                 zones: 1,
                 supports_timeout: true,
+                default_timeout_seconds: Some(60),
                 default_timeout_policy: Some("Always".to_string()),
             }),
             thermal: Some(crate::hardware::profile::model::ThermalProfileConfig {
@@ -80,6 +81,8 @@ pub fn fallback_profile() -> DeviceProfile {
             battery: Some(crate::hardware::profile::model::BatteryProfileConfig {
                 driver: "asus_charge_control".to_string(),
                 sysfs_path: None,
+                charge_control: Some(true),
+                range: Some([50, 100]),
             }),
             display: Some(crate::hardware::profile::model::DisplayProfileConfig {
                 has_oled: true,
@@ -631,7 +634,7 @@ mod tests {
         std::fs::write(dmi_dir.join("board_name"), "S5506MA\n").unwrap();
 
         let ctx = DeviceContext::new_with_dmi_root(dmi_dir);
-        assert_eq!(ctx.profile.device.name, "ASUS Vivobook S 15 OLED");
+        assert_eq!(ctx.profile.device.name, "ASUS Vivobook S / Zenbook 14 (2024)");
         assert_eq!(ctx.capabilities.schema_version, 1);
     }
 

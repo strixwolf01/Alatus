@@ -1,0 +1,55 @@
+[device]
+name = "ASUS Vivobook S / Zenbook 14 (2024)"
+vendor = "ASUSTeK COMPUTER INC."
+match_product = [
+    "ASUS Vivobook S 1* S5406*",
+    "ASUS Vivobook S 1* S5506*",
+    "ASUS Vivobook S 1* S5606*",
+    "ASUS Vivobook S 1* M5406*",
+    "ASUS Vivobook S 1* M5506*",
+    "ASUS Vivobook S 1* M5606*",
+    "Vivobook_ASUSLaptop S5506*",
+    "Vivobook_ASUSLaptop S5606*",
+    "Vivobook_ASUSLaptop M5506*",
+    "Vivobook_ASUSLaptop_S5506*",
+    "Vivobook_ASUSLaptop_S5606*",
+    "Vivobook_ASUSLaptop_M5506*",
+    "Zenbook 14 UX3405*",
+    "Zenbook 14 UM3406*",
+    "S5506MA*",
+]
+match_board = [
+    "S5406*",
+    "S5506*",
+    "S5606*",
+    "M5406*",
+    "M5506*",
+    "M5606*",
+    "UX3405*",
+    "UM3406*",
+]
+
+[capabilities.display]
+has_oled = true
+supports_flicker_free = true
+refresh_rates = [60, 120]
+gpu_mux_mode = false
+panel_od = false
+
+[capabilities.thermal]
+driver = "platform_profile"
+profiles = ["quiet", "balanced", "performance", "full_speed"]
+has_fan_curve = false
+
+[capabilities.rgb]
+driver = "ite5570"
+zones = 1
+supports_timeout = true
+default_timeout_seconds = 60
+default_timeout_policy = "battery"
+
+[capabilities.battery]
+driver = "asus_charge_control"
+charge_control = true
+range = [50, 100]
+

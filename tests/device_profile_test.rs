@@ -6,8 +6,8 @@ use std::fs;
 use std::path::Path;
 
 #[test]
-fn test_s5506ma_reference_profile_asset_parsing() {
-    let asset_path = Path::new("assets/devices/s5506ma.toml");
+fn test_vivobook_s_2024_reference_profile_asset_parsing() {
+    let asset_path = Path::new("assets/devices/vivobook_s_2024.toml");
     let content = fs::read_to_string(asset_path)
         .unwrap_or_else(|e| panic!("Failed to read asset {}: {e}", asset_path.display()));
 
@@ -15,23 +15,37 @@ fn test_s5506ma_reference_profile_asset_parsing() {
         .unwrap_or_else(|e| panic!("Failed to parse {}: {e}", asset_path.display()));
 
     // Device metadata assertions
-    assert_eq!(profile.device.name, "ASUS Vivobook S 15 OLED");
+    assert_eq!(profile.device.name, "ASUS Vivobook S / Zenbook 14 (2024)");
     assert_eq!(profile.device.vendor, "ASUSTeK COMPUTER INC.");
     assert!(
         profile
             .device
             .match_product
-            .contains(&"S5506MA".to_string())
+            .iter()
+            .any(|p| p.contains("S5506"))
     );
     assert!(
         profile
             .device
             .match_product
-            .contains(&"Vivobook_ASUSLaptop_S5506MA".to_string())
+            .iter()
+            .any(|p| p.contains("UX3405"))
     );
-    assert_eq!(
-        profile.device.match_board,
-        Some(vec!["S5506MA".to_string()])
+    assert!(
+        profile
+            .device
+            .match_product
+            .iter()
+            .any(|p| p.contains("M5406"))
+    );
+    assert!(
+        profile
+            .device
+            .match_board
+            .as_ref()
+            .unwrap()
+            .iter()
+            .any(|b| b.contains("S5506"))
     );
 
     // RGB capabilities
@@ -43,7 +57,8 @@ fn test_s5506ma_reference_profile_asset_parsing() {
     assert_eq!(rgb.driver, "ite5570");
     assert_eq!(rgb.zones, 1);
     assert!(rgb.supports_timeout);
-    assert_eq!(rgb.default_timeout_policy.as_deref(), Some("Always"));
+    assert_eq!(rgb.default_timeout_seconds, Some(60));
+    assert_eq!(rgb.default_timeout_policy.as_deref(), Some("battery"));
 
     // Thermal capabilities
     let thermal = profile
@@ -51,7 +66,7 @@ fn test_s5506ma_reference_profile_asset_parsing() {
         .thermal
         .as_ref()
         .expect("Thermal capability present");
-    assert_eq!(thermal.driver, "asus_wmi_debugfs");
+    assert_eq!(thermal.driver, "platform_profile");
     assert_eq!(
         thermal.profiles,
         vec!["quiet", "balanced", "performance", "full_speed"]
@@ -67,6 +82,8 @@ fn test_s5506ma_reference_profile_asset_parsing() {
     assert!(display.has_oled);
     assert!(display.supports_flicker_free);
     assert_eq!(display.refresh_rates, vec![60, 120]);
+    assert_eq!(display.gpu_mux_mode, Some(false));
+    assert_eq!(display.panel_od, Some(false));
 
     // Battery capabilities
     let battery = profile
@@ -75,12 +92,33 @@ fn test_s5506ma_reference_profile_asset_parsing() {
         .as_ref()
         .expect("Battery capability present");
     assert_eq!(battery.driver, "asus_charge_control");
+    assert_eq!(battery.charge_control, Some(true));
+    assert_eq!(battery.range, Some([50, 100]));
 
-    // DMI Matching verification
+    // DMI Matching verification across family variants
     let profiles = vec![profile];
-    let matched = DmiMatcher::match_profile(&profiles, "S5506MA", Some("S5506MA"));
-    assert!(matched.is_some());
-    assert_eq!(matched.unwrap().device.name, "ASUS Vivobook S 15 OLED");
+
+    // Intel Vivobook S15
+    let matched_intel = DmiMatcher::match_profile(
+        &profiles,
+        "ASUS Vivobook S 15 S5506MA_S5506MA",
+        Some("S5506MA"),
+    );
+    assert!(matched_intel.is_some());
+    assert_eq!(
+        matched_intel.unwrap().device.name,
+        "ASUS Vivobook S / Zenbook 14 (2024)"
+    );
+
+    // Zenbook 14 OLED (Intel)
+    let matched_zenbook =
+        DmiMatcher::match_profile(&profiles, "Zenbook 14 UX3405MA", Some("UX3405MA"));
+    assert!(matched_zenbook.is_some());
+
+    // AMD Vivobook S14
+    let matched_amd =
+        DmiMatcher::match_profile(&profiles, "ASUS Vivobook S 14 M5406WA", Some("M5406WA"));
+    assert!(matched_amd.is_some());
 }
 
 #[test]
