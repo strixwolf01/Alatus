@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Alatus Contributors
 
-use alatus::services::desktop_session::{DesktopSessionOptions, run_desktop_session};
+use alatus::services::session::{DesktopSessionOptions, run_desktop_session};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

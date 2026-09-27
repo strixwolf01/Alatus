@@ -11,4 +11,5 @@ pub mod firmware_mode_state;
 pub mod hardware_resolver;
 pub mod power_uevent;
 pub mod rgb;
+pub mod session;
 pub mod telemetry;
