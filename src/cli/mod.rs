@@ -7,18 +7,16 @@
 //! battery charge limiting, deep sleep states, keyboard RGB lighting, and status diagnostics via D-Bus.
 
 pub mod battery;
+pub mod client;
+pub mod commands;
 pub mod rgb;
 pub mod session_cmd;
 pub mod status;
 pub mod thermal;
 
-pub use battery::*;
-pub use rgb::*;
-pub use session_cmd::*;
-pub use status::*;
-pub use thermal::*;
+pub use client::*;
+pub use commands::*;
 
-use crate::services::daemon_client::{DaemonClient, DaemonClientError};
 use clap::{Parser, Subcommand};
 use std::process;
 
@@ -209,7 +207,8 @@ pub async fn run() {
 
     match &cli.command {
         Some(Commands::Oled { action }) => {
-            if let Err(e) = handle_oled(action.clone()).await {
+            let client = AlatusClient::session_only().await;
+            if let Err(e) = handle_oled(&client, action.clone(), false).await {
                 eprintln!("Error executing command: {}", e);
                 eprintln!(
                     "Hint: Ensure 'alatus-session' is running: systemctl --user start alatus-session.service"
@@ -219,7 +218,8 @@ pub async fn run() {
             return;
         }
         Some(Commands::Display { action }) => {
-            if let Err(e) = handle_display(action.clone()).await {
+            let client = AlatusClient::session_only().await;
+            if let Err(e) = handle_display(&client, action.clone(), false).await {
                 eprintln!("Error executing command: {}", e);
                 eprintln!(
                     "Hint: Ensure 'alatus-session' is running: systemctl --user start alatus-session.service"
@@ -229,7 +229,7 @@ pub async fn run() {
             return;
         }
         Some(Commands::Daemon { target }) => {
-            if let Err(e) = handle_daemon(target.clone()).await {
+            if let Err(e) = handle_daemon(target.clone(), false).await {
                 eprintln!("Error executing command: {}", e);
                 process::exit(1);
             }
@@ -239,7 +239,7 @@ pub async fn run() {
             action: RgbAction::Sync { enable },
         }) => {
             let on = enable.unwrap_or(true);
-            if let Err(e) = crate::services::desktop_session::set_session_accent_sync(on).await {
+            if let Err(e) = crate::services::session::set_session_accent_sync(on).await {
                 eprintln!("Error setting accent sync: {}", e);
                 eprintln!(
                     "Hint: Ensure 'alatus-session' is running: systemctl --user start alatus-session.service"
@@ -255,7 +255,7 @@ pub async fn run() {
         _ => {}
     }
 
-    let client = match DaemonClient::connect().await {
+    let client = match AlatusClient::connect().await {
         Ok(c) => c,
         Err(err) => {
             eprintln!("Error: Failed to connect to alatusd via D-Bus: {}", err);
@@ -278,15 +278,15 @@ pub async fn run() {
         Commands::Capabilities { json } => handle_capabilities(&client, json).await,
         Commands::Watch => handle_status(&client, true, true).await,
         Commands::Monitor { interval_ms } => handle_monitor(&client, interval_ms).await,
-        Commands::Mode { action } => handle_mode(&client, action).await,
-        Commands::Quiet => handle_mode(&client, Some(ModeAction::Quiet)).await,
-        Commands::Balanced => handle_mode(&client, Some(ModeAction::Balanced)).await,
-        Commands::Perf => handle_mode(&client, Some(ModeAction::Performance)).await,
-        Commands::Full => handle_mode(&client, Some(ModeAction::Full)).await,
-        Commands::Fan { action } => handle_fan(&client, action).await,
-        Commands::Cycle => handle_cycle(&client).await,
-        Commands::ChargeLimit { percentage } => handle_charge_limit(&client, percentage).await,
-        Commands::Rgb { action } => handle_rgb(&client, action).await,
+        Commands::Mode { action } => handle_mode(&client, action, false).await,
+        Commands::Quiet => handle_mode(&client, Some(ModeAction::Quiet), false).await,
+        Commands::Balanced => handle_mode(&client, Some(ModeAction::Balanced), false).await,
+        Commands::Perf => handle_mode(&client, Some(ModeAction::Performance), false).await,
+        Commands::Full => handle_mode(&client, Some(ModeAction::Full), false).await,
+        Commands::Fan { action } => handle_fan(&client, action, false).await,
+        Commands::Cycle => handle_cycle(&client, false).await,
+        Commands::ChargeLimit { percentage } => handle_charge_limit(&client, percentage, false).await,
+        Commands::Rgb { action } => handle_rgb(&client, action, false).await,
         Commands::Oled { .. }
         | Commands::Display { .. }
         | Commands::Daemon { .. }

@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Alatus Contributors
 
 pub mod cli;
+pub mod client;
 pub mod daemon;
 pub mod domain;
 pub mod hardware;
