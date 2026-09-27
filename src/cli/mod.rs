@@ -26,28 +26,14 @@ use std::process;
 #[command(name = "alatus")]
 #[command(author = "Alatus Contributors")]
 #[command(version)]
-#[command(about = "ASUS Hardware Control Center CLI and GUI for Linux", long_about = None)]
+#[command(about = "ASUS Hardware Control Center CLI for Linux", long_about = None)]
 pub struct Cli {
-    /// Launch the Slint graphical user interface
-    #[arg(long, default_value_t = false)]
-    pub gui: bool,
-
-    /// Start GUI minimized to system tray
-    #[arg(long, default_value_t = false)]
-    pub tray: bool,
-
     #[command(subcommand)]
     pub command: Option<Commands>,
 }
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum Commands {
-    /// Launch the Slint graphical user interface dashboard
-    Gui {
-        /// Start GUI minimized to system tray
-        #[arg(short = 'm', long, visible_alias = "tray", default_value_t = false)]
-        minimized: bool,
-    },
 
     /// Show system, firmware, battery, and lighting status
     Status {
@@ -184,28 +170,6 @@ pub enum Commands {
 pub async fn run() {
     let cli = Cli::parse();
 
-    // Check for GUI launch via subcommand 'gui' or flag '--gui' or '--tray'
-    if cli.gui || cli.tray || matches!(cli.command, Some(Commands::Gui { .. })) {
-        #[cfg(feature = "gui")]
-        {
-            let minimized = cli.tray
-                || match &cli.command {
-                    Some(Commands::Gui { minimized, .. }) => *minimized,
-                    _ => false,
-                };
-            if let Err(e) = crate::gui::run_gui(minimized).await {
-                eprintln!("Error executing GUI: {e}");
-                process::exit(1);
-            }
-            return;
-        }
-        #[cfg(not(feature = "gui"))]
-        {
-            eprintln!("Error: GUI feature was not enabled at compile time.");
-            process::exit(1);
-        }
-    }
-
     if let Some(Commands::Session {
         action,
         sync_accent,
@@ -323,8 +287,7 @@ pub async fn run() {
         Commands::Cycle => handle_cycle(&client).await,
         Commands::ChargeLimit { percentage } => handle_charge_limit(&client, percentage).await,
         Commands::Rgb { action } => handle_rgb(&client, action).await,
-        Commands::Gui { .. }
-        | Commands::Oled { .. }
+        Commands::Oled { .. }
         | Commands::Display { .. }
         | Commands::Daemon { .. }
         | Commands::Session { .. }

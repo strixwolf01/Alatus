@@ -5,33 +5,6 @@ use super::*;
 use crate::services::firmware_mode::FirmwareMode;
 
 #[test]
-fn test_cli_parse_gui() {
-    let cli_gui = Cli::try_parse_from(["alatus", "gui"]).unwrap();
-    assert!(matches!(
-        cli_gui.command,
-        Some(Commands::Gui { minimized: false })
-    ));
-
-    let cli_gui_min = Cli::try_parse_from(["alatus", "gui", "-m"]).unwrap();
-    assert!(matches!(
-        cli_gui_min.command,
-        Some(Commands::Gui { minimized: true })
-    ));
-
-    let cli_gui_tray = Cli::try_parse_from(["alatus", "gui", "--tray"]).unwrap();
-    assert!(matches!(
-        cli_gui_tray.command,
-        Some(Commands::Gui { minimized: true })
-    ));
-
-    let cli_gui_flag = Cli::try_parse_from(["alatus", "--gui"]).unwrap();
-    assert!(cli_gui_flag.gui);
-
-    let cli_tray_flag = Cli::try_parse_from(["alatus", "--tray"]).unwrap();
-    assert!(cli_tray_flag.tray);
-}
-
-#[test]
 fn test_cli_parse_status() {
     let cli = Cli::try_parse_from(["alatus", "status"]).unwrap();
     assert!(matches!(

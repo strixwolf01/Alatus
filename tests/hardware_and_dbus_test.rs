@@ -13,9 +13,6 @@ use alatus::services::desktop_session::{
 use alatus::services::firmware_mode::{FirmwareMode, parse_dsts};
 use alatus::services::rgb::{percent_to_sysfs, sysfs_to_percent};
 
-#[cfg(feature = "gui")]
-slint::include_modules!();
-
 // ============================================================================
 // Test 1: ASUS WMI DebugFS Roundtrip (fan_state 1:1)
 // ============================================================================
@@ -160,47 +157,7 @@ fn test_session_state_atomics() {
 }
 
 // ============================================================================
-// Test 5: Slint GUI Property Bindings & Layout Architecture
-// ============================================================================
-
-#[cfg(feature = "gui")]
-#[test]
-fn test_gui_slint_properties_and_flicker_free_dimming() {
-    match AppWindow::new() {
-        Ok(window) => {
-            assert_eq!(window.get_current_tab(), 0);
-            assert_eq!(window.get_thermal_mode(), 1);
-            assert!(window.get_oled_care_enabled());
-            assert_eq!(window.get_oled_dim_level(), 100);
-            assert_eq!(window.get_charge_limit(), 80);
-            assert_eq!(window.get_rgb_brightness(), 80);
-            assert_eq!(window.get_selected_refresh_rate(), 120);
-
-            // Test setting flicker-free dim level
-            window.set_oled_dim_level(75);
-            assert_eq!(window.get_oled_dim_level(), 75);
-
-            // Test tab switching
-            window.set_current_tab(1);
-            assert_eq!(window.get_current_tab(), 1);
-        }
-        Err(e) => {
-            let err = e.to_string();
-            assert!(
-                err.contains("display")
-                    || err.contains("Display")
-                    || err.contains("platform")
-                    || err.contains("Platform")
-                    || std::env::var("DISPLAY").is_err()
-                    || std::env::var("WAYLAND_DISPLAY").is_err(),
-                "Unexpected window initialization error: {err}"
-            );
-        }
-    }
-}
-
-// ============================================================================
-// Test 6: Firmware Mode Conversions & Mappings (fan_state spec)
+// Test 5: Firmware Mode Conversions & Mappings (fan_state spec)
 // ============================================================================
 
 #[test]

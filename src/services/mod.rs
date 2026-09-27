@@ -12,4 +12,3 @@ pub mod hardware_resolver;
 pub mod power_uevent;
 pub mod rgb;
 pub mod telemetry;
-pub mod tray;

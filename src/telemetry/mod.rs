@@ -7,6 +7,8 @@ use std::env;
 use std::sync::Once;
 use tracing_subscriber::filter::EnvFilter;
 
+pub mod formatters;
+
 static INIT_ONCE: Once = Once::new();
 
 /// Initializes structured logging with environment filtering and flexible output formats.

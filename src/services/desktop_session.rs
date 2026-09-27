@@ -1028,22 +1028,13 @@ pub fn resolve_mode_icon(mode_key: &str) -> String {
         return canon.to_string_lossy().to_string();
     }
 
-    // Runtime cache fallback from embedded bytes
-    let runtime_dir = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_string());
-    let cache_dir = std::path::Path::new(&runtime_dir).join("alatus/icons/modes");
-    let _ = std::fs::create_dir_all(&cache_dir);
-    let cache_file = cache_dir.join(format!("{mode_key}.svg"));
-
-    let embedded_svg = match mode_key {
-        "quiet" => include_str!("../../assets/icons/modes/quiet.svg"),
-        "balanced" => include_str!("../../assets/icons/modes/balanced.svg"),
-        "performance" => include_str!("../../assets/icons/modes/performance.svg"),
-        "full_speed" => include_str!("../../assets/icons/modes/full_speed.svg"),
-        _ => include_str!("../../assets/icons/modes/balanced.svg"),
-    };
-
-    let _ = std::fs::write(&cache_file, embedded_svg);
-    cache_file.to_string_lossy().to_string()
+    // Fallback to standard FreeDesktop notification icons
+    match mode_key {
+        "quiet" => "power-profile-power-saver".to_string(),
+        "balanced" => "power-profile-balanced".to_string(),
+        "performance" | "full_speed" => "power-profile-performance".to_string(),
+        _ => "preferences-system-power".to_string(),
+    }
 }
 
 /// Formats the notification title, description, and custom icon path for a thermal mode.
