@@ -3,7 +3,7 @@
 
 use std::time::{Duration, Instant};
 
-use alatus::daemon::policy::{
+use alatus::services::daemon::policy::{
     HardwareSnapshot, PolicyAction, PolicyDecision, PolicyEngine, SafetyGate, SystemEvent,
 };
 use alatus::domain::{RgbTimeoutPolicy, ThermalMode};

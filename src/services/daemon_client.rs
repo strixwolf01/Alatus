@@ -3,18 +3,7 @@
 
 use crate::services::firmware_mode::FirmwareMode;
 use std::sync::Arc;
-use tokio::sync::OnceCell;
 use zbus::{Connection, Proxy};
-
-static LAZY_CLIENT: OnceCell<DaemonClient> = OnceCell::const_new();
-
-/// Returns the global shared DaemonClient, connecting if not already connected.
-pub async fn get_daemon_client() -> Result<DaemonClient, DaemonClientError> {
-    LAZY_CLIENT
-        .get_or_try_init(DaemonClient::connect)
-        .await
-        .cloned()
-}
 
 #[derive(Debug, Clone)]
 pub enum DaemonClientError {
@@ -215,11 +204,6 @@ impl DaemonClient {
         Ok(())
     }
 
-    pub async fn get_product_serial(&self) -> Result<String, DaemonClientError> {
-        let val: String = self.proxy.get_property("ProductSerial").await?;
-        Ok(val)
-    }
-
     pub async fn get_capabilities(
         &self,
     ) -> Result<crate::hardware::SystemCapabilities, DaemonClientError> {
@@ -256,23 +240,6 @@ impl DaemonClient {
             .set_property("AutoThermalProfile", enable)
             .await?;
         Ok(())
-    }
-
-    pub async fn get_has_conflicting_power_daemon(&self) -> Result<bool, DaemonClientError> {
-        let val: bool = self.proxy.get_property("HasConflictingPowerDaemon").await?;
-        Ok(val)
-    }
-
-    pub async fn receive_firmware_mode_changed(&self) -> zbus::proxy::PropertyStream<'_, u32> {
-        self.proxy.receive_property_changed("FirmwareMode").await
-    }
-
-    pub async fn receive_charge_limit_changed(&self) -> zbus::proxy::PropertyStream<'_, u32> {
-        self.proxy.receive_property_changed("ChargeLimit").await
-    }
-
-    pub async fn receive_deep_sleep_active_changed(&self) -> zbus::proxy::PropertyStream<'_, bool> {
-        self.proxy.receive_property_changed("DeepSleepActive").await
     }
 
     pub async fn get_rgb_status(

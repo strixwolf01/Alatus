@@ -6,7 +6,7 @@ use std::sync::atomic::Ordering;
 use tempfile::tempdir;
 
 use alatus::services::alatus_rgb_wrapper::{build_asus_rgb_packet, percent_to_intensity};
-use alatus::services::desktop_session::{
+use alatus::services::session::{
     DesktopEnv, OledMetrics, SessionState, default_oled_dim_level, load_oled_metrics_from,
     save_oled_metrics_to,
 };

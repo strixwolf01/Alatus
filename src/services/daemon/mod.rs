@@ -68,7 +68,7 @@ pub async fn run_daemon() -> Result<(), Box<dyn std::error::Error>> {
 
     // Startup State Reconciliation: query current hardware status into snapshot
     let initial_battery_level =
-        crate::services::telemetry::read_battery_telemetry().map(|t| t.capacity as u8);
+        crate::telemetry::read_battery_telemetry().map(|t| t.capacity as u8);
     let initial_thermal_mode = {
         let ctx = device_context.lock().await;
         ctx.thermal.as_ref().and_then(|th| th.get_mode().ok())

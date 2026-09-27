@@ -51,9 +51,6 @@ fn default_rgb_timeout_seconds() -> u32 {
 pub struct AlatusConfig {
     pub thermal_mode: u32,
     pub charge_limit: u32,
-    pub tray_enabled: bool,
-    #[serde(alias = "autostart_tray")]
-    pub autostart_enabled: bool,
     pub rgb_preset: i32,
     pub rgb_brightness: u32,
     pub custom_rgb: (u8, u8, u8),
@@ -71,8 +68,6 @@ impl Default for AlatusConfig {
         Self {
             thermal_mode: 1, // Balanced
             charge_limit: 80,
-            tray_enabled: true,
-            autostart_enabled: false,
             rgb_preset: 0, // Auto-Sync
             rgb_brightness: 80,
             custom_rgb: (208, 188, 255),
@@ -132,18 +127,6 @@ pub fn load_config() -> AlatusConfig {
         return cfg;
     }
 
-    // Migration fallback for legacy gui_config.json
-    let legacy_path = path.with_file_name("gui_config.json");
-    if let Ok(data) = std::fs::read_to_string(&legacy_path)
-        && let Ok(legacy) = serde_json::from_str::<serde_json::Value>(&data)
-    {
-        let mut cfg = AlatusConfig::default();
-        if let Some(t) = legacy.get("tray_enabled").and_then(|v| v.as_bool()) {
-            cfg.tray_enabled = t;
-        }
-        return cfg;
-    }
-
     AlatusConfig::default()
 }
 
@@ -176,8 +159,6 @@ mod tests {
         let cfg = AlatusConfig::default();
         assert_eq!(cfg.thermal_mode, 1);
         assert_eq!(cfg.charge_limit, 80);
-        assert!(cfg.tray_enabled);
-        assert!(!cfg.autostart_enabled);
         assert_eq!(cfg.rgb_preset, 0);
         assert_eq!(cfg.rgb_brightness, 80);
         assert!(cfg.oled_care_enabled);
@@ -196,8 +177,6 @@ mod tests {
         let cfg = AlatusConfig {
             thermal_mode: 2,
             charge_limit: 60,
-            tray_enabled: false,
-            autostart_enabled: true,
             rgb_preset: 2,
             rgb_brightness: 50,
             custom_rgb: (255, 0, 128),

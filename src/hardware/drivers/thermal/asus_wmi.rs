@@ -6,7 +6,7 @@ use crate::hardware::capabilities::UnavailableReason;
 use crate::hardware::error::DriverError;
 use crate::hardware::traits::ThermalDriver;
 use crate::services::firmware_mode::{self, FirmwareMode};
-use crate::services::telemetry;
+use crate::telemetry;
 use std::path::PathBuf;
 
 const SUPPORTED_MODES: &[ThermalMode] = &[

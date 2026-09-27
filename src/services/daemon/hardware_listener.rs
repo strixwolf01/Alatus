@@ -113,7 +113,7 @@ pub fn find_keyboard_and_hotkey_devices() -> Vec<(PathBuf, String)> {
 }
 
 pub async fn trigger_osd_notification(mode: u32) {
-    let (summary, body, icon) = crate::services::desktop_session::thermal_mode_notification(mode);
+    let (summary, body, icon) = crate::services::session::thermal_mode_notification(mode);
 
     // Scan /run/user for active user D-Bus session sockets
     if let Ok(entries) = fs::read_dir("/run/user") {
@@ -124,7 +124,7 @@ pub async fn trigger_osd_notification(mode: u32) {
                 if let Ok(user_conn) = zbus::connection::Builder::address(address.as_str())
                     && let Ok(conn) = user_conn.build().await
                 {
-                    let _ = crate::services::desktop_session::send_osd_notification(
+                    let _ = crate::services::session::send_osd_notification(
                         &conn, summary, body, &icon,
                     )
                     .await;

@@ -6,13 +6,8 @@
 //! Provides CLI controls for Linux hardware management including power/fan profiles,
 //! battery charge limiting, deep sleep states, keyboard RGB lighting, and status diagnostics via D-Bus.
 
-pub mod battery;
 pub mod client;
 pub mod commands;
-pub mod rgb;
-pub mod session_cmd;
-pub mod status;
-pub mod thermal;
 
 pub use client::*;
 pub use commands::*;

@@ -6,12 +6,12 @@ use std::fs;
 use std::sync::atomic::Ordering;
 use tempfile::tempdir;
 
-use alatus::services::desktop_session::{MutterModeSpec, SessionState, pick_mutter_mode};
 use alatus::services::hardware_resolver::{
     HardwareResolveError, ThermalRegister, match_asus_profile, resolve_register_from_dmi,
     resolve_register_from_dmi_dir,
 };
-use alatus::services::telemetry::{read_battery_telemetry_from, read_thermal_telemetry_from};
+use alatus::services::session::{MutterModeSpec, SessionState, pick_mutter_mode};
+use alatus::telemetry::{read_battery_telemetry_from, read_thermal_telemetry_from};
 
 // ============================================================================
 // 1. Hardware Resolver / DMI Edge Cases & Platform Rejection

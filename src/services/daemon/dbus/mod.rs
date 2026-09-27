@@ -385,7 +385,7 @@ pub async fn run_background_listener(
 
         // Battery level monitoring for hysteresis
         let current_battery_level =
-            crate::services::telemetry::read_battery_telemetry().map(|t| t.capacity as u8);
+            crate::telemetry::read_battery_telemetry().map(|t| t.capacity as u8);
         if let Some(level) = current_battery_level {
             let decision = {
                 let mut engine = policy_engine.lock().await;
@@ -479,7 +479,7 @@ pub async fn run_background_listener(
                             inactivity_clone.reset_activity_timer();
 
                             // 1. Reset fan and thermal telemetry read handles / cache
-                            crate::services::telemetry::reset_telemetry_cache();
+                            crate::telemetry::reset_telemetry_cache();
 
                             // 2. Hardware re-enumeration on DeviceContext
                             let (limit, policy_engine, device_context) = {

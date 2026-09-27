@@ -3,7 +3,6 @@
 
 pub mod cli;
 pub mod client;
-pub mod daemon;
 pub mod domain;
 pub mod hardware;
 pub mod services;
