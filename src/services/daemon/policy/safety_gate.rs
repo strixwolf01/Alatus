@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Alatus Contributors
 
-use crate::daemon::policy::decision::{PolicyAction, PolicyDecision};
+use super::decision::{PolicyAction, PolicyDecision};
 use crate::hardware::DeviceContext;
 
 /// Safety gate validating policy decisions against active runtime capabilities

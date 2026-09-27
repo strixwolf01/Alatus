@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Alatus Contributors
 
-use super::dbus_interface::{DaemonInterface, DaemonState};
+use super::dbus::{DaemonInterface, DaemonState};
 use super::inactivity::InactivityState;
 use crate::domain::ThermalMode;
 use std::fs;

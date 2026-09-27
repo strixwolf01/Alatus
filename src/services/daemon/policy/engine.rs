@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Alatus Contributors
 
-use crate::daemon::policy::decision::{PolicyAction, PolicyDecision};
-use crate::daemon::policy::events::{HardwareSnapshot, SystemEvent};
+use super::decision::{PolicyAction, PolicyDecision};
+use super::events::{HardwareSnapshot, SystemEvent};
 use crate::domain::{RgbTimeoutPolicy, ThermalMode};
 use std::time::{Duration, Instant};
 

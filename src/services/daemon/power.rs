@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Alatus Contributors
 
-use crate::services::firmware_mode;
-use std::collections::HashMap;
+//! Power, battery charging threshold, and AC/battery state management.
+
 use std::fs;
 use std::path::{Path, PathBuf};
-use zbus::Connection;
+
+use super::error::DaemonError;
+use crate::services::firmware_mode;
 
 pub const SYS_MEM_SLEEP: &str = "/sys/power/mem_sleep";
 pub const SYS_CHARGE_THRESHOLDS: &[&str] = &[
@@ -14,38 +16,6 @@ pub const SYS_CHARGE_THRESHOLDS: &[&str] = &[
     "/sys/class/power_supply/BATC/charge_control_end_threshold",
     "/sys/class/power_supply/BATT/charge_control_end_threshold",
 ];
-
-#[derive(Debug, zbus::DBusError)]
-#[zbus(prefix = "io.strixwolf.alatus.Error")]
-pub enum DaemonError {
-    CapabilityUnavailable(String),
-    CapabilityUnsupported(String),
-    InvalidArgument(String),
-    PermissionDenied(String),
-    NotSupported(String),
-    IoError(String),
-    BackendUnavailable(String),
-}
-
-impl From<DaemonError> for zbus::fdo::Error {
-    fn from(e: DaemonError) -> Self {
-        match e {
-            DaemonError::CapabilityUnavailable(msg) => zbus::fdo::Error::Failed(msg),
-            DaemonError::CapabilityUnsupported(msg) => zbus::fdo::Error::NotSupported(msg),
-            DaemonError::InvalidArgument(msg) => zbus::fdo::Error::InvalidArgs(msg),
-            DaemonError::PermissionDenied(msg) => zbus::fdo::Error::Failed(msg),
-            DaemonError::NotSupported(msg) => zbus::fdo::Error::NotSupported(msg),
-            DaemonError::IoError(msg) => zbus::fdo::Error::Failed(msg),
-            DaemonError::BackendUnavailable(msg) => zbus::fdo::Error::Failed(msg),
-        }
-    }
-}
-
-impl From<DaemonError> for zbus::Error {
-    fn from(e: DaemonError) -> Self {
-        zbus::Error::from(zbus::fdo::Error::from(e))
-    }
-}
 
 pub fn find_charge_threshold_path() -> Option<PathBuf> {
     let power_supply_dir = Path::new("/sys/class/power_supply");
@@ -247,66 +217,6 @@ pub fn write_wmi_firmware_mode(value: u32) -> Result<(), DaemonError> {
         Err(e) => {
             tracing::error!("Failed to set firmware mode: {e}");
             Err(DaemonError::IoError(e.to_string()))
-        }
-    }
-}
-
-pub fn parse_polkit_result(is_authorized: bool) -> Result<(), DaemonError> {
-    if is_authorized {
-        Ok(())
-    } else {
-        Err(DaemonError::PermissionDenied(
-            "Polkit authorization failed".to_string(),
-        ))
-    }
-}
-
-pub async fn check_polkit(
-    conn: &Connection,
-    sender: &zbus::names::UniqueName<'_>,
-    action_id: &str,
-) -> Result<(), DaemonError> {
-    let mut details = HashMap::new();
-    details.insert(
-        "name".to_string(),
-        zbus::zvariant::Value::from(sender.as_str()),
-    );
-
-    let subject = ("system-bus-name".to_string(), details);
-    let empty_details: HashMap<String, String> = HashMap::new();
-    let flags: u32 = 1; // AllowUserInteraction
-    let cancellation_id = "";
-
-    let proxy = match zbus::Proxy::new(
-        conn,
-        "org.freedesktop.PolicyKit1",
-        "/org/freedesktop/PolicyKit1/Authority",
-        "org.freedesktop.PolicyKit1.Authority",
-    )
-    .await
-    {
-        Ok(p) => p,
-        Err(e) => {
-            return Err(DaemonError::BackendUnavailable(format!(
-                "PolicyKit not available: {e}"
-            )));
-        }
-    };
-
-    let response: Result<(bool, bool, HashMap<String, String>), zbus::Error> = proxy
-        .call(
-            "CheckAuthorization",
-            &(subject, action_id, empty_details, flags, cancellation_id),
-        )
-        .await;
-
-    match response {
-        Ok((is_authorized, _, _)) => parse_polkit_result(is_authorized),
-        Err(e) => {
-            tracing::error!("Polkit check failed with D-Bus error: {e}");
-            Err(DaemonError::PermissionDenied(format!(
-                "Polkit communication failed: {e}"
-            )))
         }
     }
 }

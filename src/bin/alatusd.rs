@@ -3,5 +3,5 @@
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    alatus::daemon::run_daemon().await
+    alatus::services::daemon::run_daemon().await
 }

@@ -3,6 +3,7 @@
 
 pub mod alatus_rgb_wrapper;
 pub mod config;
+pub mod daemon;
 pub mod daemon_client;
 pub mod dbus;
 pub mod desktop_session;
