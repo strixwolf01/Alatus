@@ -1,75 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Alatus Contributors
 
-use crate::hardware::capabilities::{
-    BatteryCapabilityDetails, CapabilityState, DisplayCapabilityDetails, RgbCapabilityDetails,
-    SystemCapabilities, ThermalCapabilityDetails, UnavailableReason,
-};
-use crate::hardware::drivers::{
-    AsusWmiDriver, AsusctlProxyDriver, Ite5570Driver, OledDisplayDriver, SysfsBatteryDriver,
-};
+//! Passive runtime container holding resolved drivers and dynamic capability states.
+
+use crate::hardware::capabilities::SystemCapabilities;
+use crate::hardware::drivers::AsusctlProxyDriver;
 use crate::hardware::error::DriverError;
-use crate::hardware::profile::{DeviceMeta, DeviceProfile, DeviceProfileCapabilities, DmiMatcher};
+use crate::hardware::profile::DeviceProfile;
+use crate::hardware::resolver::{DriverFactory, resolve_profile_from_dmi};
 use crate::hardware::traits::{BatteryDriver, DisplayDriver, RgbDriver, ThermalDriver};
 use std::path::Path;
 
-const S5506MA_TOML: &str = include_str!("../../assets/devices/s5506ma.toml");
-const ZENBOOK_UM5302_TOML: &str = include_str!("../../assets/devices/zenbook_um5302.toml");
-const ROG_G14_TOML: &str = include_str!("../../assets/devices/rog_g14.toml");
-
-/// Returns the compiled-in device profiles.
-pub fn builtin_profiles() -> Vec<DeviceProfile> {
-    let mut profiles = Vec::new();
-    if let Ok(p) = DeviceProfile::from_toml_str(S5506MA_TOML) {
-        profiles.push(p);
-    }
-    if let Ok(p) = DeviceProfile::from_toml_str(ZENBOOK_UM5302_TOML) {
-        profiles.push(p);
-    }
-    if let Ok(p) = DeviceProfile::from_toml_str(ROG_G14_TOML) {
-        profiles.push(p);
-    }
-    profiles
-}
-
-/// Fallback profile for unrecognized ASUS laptop platforms.
-pub fn fallback_profile() -> DeviceProfile {
-    DeviceProfile {
-        device: DeviceMeta {
-            name: "Generic ASUS Laptop".to_string(),
-            vendor: "ASUSTeK COMPUTER INC.".to_string(),
-            match_product: vec!["*".to_string()],
-            match_board: None,
-        },
-        capabilities: DeviceProfileCapabilities {
-            rgb: Some(crate::hardware::profile::model::RgbProfileConfig {
-                driver: "ite5570".to_string(),
-                zones: 1,
-                supports_timeout: true,
-                default_timeout_policy: Some("Always".to_string()),
-            }),
-            thermal: Some(crate::hardware::profile::model::ThermalProfileConfig {
-                driver: "asus_wmi_debugfs".to_string(),
-                profiles: vec![
-                    "quiet".to_string(),
-                    "balanced".to_string(),
-                    "performance".to_string(),
-                    "full_speed".to_string(),
-                ],
-                has_fan_curve: false,
-            }),
-            battery: Some(crate::hardware::profile::model::BatteryProfileConfig {
-                driver: "asus_charge_control".to_string(),
-                sysfs_path: None,
-            }),
-            display: Some(crate::hardware::profile::model::DisplayProfileConfig {
-                has_oled: true,
-                supports_flicker_free: true,
-                refresh_rates: vec![60, 120],
-            }),
-        },
-    }
-}
+pub use crate::hardware::resolver::{builtin_profiles, fallback_profile};
 
 /// Single owner of host hardware platform drivers and dynamic capability states.
 pub struct DeviceContext {
@@ -95,172 +37,21 @@ impl DeviceContext {
 
     /// Probes system with a custom DMI root path for non-standard environments or testing.
     pub fn new_with_dmi_root(dmi_root: &Path) -> Self {
-        let profiles = builtin_profiles();
-        let matched = DmiMatcher::read_dmi(dmi_root)
-            .ok()
-            .and_then(|(prod, board)| {
-                DmiMatcher::match_profile(&profiles, &prod, board.as_deref()).cloned()
-            });
-
-        let profile = matched.unwrap_or_else(fallback_profile);
+        let profile = resolve_profile_from_dmi(dmi_root);
         Self::from_profile(profile)
     }
 
-    /// Initializes hardware drivers according to the declared profile capabilities, probing
-    /// native kernel and hardware drivers first, falling back to system D-Bus `asusd` proxy if available.
+    /// Initializes hardware drivers according to the declared profile capabilities.
     pub fn from_profile(profile: DeviceProfile) -> Self {
-        Self::from_profile_with_fallback(profile, None)
+        DriverFactory::build_context(profile, None)
     }
 
-    /// Initializes hardware drivers with an optional pre-configured fallback proxy (e.g. for testing).
+    /// Initializes hardware drivers with an optional pre-configured fallback proxy.
     pub fn from_profile_with_fallback(
         profile: DeviceProfile,
         fallback_proxy: Option<AsusctlProxyDriver>,
     ) -> Self {
-        let mut capabilities = SystemCapabilities {
-            schema_version: 1,
-            rgb: CapabilityState::Unsupported,
-            thermal: CapabilityState::Unsupported,
-            battery: CapabilityState::Unsupported,
-            display: CapabilityState::Unsupported,
-        };
-
-        // Cache or probe fallback proxy lazily so we only probe system D-Bus once if needed
-        let mut proxy_cache = fallback_proxy;
-        let get_proxy = |cache: &mut Option<AsusctlProxyDriver>| -> Option<AsusctlProxyDriver> {
-            if cache.is_none() {
-                *cache = AsusctlProxyDriver::probe();
-            }
-            cache.clone()
-        };
-
-        // 1. RGB Subsystem
-        let rgb: Option<Box<dyn RgbDriver>> = match &profile.capabilities.rgb {
-            None => {
-                capabilities.rgb = CapabilityState::Unsupported;
-                None
-            }
-            Some(rgb_cfg) => {
-                let is_ite = rgb_cfg.driver == "ite5570";
-                let has_hid = is_ite && crate::services::alatus_rgb_wrapper::discover().is_ok();
-                let has_sysfs = is_ite
-                    && Path::new(crate::services::rgb::SYS_KBD_BACKLIGHT)
-                        .join("brightness")
-                        .exists();
-
-                if has_hid || has_sysfs {
-                    capabilities.rgb = CapabilityState::Supported(RgbCapabilityDetails {
-                        max_brightness: 100,
-                        supports_custom_color: true,
-                        supports_inactivity_timeout: rgb_cfg.supports_timeout,
-                        supported_zones: vec!["keyboard".to_string()],
-                    });
-                    Some(Box::new(Ite5570Driver::new()))
-                } else if let Some(proxy) = get_proxy(&mut proxy_cache) {
-                    capabilities.rgb = CapabilityState::Supported(RgbCapabilityDetails {
-                        max_brightness: 100,
-                        supports_custom_color: true,
-                        supports_inactivity_timeout: rgb_cfg.supports_timeout,
-                        supported_zones: vec!["keyboard".to_string()],
-                    });
-                    Some(Box::new(proxy))
-                } else {
-                    capabilities.rgb =
-                        CapabilityState::Unavailable(UnavailableReason::KernelInterfaceMissing);
-                    None
-                }
-            }
-        };
-
-        // 2. Thermal Subsystem
-        let thermal: Option<Box<dyn ThermalDriver>> = match &profile.capabilities.thermal {
-            None => {
-                capabilities.thermal = CapabilityState::Unsupported;
-                None
-            }
-            Some(_th_cfg) => {
-                let driver = AsusWmiDriver::new();
-                if driver.get_mode().is_ok() {
-                    capabilities.thermal = CapabilityState::Supported(ThermalCapabilityDetails {
-                        supported_modes: driver.supported_modes().to_vec(),
-                        fan_count: 2,
-                        supports_fan_telemetry: true,
-                    });
-                    Some(Box::new(driver))
-                } else if let Some(proxy) = get_proxy(&mut proxy_cache) {
-                    capabilities.thermal = CapabilityState::Supported(ThermalCapabilityDetails {
-                        supported_modes: proxy.supported_modes().to_vec(),
-                        fan_count: 2,
-                        supports_fan_telemetry: false,
-                    });
-                    Some(Box::new(proxy))
-                } else {
-                    capabilities.thermal =
-                        CapabilityState::Unavailable(UnavailableReason::KernelInterfaceMissing);
-                    None
-                }
-            }
-        };
-
-        // 3. Battery Subsystem
-        let battery: Option<Box<dyn BatteryDriver>> = match &profile.capabilities.battery {
-            None => {
-                capabilities.battery = CapabilityState::Unsupported;
-                None
-            }
-            Some(bat_cfg) => {
-                let driver = match &bat_cfg.sysfs_path {
-                    Some(custom_path) => {
-                        SysfsBatteryDriver::with_path(std::path::PathBuf::from(custom_path))
-                    }
-                    None => SysfsBatteryDriver::new(),
-                };
-                if driver.get_charge_threshold().is_ok() {
-                    capabilities.battery = CapabilityState::Supported(BatteryCapabilityDetails {
-                        min_threshold: 50,
-                        max_threshold: 100,
-                        supports_charge_threshold: true,
-                    });
-                    Some(Box::new(driver))
-                } else if let Some(proxy) = get_proxy(&mut proxy_cache) {
-                    capabilities.battery = CapabilityState::Supported(BatteryCapabilityDetails {
-                        min_threshold: 20,
-                        max_threshold: 100,
-                        supports_charge_threshold: true,
-                    });
-                    Some(Box::new(proxy))
-                } else {
-                    capabilities.battery =
-                        CapabilityState::Unavailable(UnavailableReason::KernelInterfaceMissing);
-                    None
-                }
-            }
-        };
-
-        // 4. Display Subsystem
-        let display: Option<Box<dyn DisplayDriver>> = match &profile.capabilities.display {
-            None => {
-                capabilities.display = CapabilityState::Unsupported;
-                None
-            }
-            Some(disp_cfg) => {
-                let driver = OledDisplayDriver::with_refresh_rates(disp_cfg.refresh_rates.clone());
-                capabilities.display = CapabilityState::Supported(DisplayCapabilityDetails {
-                    supports_flicker_free_dimming: disp_cfg.supports_flicker_free,
-                    supported_refresh_rates: disp_cfg.refresh_rates.clone(),
-                });
-                Some(Box::new(driver))
-            }
-        };
-
-        Self {
-            profile,
-            capabilities,
-            rgb,
-            thermal,
-            battery,
-            display,
-        }
+        DriverFactory::build_context(profile, fallback_proxy)
     }
 
     /// Builder for testing, mock injection, and custom capability configurations.
@@ -285,12 +76,14 @@ impl DeviceContext {
     /// Returns a mutable reference to the RGB driver if supported and operational.
     pub fn rgb_mut(&mut self) -> Result<&mut (dyn RgbDriver + 'static), DriverError> {
         match &self.capabilities.rgb {
-            CapabilityState::Unsupported => Err(DriverError::Unsupported(
+            crate::hardware::capabilities::CapabilityState::Unsupported => Err(DriverError::Unsupported(
                 "RGB illumination unsupported on this device".to_string(),
             )),
-            CapabilityState::Unavailable(reason) => Err(DriverError::Unavailable(reason.clone())),
-            CapabilityState::Supported(_) => self.rgb.as_deref_mut().ok_or_else(|| {
-                DriverError::Unavailable(UnavailableReason::HardwareError(
+            crate::hardware::capabilities::CapabilityState::Unavailable(reason) => {
+                Err(DriverError::Unavailable(reason.clone()))
+            }
+            crate::hardware::capabilities::CapabilityState::Supported(_) => self.rgb.as_deref_mut().ok_or_else(|| {
+                DriverError::Unavailable(crate::hardware::capabilities::UnavailableReason::HardwareError(
                     "RGB driver missing".to_string(),
                 ))
             }),
@@ -300,98 +93,69 @@ impl DeviceContext {
     /// Returns a mutable reference to the thermal driver if supported and operational.
     pub fn thermal_mut(&mut self) -> Result<&mut (dyn ThermalDriver + 'static), DriverError> {
         match &self.capabilities.thermal {
-            CapabilityState::Unsupported => Err(DriverError::Unsupported(
+            crate::hardware::capabilities::CapabilityState::Unsupported => Err(DriverError::Unsupported(
                 "Thermal management unsupported on this device".to_string(),
             )),
-            CapabilityState::Unavailable(reason) => Err(DriverError::Unavailable(reason.clone())),
-            CapabilityState::Supported(_) => self.thermal.as_deref_mut().ok_or_else(|| {
-                DriverError::Unavailable(UnavailableReason::HardwareError(
-                    "Thermal driver missing".to_string(),
-                ))
-            }),
+            crate::hardware::capabilities::CapabilityState::Unavailable(reason) => {
+                Err(DriverError::Unavailable(reason.clone()))
+            }
+            crate::hardware::capabilities::CapabilityState::Supported(_) => {
+                self.thermal.as_deref_mut().ok_or_else(|| {
+                    DriverError::Unavailable(crate::hardware::capabilities::UnavailableReason::HardwareError(
+                        "Thermal driver missing".to_string(),
+                    ))
+                })
+            }
         }
     }
 
     /// Returns a mutable reference to the battery driver if supported and operational.
     pub fn battery_mut(&mut self) -> Result<&mut (dyn BatteryDriver + 'static), DriverError> {
         match &self.capabilities.battery {
-            CapabilityState::Unsupported => Err(DriverError::Unsupported(
+            crate::hardware::capabilities::CapabilityState::Unsupported => Err(DriverError::Unsupported(
                 "Battery charge limit unsupported on this device".to_string(),
             )),
-            CapabilityState::Unavailable(reason) => Err(DriverError::Unavailable(reason.clone())),
-            CapabilityState::Supported(_) => self.battery.as_deref_mut().ok_or_else(|| {
-                DriverError::Unavailable(UnavailableReason::HardwareError(
-                    "Battery driver missing".to_string(),
-                ))
-            }),
+            crate::hardware::capabilities::CapabilityState::Unavailable(reason) => {
+                Err(DriverError::Unavailable(reason.clone()))
+            }
+            crate::hardware::capabilities::CapabilityState::Supported(_) => {
+                self.battery.as_deref_mut().ok_or_else(|| {
+                    DriverError::Unavailable(crate::hardware::capabilities::UnavailableReason::HardwareError(
+                        "Battery driver missing".to_string(),
+                    ))
+                })
+            }
         }
     }
 
     /// Returns a mutable reference to the display driver if supported and operational.
     pub fn display_mut(&mut self) -> Result<&mut (dyn DisplayDriver + 'static), DriverError> {
         match &self.capabilities.display {
-            CapabilityState::Unsupported => Err(DriverError::Unsupported(
+            crate::hardware::capabilities::CapabilityState::Unsupported => Err(DriverError::Unsupported(
                 "Display management unsupported on this device".to_string(),
             )),
-            CapabilityState::Unavailable(reason) => Err(DriverError::Unavailable(reason.clone())),
-            CapabilityState::Supported(_) => self.display.as_deref_mut().ok_or_else(|| {
-                DriverError::Unavailable(UnavailableReason::HardwareError(
-                    "Display driver missing".to_string(),
-                ))
-            }),
+            crate::hardware::capabilities::CapabilityState::Unavailable(reason) => {
+                Err(DriverError::Unavailable(reason.clone()))
+            }
+            crate::hardware::capabilities::CapabilityState::Supported(_) => {
+                self.display.as_deref_mut().ok_or_else(|| {
+                    DriverError::Unavailable(crate::hardware::capabilities::UnavailableReason::HardwareError(
+                        "Display driver missing".to_string(),
+                    ))
+                })
+            }
         }
     }
 
     /// Re-probes the RGB backlighting controller and refreshes the driver instance
     /// while preserving active brightness if possible.
     pub fn re_enumerate_rgb(&mut self) {
-        let cached_brightness = self.rgb.as_ref().and_then(|r| r.get_brightness().ok());
-
-        if let Some(rgb_cfg) = &self.profile.capabilities.rgb {
-            let is_ite = rgb_cfg.driver == "ite5570";
-            let has_hid = is_ite && crate::services::alatus_rgb_wrapper::discover().is_ok();
-            let has_sysfs = is_ite
-                && Path::new(crate::services::rgb::SYS_KBD_BACKLIGHT)
-                    .join("brightness")
-                    .exists();
-
-            if has_hid || has_sysfs {
-                self.capabilities.rgb = CapabilityState::Supported(RgbCapabilityDetails {
-                    max_brightness: 100,
-                    supports_custom_color: true,
-                    supports_inactivity_timeout: rgb_cfg.supports_timeout,
-                    supported_zones: vec!["keyboard".to_string()],
-                });
-                let mut driver = Ite5570Driver::new();
-                if let Some(b) = cached_brightness {
-                    let _ = driver.set_brightness(b);
-                }
-                self.rgb = Some(Box::new(driver));
-            } else if let Some(proxy) = AsusctlProxyDriver::probe() {
-                self.capabilities.rgb = CapabilityState::Supported(RgbCapabilityDetails {
-                    max_brightness: 100,
-                    supports_custom_color: true,
-                    supports_inactivity_timeout: rgb_cfg.supports_timeout,
-                    supported_zones: vec!["keyboard".to_string()],
-                });
-                self.rgb = Some(Box::new(proxy));
-            } else {
-                self.capabilities.rgb =
-                    CapabilityState::Unavailable(UnavailableReason::KernelInterfaceMissing);
-                self.rgb = None;
-            }
-        }
+        DriverFactory::re_enumerate_rgb(self);
     }
 
     /// Re-probes platform hardware drivers and refreshes capability state.
-    /// Useful after system sleep/resume or dynamic driver rebinding.
     pub fn re_enumerate(&mut self) {
-        let refreshed = Self::from_profile(self.profile.clone());
-        self.capabilities = refreshed.capabilities;
-        self.rgb = refreshed.rgb;
-        self.thermal = refreshed.thermal;
-        self.battery = refreshed.battery;
-        self.display = refreshed.display;
+        DriverFactory::re_enumerate(self);
     }
 }
 
@@ -399,9 +163,14 @@ impl DeviceContext {
 mod tests {
     use super::*;
     use crate::domain::{BrightnessPercent, ChargeThreshold, ColorRgb, ThermalMode};
+    use crate::hardware::capabilities::{
+        BatteryCapabilityDetails, CapabilityState, DisplayCapabilityDetails, RgbCapabilityDetails,
+        ThermalCapabilityDetails,
+    };
     use crate::hardware::mock::{
         MockBatteryDriver, MockDisplayDriver, MockRgbDriver, MockThermalDriver,
     };
+    use crate::hardware::profile::{DeviceMeta, DeviceProfileCapabilities};
     use tempfile::tempdir;
 
     #[test]

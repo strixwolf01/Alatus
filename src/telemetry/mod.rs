@@ -7,7 +7,11 @@ use std::env;
 use std::sync::Once;
 use tracing_subscriber::filter::EnvFilter;
 
+pub mod collectors;
 pub mod formatters;
+
+pub use collectors::*;
+pub use formatters::*;
 
 static INIT_ONCE: Once = Once::new();
 

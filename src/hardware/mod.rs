@@ -9,6 +9,7 @@ pub mod drivers;
 pub mod error;
 pub mod mock;
 pub mod profile;
+pub mod resolver;
 pub mod traits;
 
 pub use capabilities::{
