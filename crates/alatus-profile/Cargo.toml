@@ -1,0 +1,16 @@
+[package]
+name = "alatus-profile"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+alatus-core = { path = "../alatus-core" }
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "2.0"
+toml = "0.8"
+tracing = "0.1"
+
+[dev-dependencies]
+tempfile = "3.10"

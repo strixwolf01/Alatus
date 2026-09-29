@@ -1,0 +1,11 @@
+[package]
+name = "alatus-ipc"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+alatus-core = { path = "../alatus-core" }
+serde = { version = "1.0", features = ["derive"] }
+zbus = { version = "4.4", default-features = false, features = ["tokio"] }

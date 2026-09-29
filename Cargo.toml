@@ -1,0 +1,29 @@
+[workspace]
+members = [
+    "crates/alatus-core",
+    "crates/alatus-profile",
+    "crates/alatus-drivers",
+    "crates/alatus-registry",
+    "crates/alatus-ipc",
+    "crates/alatusd",
+    "crates/alatus-session",
+    "crates/alatus-cli",
+    "crates/alatus-gui",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["StrixWolf <strixwolf@example.com>"]
+license = "GPL-3.0-or-later"
+repository = "https://github.com/strixwolf01/Alatus"
+readme = "README.md"
+
+[workspace.lints.rust]
+unsafe_code = "allow"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+all = "warn"
+pedantic = "allow"

@@ -1,0 +1,17 @@
+[package]
+name = "alatusd"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+alatus-core = { path = "../alatus-core" }
+alatus-drivers = { path = "../alatus-drivers" }
+alatus-ipc = { path = "../alatus-ipc" }
+alatus-profile = { path = "../alatus-profile" }
+alatus-registry = { path = "../alatus-registry" }
+tokio = { version = "1.38", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+zbus = { version = "4.4", default-features = false, features = ["tokio"] }

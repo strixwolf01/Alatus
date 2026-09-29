@@ -1,0 +1,16 @@
+[package]
+name = "alatus-registry"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+alatus-core = { path = "../alatus-core" }
+alatus-drivers = { path = "../alatus-drivers" }
+alatus-profile = { path = "../alatus-profile" }
+tracing = "0.1"
+
+[dev-dependencies]
+async-trait = "0.1"
+

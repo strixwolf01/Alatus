@@ -1,0 +1,11 @@
+[package]
+name = "alatus-gui"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+alatus-core = { path = "../alatus-core" }
+alatus-ipc = { path = "../alatus-ipc" }
+tokio = { version = "1.38", features = ["full"] }
