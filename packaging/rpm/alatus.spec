@@ -57,6 +57,7 @@ fi
 %{_bindir}/alatusd
 %{_bindir}/alatus-session
 %{_bindir}/alatus-gui
+%dir /etc/alatus
 %{_datadir}/alatus/
 %{_datadir}/dbus-1/system.d/org.alatus.Daemon.conf
 %{_datadir}/polkit-1/actions/org.alatus.policy
