@@ -8,4 +8,12 @@ license.workspace = true
 [dependencies]
 alatus-core = { path = "../alatus-core" }
 alatus-ipc = { path = "../alatus-ipc" }
+futures-util = "0.3"
+slint = "1.9"
 tokio = { version = "1.38", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+zbus = { version = "4.4", default-features = false, features = ["tokio"] }
+
+[build-dependencies]
+slint-build = "1.9"
