@@ -71,6 +71,18 @@ impl DriverRegistry {
             )))
         });
 
+        let root_lighting = sysfs_root.clone();
+        registry.register_lighting("asus-ite5570-lamparray", move |cfg| {
+            Ok(Arc::new(alatus_drivers::AsusIte5570LightingDriver::new(
+                root_lighting.clone(),
+                cfg.hid_vendor_id,
+                cfg.hid_product_id,
+                cfg.report_id,
+                None::<&str>,
+                cfg.default_brightness,
+            )))
+        });
+
         registry
     }
 

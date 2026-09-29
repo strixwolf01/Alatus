@@ -57,6 +57,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
         tracing::warn!("No thermal driver available for this machine profile.");
     }
 
+    if let Some(lighting_driver) = drivers.lighting {
+        tracing::info!(
+            "Registering org.alatus.Lighting D-Bus interface at {}",
+            alatus_ipc::LIGHTING_OBJECT_PATH
+        );
+        let lighting_svc = alatusd::LightingService::new(lighting_driver);
+        builder = builder.serve_at(alatus_ipc::LIGHTING_OBJECT_PATH, lighting_svc)?;
+    } else {
+        tracing::warn!("No lighting driver available for this machine profile.");
+    }
+
     let _conn = builder.build().await?;
     tracing::info!("alatusd daemon successfully registered on system bus. Listening for requests...");
 

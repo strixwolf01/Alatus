@@ -38,6 +38,7 @@ version = "0.1.0"
 dependencies = [
  "alatus-core",
  "async-trait",
+ "nix",
  "tempfile",
  "tokio",
  "tracing",
