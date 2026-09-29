@@ -68,6 +68,8 @@ impl DriverRegistry {
                 cfg.debugfs_fan_register,
                 None::<&str>,
                 cfg.supports_full_speed,
+                Some(cfg.is_cpu_only),
+                Some(cfg.max_fan_rpm),
             )))
         });
 

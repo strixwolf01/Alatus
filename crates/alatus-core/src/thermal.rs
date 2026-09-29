@@ -35,6 +35,9 @@ pub struct FanStatus {
 pub trait ThermalDriver: Send + Sync {
     fn name(&self) -> &'static str;
     fn capabilities(&self) -> ThermalCapabilities;
+    fn is_cpu_only(&self) -> bool {
+        true
+    }
 
     async fn available_profiles(&self) -> Result<Vec<ThermalProfileMode>, AlatusError>;
     async fn get_current_profile(&self) -> Result<ThermalProfileMode, AlatusError>;

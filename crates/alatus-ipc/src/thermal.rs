@@ -34,6 +34,7 @@ pub trait Thermal {
     async fn set_profile(&self, mode: String) -> zbus::Result<()>;
     async fn list_profiles(&self) -> zbus::Result<Vec<String>>;
     async fn get_fans(&self) -> zbus::Result<Vec<FanStatusMsg>>;
+    async fn is_cpu_only(&self) -> zbus::Result<bool>;
 
     #[zbus(signal)]
     async fn profile_changed(&self, new_profile: String) -> zbus::Result<()>;

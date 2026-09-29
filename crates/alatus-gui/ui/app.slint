@@ -19,17 +19,20 @@ export component MainWindow inherits Window {
     in-out property <int> active_tab: 0;
 
     // Battery properties
-    in-out property <int> battery_percentage: 80;
-    in-out property <string> battery_status: "Charging";
+    in-out property <int> battery_percentage: 0;
+    in-out property <string> battery_status: "--";
     in-out property <int> battery_limit: 80;
-    in-out property <int> battery_health: 99;
-    in-out property <string> battery_power: "12.5 W";
+    in-out property <int> battery_health: 100;
+    in-out property <string> battery_power: "-- W";
 
     // Thermal properties
     in-out property <string> current_profile: "Balanced";
     in-out property <bool> full_speed_supported: true;
-    in-out property <int> cpu_fan_rpm: 4100;
-    in-out property <int> gpu_fan_rpm: 4100;
+    in-out property <bool> is_cpu_only: false;
+    in-out property <int> cpu_fan_rpm: 0;
+    in-out property <int> gpu_fan_rpm: 0;
+    in-out property <string> fan_cpu_only_text: " CPU : 0%/0% ";
+    in-out property <string> fan_rpm_subtext: "";
 
     // Lighting properties
     in-out property <int> lighting_brightness: 3;
@@ -399,7 +402,25 @@ export component MainWindow inherits Window {
                         height: 50px;
                         border-radius: 8px;
                         background: #111318;
-                        HorizontalLayout {
+                        if root.is_cpu_only: HorizontalLayout {
+                            alignment: center;
+                            spacing: 12px;
+                            Text {
+                                text: root.fan_cpu_only_text;
+                                font-size: 15px;
+                                font-weight: 700;
+                                color: #00F0FF;
+                                vertical-alignment: center;
+                            }
+                            if root.fan_rpm_subtext != "": Text {
+                                text: "(" + root.fan_rpm_subtext + ")";
+                                font-size: 12px;
+                                font-weight: 500;
+                                color: #8A92A6;
+                                vertical-alignment: center;
+                            }
+                        }
+                        if !root.is_cpu_only: HorizontalLayout {
                             alignment: space-around;
                             Text {
                                 text: "CPU Fan: " + root.cpu_fan_rpm + " RPM";

@@ -25,6 +25,8 @@ async fn test_thermal_standard_profiles() {
         None,
         None::<&str>,
         false,
+        None,
+        None,
     );
 
     let caps = driver.capabilities();
@@ -94,6 +96,8 @@ async fn test_thermal_full_speed_with_debugfs() {
         Some(0x00110013),
         None::<&str>,
         true,
+        None,
+        None,
     );
 
     assert!(driver
@@ -148,6 +152,8 @@ async fn test_thermal_hwmon_fan_readback() {
         None,
         Some(hwmon_dir.to_str().unwrap()),
         false,
+        None,
+        None,
     );
 
     let fans = driver.get_fans().await.unwrap();
@@ -179,6 +185,8 @@ async fn test_thermal_modern_wmi_debugfs_sequencing() {
         Some(0x00110019),
         None::<&str>,
         true,
+        None,
+        None,
     );
 
     // Initial state read from ctrl_param (0x00000000 = Balanced)

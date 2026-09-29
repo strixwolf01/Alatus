@@ -39,6 +39,8 @@ async fn test_thermal_service_and_proxy_over_session_dbus() {
         Some(0x00110013),
         Some(hwmon_dir.to_str().unwrap()),
         true,
+        None,
+        None,
     ));
 
     let service = ThermalService::new(driver);

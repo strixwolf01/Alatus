@@ -79,6 +79,10 @@ impl ThermalService {
         Ok(fans.into_iter().map(Into::into).collect())
     }
 
+    async fn is_cpu_only(&self) -> zbus::fdo::Result<bool> {
+        Ok(self.driver.is_cpu_only())
+    }
+
     #[zbus(signal)]
     pub async fn profile_changed(
         signal_ctxt: &SignalContext<'_>,

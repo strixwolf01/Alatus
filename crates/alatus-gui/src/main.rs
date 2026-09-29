@@ -44,6 +44,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // 2. Initial Data Query: Thermal
     let thermal_proxy = ThermalProxy::new(&conn).await.ok();
     if let Some(ref tp) = thermal_proxy {
+        let is_cpu_only = tp.is_cpu_only().await.unwrap_or(true);
+        let handle_clone = handle.clone();
+        let _ = slint::invoke_from_event_loop(move || {
+            if let Some(ui) = handle_clone.upgrade() {
+                ui.set_is_cpu_only(is_cpu_only);
+            }
+        });
+
         if let Ok(current) = tp.get_current_profile().await {
             let handle_clone = handle.clone();
             slint::invoke_from_event_loop(move || {
@@ -53,15 +61,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
             })?;
         }
         if let Ok(fans) = tp.get_fans().await {
+            let (cpu_only_text, rpm_subtext, cpu_rpm, gpu_rpm) = format_fan_telemetry(&fans);
             let handle_clone = handle.clone();
             slint::invoke_from_event_loop(move || {
                 if let Some(ui) = handle_clone.upgrade() {
-                    if let Some(fan1) = fans.first() {
-                        ui.set_cpu_fan_rpm(fan1.current_rpm as i32);
-                    }
-                    if let Some(fan2) = fans.get(1) {
-                        ui.set_gpu_fan_rpm(fan2.current_rpm as i32);
-                    }
+                    ui.set_cpu_fan_rpm(cpu_rpm);
+                    ui.set_gpu_fan_rpm(gpu_rpm);
+                    ui.set_fan_cpu_only_text(cpu_only_text.into());
+                    ui.set_fan_rpm_subtext(rpm_subtext.into());
                 }
             })?;
         }
@@ -217,7 +224,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // 7. Background Signal Monitors for Live Hardware Updates
-    if let Some(tp) = thermal_proxy {
+    if let Some(tp) = thermal_proxy.clone() {
         let handle_t = handle.clone();
         tokio::spawn(async move {
             if let Ok(mut stream) = tp.receive_profile_changed().await {
@@ -262,8 +269,110 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
     }
 
+    // 8. Periodic Polling for Live Telemetry (Battery & Fans)
+    {
+        let bp_poll = battery_proxy.clone();
+        let tp_poll = thermal_proxy.clone();
+        let handle_poll = handle.clone();
+
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(2));
+            interval.tick().await;
+
+            loop {
+                interval.tick().await;
+                if handle_poll.upgrade().is_none() {
+                    break;
+                }
+
+                if let Some(ref bp) = bp_poll {
+                    if let Ok(info) = bp.get_info().await {
+                        let handle_inner = handle_poll.clone();
+                        let _ = slint::invoke_from_event_loop(move || {
+                            if let Some(ui) = handle_inner.upgrade() {
+                                ui.set_battery_percentage(info.percentage as i32);
+                                ui.set_battery_status(info.status.into());
+                                if let Some(limit) = info.charge_limit {
+                                    ui.set_battery_limit(limit as i32);
+                                }
+                                if let Some(health) = info.health_percentage {
+                                    ui.set_battery_health(health as i32);
+                                }
+                                if let Some(microwatts) = info.power_now_microwatts {
+                                    let watts = microwatts as f64 / 1_000_000.0;
+                                    ui.set_battery_power(format!("{:.1} W", watts).into());
+                                }
+                            }
+                        });
+                    }
+                }
+
+                if let Some(ref tp) = tp_poll {
+                    if let Ok(fans) = tp.get_fans().await {
+                        let (cpu_only_text, rpm_subtext, cpu_rpm, gpu_rpm) =
+                            format_fan_telemetry(&fans);
+                        let handle_inner = handle_poll.clone();
+                        let _ = slint::invoke_from_event_loop(move || {
+                            if let Some(ui) = handle_inner.upgrade() {
+                                ui.set_cpu_fan_rpm(cpu_rpm);
+                                ui.set_gpu_fan_rpm(gpu_rpm);
+                                ui.set_fan_cpu_only_text(cpu_only_text.into());
+                                ui.set_fan_rpm_subtext(rpm_subtext.into());
+                            }
+                        });
+                    }
+
+                    if let Ok(current) = tp.get_current_profile().await {
+                        let handle_inner = handle_poll.clone();
+                        let _ = slint::invoke_from_event_loop(move || {
+                            if let Some(ui) = handle_inner.upgrade() {
+                                if ui.get_current_profile() != current.as_str() {
+                                    ui.set_current_profile(current.into());
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    }
+
     main_window.run()?;
     Ok(())
+}
+
+fn format_fan_telemetry(fans: &[alatus_ipc::FanStatusMsg]) -> (String, String, i32, i32) {
+    let cpu_rpm = fans.first().map(|f| f.current_rpm as i32).unwrap_or(0);
+    let gpu_rpm = fans.get(1).map(|f| f.current_rpm as i32).unwrap_or(0);
+
+    let default_max = 6000;
+    let max_rpm_1 = fans.first().and_then(|f| f.max_rpm).unwrap_or(default_max) as u64;
+    let max_rpm_2 = fans.get(1).and_then(|f| f.max_rpm).unwrap_or(default_max) as u64;
+
+    let pct1 = (cpu_rpm.max(0) as u64 * 100)
+        .checked_div(max_rpm_1)
+        .unwrap_or(0)
+        .min(100);
+    let pct2 = (gpu_rpm.max(0) as u64 * 100)
+        .checked_div(max_rpm_2)
+        .unwrap_or(0)
+        .min(100);
+
+    let (cpu_only_text, rpm_subtext) = if fans.len() >= 2 {
+        (
+            format!(" CPU : {}%/{}% ", pct1, pct2),
+            format!("{} RPM / {} RPM", cpu_rpm, gpu_rpm),
+        )
+    } else if let Some(fan) = fans.first() {
+        (
+            format!(" CPU : {}% ", pct1),
+            format!("{} RPM", fan.current_rpm),
+        )
+    } else {
+        (" CPU : 0%/0% ".to_string(), "".to_string())
+    };
+
+    (cpu_only_text, rpm_subtext, cpu_rpm, gpu_rpm)
 }
 
 async fn pick_color_from_de() -> Option<(u8, u8, u8)> {

@@ -23,9 +23,12 @@ pub struct AsusHybridThermalDriver {
     hwmon_dir: Option<PathBuf>,
     can_full_speed: AtomicBool,
     is_full_speed_active: AtomicBool,
+    is_cpu_only: bool,
+    max_fan_rpm: u32,
 }
 
 impl AsusHybridThermalDriver {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         sysfs_root: SysfsRoot,
         platform_profile_path: impl AsRef<Path>,
@@ -33,6 +36,8 @@ impl AsusHybridThermalDriver {
         debugfs_fan_register: Option<u32>,
         hwmon_dir: Option<impl AsRef<Path>>,
         supports_full_speed: bool,
+        is_cpu_only: Option<bool>,
+        max_fan_rpm: Option<u32>,
     ) -> Self {
         let platform_profile_path = sysfs_root.resolve(platform_profile_path);
         let debugfs_devs_path = debugfs_devs_path.map(|p| sysfs_root.resolve(p));
@@ -66,6 +71,8 @@ impl AsusHybridThermalDriver {
             hwmon_dir,
             can_full_speed: AtomicBool::new(can_full_speed),
             is_full_speed_active: AtomicBool::new(false),
+            is_cpu_only: is_cpu_only.unwrap_or(true),
+            max_fan_rpm: max_fan_rpm.unwrap_or(6000),
         }
     }
 
@@ -80,15 +87,39 @@ impl AsusHybridThermalDriver {
             }
         }
 
-        // Try standard asus-nb-wmi hwmon path
-        let default_hwmon = self
-            .sysfs_root
-            .resolve("/devices/platform/asus-nb-wmi/hwmon");
-        if let Ok(entries) = std::fs::read_dir(&default_hwmon) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.is_dir() {
-                    return Some(path);
+        // Try standard asus-nb-wmi hwmon paths
+        let candidates = [
+            self.sysfs_root.resolve("/sys/devices/platform/asus-nb-wmi/hwmon"),
+            self.sysfs_root.resolve("/devices/platform/asus-nb-wmi/hwmon"),
+        ];
+
+        for base_hwmon in candidates {
+            if let Ok(entries) = std::fs::read_dir(&base_hwmon) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if path.is_dir() {
+                        return Some(path);
+                    }
+                }
+            }
+        }
+
+        // Fallback: search class hwmon
+        let class_candidates = [
+            self.sysfs_root.resolve("/sys/class/hwmon"),
+            self.sysfs_root.resolve("/class/hwmon"),
+        ];
+
+        for class_hwmon in class_candidates {
+            if let Ok(entries) = std::fs::read_dir(&class_hwmon) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    let name_file = path.join("name");
+                    if let Ok(name) = std::fs::read_to_string(&name_file) {
+                        if name.trim() == "asus" {
+                            return Some(path);
+                        }
+                    }
                 }
             }
         }
@@ -115,6 +146,10 @@ impl ThermalDriver for AsusHybridThermalDriver {
             caps |= ThermalCapabilities::FAN_RPM_READBACK;
         }
         caps
+    }
+
+    fn is_cpu_only(&self) -> bool {
+        self.is_cpu_only
     }
 
     async fn available_profiles(&self) -> Result<Vec<ThermalProfileMode>, AlatusError> {
@@ -287,7 +322,7 @@ impl ThermalDriver for AsusHybridThermalDriver {
             fans.push(FanStatus {
                 label,
                 current_rpm: rpm,
-                max_rpm: Some(5500),
+                max_rpm: Some(self.max_fan_rpm),
             });
 
             idx += 1;

@@ -22,3 +22,5 @@ Thumbs.db
 # Logs and temporary files
 *.log
 /scratch/
+.agents/
+skills-lock.json

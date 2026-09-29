@@ -79,6 +79,18 @@ pub struct ThermalConfig {
     pub supports_full_speed: bool,
     #[serde(default = "default_fan_count")]
     pub fan_count: u32,
+    #[serde(default = "default_is_cpu_only")]
+    pub is_cpu_only: bool,
+    #[serde(default = "default_max_fan_rpm")]
+    pub max_fan_rpm: u32,
+}
+
+fn default_is_cpu_only() -> bool {
+    true
+}
+
+fn default_max_fan_rpm() -> u32 {
+    6000
 }
 
 fn default_fan_count() -> u32 {
