@@ -1,7 +1,7 @@
 PREFIX ?= /usr
 DESTDIR ?=
 
-.PHONY: all build check test clean install uninstall
+.PHONY: all build check test clean install uninstall rpm deb deploy set-version
 
 all: build
 
@@ -16,8 +16,9 @@ test:
 
 clean:
 	cargo clean
+	rm -rf dist target/deb target/rpmbuild
 
-install: build
+install:
 	# Install Binaries
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install -m 755 target/release/alatusd $(DESTDIR)$(PREFIX)/bin/alatusd
@@ -26,8 +27,15 @@ install: build
 	install -m 755 target/release/alatus-gui $(DESTDIR)$(PREFIX)/bin/alatus-gui
 
 	# Install Machine Profiles
+	install -d $(DESTDIR)/etc/alatus
 	install -d $(DESTDIR)$(PREFIX)/share/alatus/profiles
 	install -m 644 data/profiles/*.toml $(DESTDIR)$(PREFIX)/share/alatus/profiles/
+
+	# Install Icons
+	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps
+	install -m 644 data/icons/alatus-gui.svg $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/alatus-gui.svg
+	install -d $(DESTDIR)$(PREFIX)/share/alatus/icons/modes
+	install -m 644 data/icons/modes/*.svg $(DESTDIR)$(PREFIX)/share/alatus/icons/modes/
 
 	# Install D-Bus Configuration
 	install -d $(DESTDIR)$(PREFIX)/share/dbus-1/system.d
@@ -54,8 +62,22 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/alatus
 	rm -f $(DESTDIR)$(PREFIX)/bin/alatus-gui
 	rm -rf $(DESTDIR)$(PREFIX)/share/alatus
+	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/alatus-gui.svg
 	rm -f $(DESTDIR)$(PREFIX)/share/dbus-1/system.d/org.alatus.Daemon.conf
 	rm -f $(DESTDIR)$(PREFIX)/share/polkit-1/actions/org.alatus.policy
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/alatusd.service
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/user/alatus-session.service
 	rm -f $(DESTDIR)$(PREFIX)/share/applications/org.alatus.gui.desktop
+
+rpm:
+	./scripts/build-rpm.sh
+
+deb:
+	./scripts/build-deb.sh
+
+deploy:
+	./scripts/deploy.sh
+
+set-version:
+	@if [ -z "$(VERSION)" ]; then echo "Usage: make set-version VERSION=0.1.0"; exit 1; fi
+	./scripts/set-version.sh $(VERSION)

@@ -1,0 +1,15 @@
+Source: alatus
+Section: utils
+Priority: optional
+Maintainer: StrixWolf <strixwolf@example.com>
+Build-Depends: debhelper-compat (= 13), cargo, rustc
+Standards-Version: 4.6.2
+Homepage: https://github.com/strixwolf01/Alatus
+
+Package: alatus
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, systemd, dbus, policykit-1 | polkitd
+Description: Linux hardware control suite for ASUS laptops
+ Alatus is a modular Linux hardware control suite for ASUS laptops.
+ It provides fine-grained control over battery charging thresholds,
+ thermal fan profiles, keyboard RGB lighting, and ASUS WMI hotkeys.

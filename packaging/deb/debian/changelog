@@ -1,0 +1,11 @@
+alatus (0.1.0-1) unstable; urgency=medium
+
+  * Release 0.1.0
+
+ -- StrixWolf <strixwolf@example.com>  Tue, 29 Sep 2026 11:28:48 +0330
+
+alatus (0.1.0-1) unstable; urgency=medium
+
+  * Initial release of clean-slate Rust rewrite (0.1.0).
+
+ -- StrixWolf <strixwolf@example.com>  Sun, 29 Sep 2026 11:00:00 +0330
