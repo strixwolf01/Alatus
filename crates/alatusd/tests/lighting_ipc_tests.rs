@@ -32,6 +32,7 @@ async fn test_lighting_service_and_proxy_over_session_dbus() {
         0x5A,
         Some(&mock_dev_file),
         3,
+        Some(vec!["Static".to_string(), "Rainbow".to_string()]),
     ));
 
     let service = LightingService::new(driver);

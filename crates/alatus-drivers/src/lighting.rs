@@ -33,6 +33,7 @@ pub struct AsusIte5570LightingDriver {
     current_brightness: AtomicU8,
     current_mode: Mutex<LightingMode>,
     current_color: Mutex<RgbColor>,
+    supported_modes: Vec<LightingMode>,
 }
 
 impl AsusIte5570LightingDriver {
@@ -43,6 +44,7 @@ impl AsusIte5570LightingDriver {
         report_id: u8,
         custom_device_path: Option<impl AsRef<Path>>,
         default_brightness: u8,
+        supported_modes: Option<Vec<String>>,
     ) -> Self {
         // Hardware report IDs based on ITE5570 device models (confirmed by vrgb):
         // - 0x19B6 (Vivobook S 14/15 series): firmware=0x0B, color=0x05, rainbow=true
@@ -59,6 +61,21 @@ impl AsusIte5570LightingDriver {
             }
         };
 
+        let parsed_modes = match supported_modes {
+            Some(modes) if !modes.is_empty() => {
+                let parsed: Vec<LightingMode> = modes
+                    .into_iter()
+                    .filter_map(|m| m.parse::<LightingMode>().ok())
+                    .collect();
+                if parsed.is_empty() {
+                    vec![LightingMode::Static]
+                } else {
+                    parsed
+                }
+            }
+            _ => vec![LightingMode::Static],
+        };
+
         Self {
             sysfs_root,
             hid_vendor_id,
@@ -70,6 +87,7 @@ impl AsusIte5570LightingDriver {
             current_brightness: AtomicU8::new(default_brightness.min(3)),
             current_mode: Mutex::new(LightingMode::Static),
             current_color: Mutex::new(RgbColor::new(255, 255, 255)),
+            supported_modes: parsed_modes,
         }
     }
 
@@ -210,10 +228,14 @@ impl LightingDriver for AsusIte5570LightingDriver {
     fn capabilities(&self) -> LightingCapabilities {
         let mut caps =
             LightingCapabilities::BRIGHTNESS_CONTROL | LightingCapabilities::STATIC_COLOR;
-        if self.rainbow_supported {
+        if self.rainbow_supported && self.supported_modes.contains(&LightingMode::Rainbow) {
             caps |= LightingCapabilities::BUILTIN_EFFECTS;
         }
         caps
+    }
+
+    fn supported_modes(&self) -> Vec<LightingMode> {
+        self.supported_modes.clone()
     }
 
     async fn get_brightness(&self) -> Result<u8, AlatusError> {
@@ -238,6 +260,12 @@ impl LightingDriver for AsusIte5570LightingDriver {
     }
 
     async fn apply_effect(&self, effect: &LightingEffect) -> Result<(), AlatusError> {
+        if effect.mode != LightingMode::Off && !self.supported_modes.contains(&effect.mode) {
+            return Err(AlatusError::UnsupportedCapability(
+                "Requested lighting mode is not supported by this hardware profile",
+            ));
+        }
+
         let dev_path = match self.discover_hidraw_node() {
             Some(p) => p,
             None => {

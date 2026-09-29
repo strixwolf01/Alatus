@@ -22,10 +22,16 @@ async fn test_lighting_device_discovery_and_packet_serialization() {
     // Create mock /dev/hidraw1 file
     let mock_dev_file = dev_dir.join("hidraw1");
     fs::write(&mock_dev_file, vec![]).unwrap();
-
     let root = SysfsRoot::new(dir.path().join("sys"));
-    let driver =
-        AsusIte5570LightingDriver::new(root, 0x0B05, 0x19B6, 0x0B, Some(&mock_dev_file), 3);
+    let driver = AsusIte5570LightingDriver::new(
+        root,
+        0x0B05,
+        0x19B6,
+        0x0B,
+        Some(&mock_dev_file),
+        3,
+        Some(vec!["Static".to_string(), "Rainbow".to_string()]),
+    );
 
     let caps = driver.capabilities();
     assert!(caps.contains(LightingCapabilities::BRIGHTNESS_CONTROL));

@@ -151,11 +151,7 @@ impl ThermalDriver for AsusHybridThermalDriver {
     }
 
     async fn get_current_profile(&self) -> Result<ThermalProfileMode, AlatusError> {
-        if self.is_full_speed_active.load(Ordering::SeqCst) {
-            return Ok(ThermalProfileMode::FullSpeed);
-        }
-
-        // 1. Try reading live hardware state from DebugFS ctrl_param
+        // 1. Try reading live hardware state from DebugFS ctrl_param FIRST
         if let Some(ref devs_path) = self.debugfs_devs_path {
             let base = devs_path.parent().unwrap_or(devs_path);
             let dev_id_path = base.join("dev_id");
@@ -166,16 +162,25 @@ impl ThermalDriver for AsusHybridThermalDriver {
                 if fs::write(&dev_id_path, &reg_str).await.is_ok() {
                     if let Ok(content) = fs::read_to_string(&ctrl_param_path).await {
                         let trimmed = content.trim();
-                        match trimmed {
-                            "0x00000000" | "0" => return Ok(ThermalProfileMode::Balanced),
-                            "0x00000001" | "1" => return Ok(ThermalProfileMode::Quiet),
-                            "0x00000002" | "2" => return Ok(ThermalProfileMode::Performance),
-                            "0x00000003" | "3" => return Ok(ThermalProfileMode::FullSpeed),
-                            _ => {}
+                        let mode = match trimmed {
+                            "0x00000000" | "0" => Some(ThermalProfileMode::Balanced),
+                            "0x00000001" | "1" => Some(ThermalProfileMode::Quiet),
+                            "0x00000002" | "2" => Some(ThermalProfileMode::Performance),
+                            "0x00000003" | "3" => Some(ThermalProfileMode::FullSpeed),
+                            _ => None,
+                        };
+                        if let Some(m) = mode {
+                            self.is_full_speed_active
+                                .store(m == ThermalProfileMode::FullSpeed, Ordering::SeqCst);
+                            return Ok(m);
                         }
                     }
                 }
             }
+        }
+
+        if self.is_full_speed_active.load(Ordering::SeqCst) {
+            return Ok(ThermalProfileMode::FullSpeed);
         }
 
         // 2. Fall back to standard platform_profile
@@ -210,7 +215,18 @@ impl ThermalDriver for AsusHybridThermalDriver {
             }
         };
 
-        // 1. Write to asus-nb-wmi DebugFS if available
+        // 1. Keep Linux kernel platform_profile in sync FIRST so kernel does not clobber hardware registers afterwards
+        if self.platform_profile_path.exists() {
+            let kernel_profile = match mode {
+                ThermalProfileMode::Quiet => "quiet\n",
+                ThermalProfileMode::Balanced => "balanced\n",
+                ThermalProfileMode::Performance | ThermalProfileMode::FullSpeed => "performance\n",
+                _ => "balanced\n",
+            };
+            let _ = fs::write(&self.platform_profile_path, kernel_profile).await;
+        }
+
+        // 2. Write to asus-nb-wmi DebugFS AFTER so kernel does not overwrite it
         if let Some(ref devs_path) = self.debugfs_devs_path {
             let base = devs_path.parent().unwrap_or(devs_path);
             let dev_id_path = base.join("dev_id");
@@ -237,17 +253,6 @@ impl ThermalDriver for AsusHybridThermalDriver {
             self.is_full_speed_active.store(true, Ordering::SeqCst);
         } else {
             self.is_full_speed_active.store(false, Ordering::SeqCst);
-        }
-
-        // 2. Also keep Linux kernel platform_profile in sync if it exists
-        if self.platform_profile_path.exists() {
-            let kernel_profile = match mode {
-                ThermalProfileMode::Quiet => "quiet\n",
-                ThermalProfileMode::Balanced => "balanced\n",
-                ThermalProfileMode::Performance | ThermalProfileMode::FullSpeed => "performance\n",
-                _ => "balanced\n",
-            };
-            let _ = fs::write(&self.platform_profile_path, kernel_profile).await;
         }
 
         tracing::info!("Set thermal profile to {:?}", mode);

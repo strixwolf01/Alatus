@@ -172,13 +172,18 @@ async fn handle_lighting(conn: &Connection, action: LightingAction) -> Result<()
         LightingAction::Status => {
             let state = proxy.get_state().await?;
             println!("--- ASUS Keyboard RGB Lighting ---");
-            println!("  Mode       : {}", state.mode);
-            println!("  Brightness : {} / 3", state.brightness);
+            if state.supported_modes.len() > 1 {
+                println!("  Mode            : {}", state.mode);
+                println!("  Supported Modes : {}", state.supported_modes.join(", "));
+            }
+            println!("  Brightness      : {} / 3", state.brightness);
             println!(
-                "  Color      : RGB({}, {}, {}) [#{:02X}{:02X}{:02X}]",
+                "  Color           : RGB({}, {}, {}) [#{:02X}{:02X}{:02X}]",
                 state.r, state.g, state.b, state.r, state.g, state.b
             );
-            println!("  Speed      : {}", state.speed);
+            if state.supported_modes.len() > 1 {
+                println!("  Speed           : {}", state.speed);
+            }
         }
         LightingAction::Brightness { level } => {
             let clamped = level.min(3);
@@ -206,6 +211,22 @@ async fn handle_lighting(conn: &Connection, action: LightingAction) -> Result<()
             println!("✓ Successfully updated keyboard color.");
         }
         LightingAction::Mode { mode, speed } => {
+            let state = proxy.get_state().await?;
+            if state.supported_modes.len() <= 1 {
+                return Err("This laptop profile only supports static color mode in Linux. Dynamic lighting modes are not available on this model.".into());
+            }
+            if !state
+                .supported_modes
+                .iter()
+                .any(|m| m.eq_ignore_ascii_case(&mode))
+            {
+                return Err(format!(
+                    "Lighting mode '{}' is not supported. Supported modes: {}",
+                    mode,
+                    state.supported_modes.join(", ")
+                )
+                .into());
+            }
             println!(
                 "Setting keyboard lighting mode to '{}' (speed {})...",
                 mode, speed

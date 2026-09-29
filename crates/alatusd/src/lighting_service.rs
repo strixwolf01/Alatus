@@ -46,6 +46,13 @@ impl LightingService {
             LightingMode::Off => "Off",
         };
 
+        let supported_modes: Vec<String> = self
+            .driver
+            .supported_modes()
+            .iter()
+            .map(|m| m.as_str().to_string())
+            .collect();
+
         Ok(LightingStateMsg {
             mode: mode_str.to_string(),
             brightness,
@@ -53,6 +60,7 @@ impl LightingService {
             g: color.g,
             b: color.b,
             speed,
+            supported_modes,
         })
     }
 }
@@ -143,6 +151,15 @@ impl LightingService {
             }
         };
 
+        let supported = self.driver.supported_modes();
+        if parsed_mode != LightingMode::Off && !supported.contains(&parsed_mode) {
+            let names: Vec<&'static str> = supported.iter().map(|m| m.as_str()).collect();
+            return Err(zbus::fdo::Error::NotSupported(format!(
+                "Lighting mode '{mode}' is not supported by this hardware profile. Supported modes: {}",
+                names.join(", ")
+            )));
+        }
+
         let brightness = self.driver.get_brightness().await.unwrap_or(3);
         let color = *self.current_color.lock().unwrap();
 
@@ -169,6 +186,15 @@ impl LightingService {
 
     async fn get_state(&self) -> zbus::fdo::Result<LightingStateMsg> {
         self.current_state().await
+    }
+
+    async fn get_supported_modes(&self) -> zbus::fdo::Result<Vec<String>> {
+        Ok(self
+            .driver
+            .supported_modes()
+            .iter()
+            .map(|m| m.as_str().to_string())
+            .collect())
     }
 
     #[zbus(signal)]

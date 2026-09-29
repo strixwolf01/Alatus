@@ -94,6 +94,12 @@ pub struct LightingConfig {
     pub lamp_count: u32,
     pub default_mode: String,
     pub default_brightness: u8,
+    #[serde(default = "default_supported_modes")]
+    pub supported_modes: Vec<String>,
+}
+
+fn default_supported_modes() -> Vec<String> {
+    vec!["Static".to_string()]
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

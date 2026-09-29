@@ -72,10 +72,34 @@ async fn main() -> Result<(), Box<dyn Error>> {
     if let Some(ref lp) = lighting_proxy {
         if let Ok(state) = lp.get_state().await {
             let handle_clone = handle.clone();
+            let has_multiple_modes = state.supported_modes.len() > 1;
+            let supports_breathing = state
+                .supported_modes
+                .iter()
+                .any(|m| m.eq_ignore_ascii_case("breathing"));
+            let supports_rainbow = state
+                .supported_modes
+                .iter()
+                .any(|m| m.eq_ignore_ascii_case("rainbow"));
+            let supports_strobe = state
+                .supported_modes
+                .iter()
+                .any(|m| m.eq_ignore_ascii_case("strobe"));
+            let hex = format!("#{:02X}{:02X}{:02X}", state.r, state.g, state.b);
+            let r = state.r;
+            let g = state.g;
+            let b = state.b;
+
             slint::invoke_from_event_loop(move || {
                 if let Some(ui) = handle_clone.upgrade() {
                     ui.set_lighting_brightness(state.brightness as i32);
                     ui.set_lighting_mode(state.mode.into());
+                    ui.set_has_multiple_modes(has_multiple_modes);
+                    ui.set_supports_mode_breathing(supports_breathing);
+                    ui.set_supports_mode_rainbow(supports_rainbow);
+                    ui.set_supports_mode_strobe(supports_strobe);
+                    ui.set_lighting_hex(hex.into());
+                    ui.set_current_rgb_color(slint::Color::from_rgb_u8(r, g, b));
                 }
             })?;
         }
@@ -137,10 +161,40 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
 
         let lp_color = lp.clone();
+        let handle_c = handle.clone();
         main_window.on_set_lighting_color(move |r, g, b| {
             let lp_clone = lp_color.clone();
+            let handle_inner = handle_c.clone();
+            let hex = format!("#{r:02X}{g:02X}{b:02X}");
             tokio::spawn(async move {
                 let _ = lp_clone.set_color(r as u8, g as u8, b as u8).await;
+                let _ = slint::invoke_from_event_loop(move || {
+                    if let Some(ui) = handle_inner.upgrade() {
+                        ui.set_lighting_hex(hex.into());
+                        ui.set_current_rgb_color(slint::Color::from_rgb_u8(
+                            r as u8, g as u8, b as u8,
+                        ));
+                    }
+                });
+            });
+        });
+
+        let lp_picker = lp.clone();
+        let handle_p = handle.clone();
+        main_window.on_open_de_color_picker(move || {
+            let lp_clone = lp_picker.clone();
+            let handle_inner = handle_p.clone();
+            tokio::spawn(async move {
+                if let Some((r, g, b)) = pick_color_from_de().await {
+                    let _ = lp_clone.set_color(r, g, b).await;
+                    let hex = format!("#{r:02X}{g:02X}{b:02X}");
+                    let _ = slint::invoke_from_event_loop(move || {
+                        if let Some(ui) = handle_inner.upgrade() {
+                            ui.set_lighting_hex(hex.into());
+                            ui.set_current_rgb_color(slint::Color::from_rgb_u8(r, g, b));
+                        }
+                    });
+                }
             });
         });
 
@@ -162,7 +216,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
     }
 
-    // 7. Background Signal Monitor for Live Hardware Updates
+    // 7. Background Signal Monitors for Live Hardware Updates
     if let Some(tp) = thermal_proxy {
         let handle_t = handle.clone();
         tokio::spawn(async move {
@@ -182,6 +236,103 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
     }
 
+    if let Some(lp) = lighting_proxy {
+        let handle_l = handle.clone();
+        tokio::spawn(async move {
+            if let Ok(mut stream) = lp.receive_state_changed().await {
+                while let Some(signal) = stream.next().await {
+                    if let Ok(args) = signal.args() {
+                        let state = args.state;
+                        let handle_inner = handle_l.clone();
+                        let hex = format!("#{:02X}{:02X}{:02X}", state.r, state.g, state.b);
+                        let r = state.r;
+                        let g = state.g;
+                        let b = state.b;
+                        let _ = slint::invoke_from_event_loop(move || {
+                            if let Some(ui) = handle_inner.upgrade() {
+                                ui.set_lighting_brightness(state.brightness as i32);
+                                ui.set_lighting_mode(state.mode.into());
+                                ui.set_lighting_hex(hex.into());
+                                ui.set_current_rgb_color(slint::Color::from_rgb_u8(r, g, b));
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    }
+
     main_window.run()?;
     Ok(())
+}
+
+async fn pick_color_from_de() -> Option<(u8, u8, u8)> {
+    let desktop = std::env::var("XDG_CURRENT_DESKTOP")
+        .unwrap_or_default()
+        .to_lowercase();
+    let is_kde = desktop.contains("kde");
+
+    let output = if is_kde && std::path::Path::new("/usr/bin/kdialog").exists() {
+        tokio::process::Command::new("kdialog")
+            .arg("--getcolor")
+            .output()
+            .await
+            .ok()
+    } else if std::path::Path::new("/usr/bin/zenity").exists() {
+        tokio::process::Command::new("zenity")
+            .arg("--color-selection")
+            .arg("--show-palette")
+            .output()
+            .await
+            .ok()
+    } else if std::path::Path::new("/usr/bin/kdialog").exists() {
+        tokio::process::Command::new("kdialog")
+            .arg("--getcolor")
+            .output()
+            .await
+            .ok()
+    } else {
+        None
+    };
+
+    if let Some(out) = output {
+        if out.status.success() {
+            let stdout = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            return parse_color_string(&stdout);
+        }
+    }
+    None
+}
+
+fn parse_color_string(s: &str) -> Option<(u8, u8, u8)> {
+    let s = s.trim();
+    if s.is_empty() {
+        return None;
+    }
+
+    // Format 1: #RRGGBB or #RRGGBBAA or RRGGBB
+    let hex_part = s.trim_start_matches('#');
+    if hex_part.len() >= 6 && hex_part.chars().all(|c| c.is_ascii_hexdigit()) {
+        let r = u8::from_str_radix(&hex_part[0..2], 16).ok()?;
+        let g = u8::from_str_radix(&hex_part[2..4], 16).ok()?;
+        let b = u8::from_str_radix(&hex_part[4..6], 16).ok()?;
+        return Some((r, g, b));
+    }
+
+    // Format 2: rgb(r, g, b) or rgba(r, g, b, a)
+    if let Some(inner) = s
+        .strip_prefix("rgb(")
+        .and_then(|t| t.strip_suffix(')'))
+        .or_else(|| s.strip_prefix("rgba(").and_then(|t| t.strip_suffix(')')))
+    {
+        let parts: Vec<&str> = inner.split(',').collect();
+        if parts.len() >= 3 {
+            let r = parts[0].trim().parse::<u8>().ok()?;
+            let g = parts[1].trim().parse::<u8>().ok()?;
+            let b = parts[2].trim().parse::<u8>().ok()?;
+            return Some((r, g, b));
+        }
+    }
+
+    None
 }

@@ -14,6 +14,7 @@ pub struct LightingStateMsg {
     pub g: u8,
     pub b: u8,
     pub speed: u8,
+    pub supported_modes: Vec<String>,
 }
 
 #[zbus::proxy(
@@ -27,6 +28,7 @@ pub trait Lighting {
     async fn set_color(&self, r: u8, g: u8, b: u8) -> zbus::Result<()>;
     async fn set_mode(&self, mode: String, speed: u8) -> zbus::Result<()>;
     async fn get_state(&self) -> zbus::Result<LightingStateMsg>;
+    async fn get_supported_modes(&self) -> zbus::Result<Vec<String>>;
 
     #[zbus(signal)]
     async fn state_changed(&self, state: LightingStateMsg) -> zbus::Result<()>;

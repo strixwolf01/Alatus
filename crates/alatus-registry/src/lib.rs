@@ -80,6 +80,7 @@ impl DriverRegistry {
                 cfg.report_id,
                 None::<&str>,
                 cfg.default_brightness,
+                Some(cfg.supported_modes.clone()),
             )))
         });
 
