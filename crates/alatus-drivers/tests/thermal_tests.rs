@@ -111,7 +111,7 @@ async fn test_thermal_full_speed_with_debugfs() {
     );
 
     let devs_content = fs::read_to_string(debugfs_dir.join("devs")).unwrap();
-    assert_eq!(devs_content.trim(), "0x00110013 0x1");
+    assert_eq!(devs_content.trim(), "0x00110013 0x3");
 
     // Revert to Quiet
     driver.set_profile(ThermalProfileMode::Quiet).await.unwrap();
@@ -121,7 +121,7 @@ async fn test_thermal_full_speed_with_debugfs() {
     );
 
     let devs_content_reverted = fs::read_to_string(debugfs_dir.join("devs")).unwrap();
-    assert_eq!(devs_content_reverted.trim(), "0x00110013 0x0");
+    assert_eq!(devs_content_reverted.trim(), "0x00110013 0x1");
 }
 
 #[tokio::test]
@@ -156,4 +156,66 @@ async fn test_thermal_hwmon_fan_readback() {
     assert_eq!(fans[0].current_rpm, 4200);
     assert_eq!(fans[1].label, "gpu_fan");
     assert_eq!(fans[1].current_rpm, 4100);
+}
+
+#[tokio::test]
+async fn test_thermal_modern_wmi_debugfs_sequencing() {
+    let dir = tempdir().unwrap();
+    let acpi_dir = dir.path().join("sys/firmware/acpi");
+    let debugfs_dir = dir.path().join("sys/kernel/debug/asus-nb-wmi");
+    fs::create_dir_all(&acpi_dir).unwrap();
+    fs::create_dir_all(&debugfs_dir).unwrap();
+
+    fs::write(acpi_dir.join("platform_profile"), "balanced\n").unwrap();
+    fs::write(debugfs_dir.join("dev_id"), "").unwrap();
+    fs::write(debugfs_dir.join("ctrl_param"), "0x00000000\n").unwrap();
+    fs::write(debugfs_dir.join("devs"), "DEVS(0x110019, 0x0) = 0x1\n").unwrap();
+
+    let root = SysfsRoot::new(dir.path().join("sys"));
+    let driver = AsusHybridThermalDriver::new(
+        root,
+        "/firmware/acpi/platform_profile",
+        Some("/kernel/debug/asus-nb-wmi/devs"),
+        Some(0x00110019),
+        None::<&str>,
+        true,
+    );
+
+    // Initial state read from ctrl_param (0x00000000 = Balanced)
+    assert_eq!(
+        driver.get_current_profile().await.unwrap(),
+        ThermalProfileMode::Balanced
+    );
+
+    // Switch to FullSpeed (value 3)
+    driver
+        .set_profile(ThermalProfileMode::FullSpeed)
+        .await
+        .unwrap();
+
+    assert_eq!(
+        fs::read_to_string(debugfs_dir.join("dev_id"))
+            .unwrap()
+            .trim(),
+        "0x110019"
+    );
+    assert_eq!(
+        fs::read_to_string(debugfs_dir.join("ctrl_param"))
+            .unwrap()
+            .trim(),
+        "3"
+    );
+    assert_eq!(
+        driver.get_current_profile().await.unwrap(),
+        ThermalProfileMode::FullSpeed
+    );
+
+    // Switch to Quiet (value 1)
+    driver.set_profile(ThermalProfileMode::Quiet).await.unwrap();
+    assert_eq!(
+        fs::read_to_string(debugfs_dir.join("ctrl_param"))
+            .unwrap()
+            .trim(),
+        "1"
+    );
 }

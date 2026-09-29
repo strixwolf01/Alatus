@@ -20,8 +20,8 @@ sysfs_path = "/sys/class/power_supply/BAT0"
 driver = "asus-hybrid-thermal"
 platform_profile_path = "/sys/firmware/acpi/platform_profile"
 debugfs_devs_path = "/sys/kernel/debug/asus-nb-wmi/devs"
-debugfs_fan_register = 0x00110013
-supports_full_speed = false
+debugfs_fan_register = 0x00110019
+supports_full_speed = true
 fan_count = 1
 
 [hotkeys]

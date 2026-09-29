@@ -20,7 +20,7 @@ sysfs_path = "/sys/class/power_supply/BAT0"
 driver = "asus-hybrid-thermal"
 platform_profile_path = "/sys/firmware/acpi/platform_profile"
 debugfs_devs_path = "/sys/kernel/debug/asus-nb-wmi/devs"
-debugfs_fan_register = 0x00110013
+debugfs_fan_register = 0x00110019
 supports_full_speed = true
 fan_count = 2
 
@@ -28,7 +28,7 @@ fan_count = 2
 driver = "asus-ite5570-lamparray"
 hid_vendor_id = 0x0B05
 hid_product_id = 0x19B6
-report_id = 0x5A
+report_id = 0x0B
 lamp_count = 1
 default_mode = "Static"
 default_brightness = 3

@@ -250,11 +250,10 @@ echo "==> [Step 2/3] Requesting root permission once for installation..."
 if [ "$EUID" -eq 0 ]; then
     echo "  -> Running directly as root."
     "$REPO_ROOT/scripts/deploy.sh" --privileged-worker "$REPO_ROOT" "$FAMILY" "$PKG_PATH"
-elif command -v sudo >/dev/null 2>&1 && sudo -v; then
-    echo "  -> Elevated via sudo."
-    sudo "$REPO_ROOT/scripts/deploy.sh" --privileged-worker "$REPO_ROOT" "$FAMILY" "$PKG_PATH"
+elif command -v sudo >/dev/null 2>&1 && sudo "$REPO_ROOT/scripts/deploy.sh" --privileged-worker "$REPO_ROOT" "$FAMILY" "$PKG_PATH"; then
+    echo "  -> Installation completed via sudo."
 elif command -v pkexec >/dev/null 2>&1; then
-    echo "  -> sudo not permitted/available; elevating via PolicyKit (pkexec)..."
+    echo "  -> Elevating via PolicyKit (pkexec)..."
     pkexec "$REPO_ROOT/scripts/deploy.sh" --privileged-worker "$REPO_ROOT" "$FAMILY" "$PKG_PATH"
 else
     echo "Error: Neither sudo nor pkexec is available. Root privileges are required to install system services." >&2

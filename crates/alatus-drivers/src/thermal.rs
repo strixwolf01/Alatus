@@ -1,5 +1,5 @@
 //! ASUS hybrid thermal driver combining standard ACPI platform_profile,
-//! hwmon fan telemetry, and asus-nb-wmi DebugFS Full Speed fan boost.
+//! hwmon fan telemetry, and asus-nb-wmi DebugFS fan state sequencing.
 
 use crate::sysfs::SysfsRoot;
 use alatus_core::{
@@ -11,6 +11,8 @@ use async_trait::async_trait;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::fs;
+
+pub const DEFAULT_FAN_REGISTER: u32 = 0x00110019;
 
 #[derive(Debug)]
 pub struct AsusHybridThermalDriver {
@@ -36,18 +38,18 @@ impl AsusHybridThermalDriver {
         let debugfs_devs_path = debugfs_devs_path.map(|p| sysfs_root.resolve(p));
         let hwmon_dir = hwmon_dir.map(|p| sysfs_root.resolve(p));
 
-        // Check if debugfs path is genuinely writable
+        // Check if debugfs path is genuinely accessible
         let can_full_speed = if supports_full_speed {
             if let Some(ref path) = debugfs_devs_path {
-                match std::fs::OpenOptions::new().write(true).open(path) {
-                    Ok(_) => true,
-                    Err(e) => {
-                        tracing::warn!(
-                            "DebugFS path '{}' not writable ({e}). Full Speed mode will be disabled (Kernel Lockdown / Secure Boot active).",
-                            path.display()
-                        );
-                        false
-                    }
+                let base = path.parent().unwrap_or(path);
+                let dev_id_path = base.join("dev_id");
+                if dev_id_path.exists() {
+                    std::fs::OpenOptions::new()
+                        .write(true)
+                        .open(&dev_id_path)
+                        .is_ok()
+                } else {
+                    std::fs::OpenOptions::new().write(true).open(path).is_ok()
                 }
             } else {
                 false
@@ -60,7 +62,7 @@ impl AsusHybridThermalDriver {
             sysfs_root,
             platform_profile_path,
             debugfs_devs_path,
-            debugfs_fan_register: debugfs_fan_register.unwrap_or(0x00110013),
+            debugfs_fan_register: debugfs_fan_register.unwrap_or(DEFAULT_FAN_REGISTER),
             hwmon_dir,
             can_full_speed: AtomicBool::new(can_full_speed),
             is_full_speed_active: AtomicBool::new(false),
@@ -133,7 +135,7 @@ impl ThermalDriver for AsusHybridThermalDriver {
                 }
             }
         } else {
-            // Default standard ACPI fallback choices
+            // Default standard choices
             modes = vec![
                 ThermalProfileMode::Quiet,
                 ThermalProfileMode::Balanced,
@@ -153,6 +155,30 @@ impl ThermalDriver for AsusHybridThermalDriver {
             return Ok(ThermalProfileMode::FullSpeed);
         }
 
+        // 1. Try reading live hardware state from DebugFS ctrl_param
+        if let Some(ref devs_path) = self.debugfs_devs_path {
+            let base = devs_path.parent().unwrap_or(devs_path);
+            let dev_id_path = base.join("dev_id");
+            let ctrl_param_path = base.join("ctrl_param");
+
+            if dev_id_path.exists() && ctrl_param_path.exists() {
+                let reg_str = format!("{:#x}\n", self.debugfs_fan_register);
+                if fs::write(&dev_id_path, &reg_str).await.is_ok() {
+                    if let Ok(content) = fs::read_to_string(&ctrl_param_path).await {
+                        let trimmed = content.trim();
+                        match trimmed {
+                            "0x00000000" | "0" => return Ok(ThermalProfileMode::Balanced),
+                            "0x00000001" | "1" => return Ok(ThermalProfileMode::Quiet),
+                            "0x00000002" | "2" => return Ok(ThermalProfileMode::Performance),
+                            "0x00000003" | "3" => return Ok(ThermalProfileMode::FullSpeed),
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Fall back to standard platform_profile
         let content = fs::read_to_string(&self.platform_profile_path)
             .await
             .map_err(|e| AlatusError::Sysfs {
@@ -172,79 +198,59 @@ impl ThermalDriver for AsusHybridThermalDriver {
     }
 
     async fn set_profile(&self, mode: ThermalProfileMode) -> Result<(), AlatusError> {
-        match mode {
-            ThermalProfileMode::FullSpeed => {
-                if !self.can_full_speed.load(Ordering::SeqCst) {
-                    return Err(AlatusError::UnsupportedCapability(
-                        "Full Speed fan mode is unavailable (DebugFS write blocked or Lockdown active)",
-                    ));
-                }
-
-                // 1. First set platform profile to performance
-                fs::write(&self.platform_profile_path, "performance\n")
-                    .await
-                    .map_err(|e| AlatusError::Sysfs {
-                        path: self.platform_profile_path.clone(),
-                        message: format!("Failed to set base performance profile: {e}"),
-                    })?;
-
-                // 2. Write DebugFS fan register for 100% boost
-                if let Some(ref devs_path) = self.debugfs_devs_path {
-                    let cmd = format!("{:#010x} 0x1\n", self.debugfs_fan_register);
-                    fs::write(devs_path, &cmd)
-                        .await
-                        .map_err(|e| AlatusError::Sysfs {
-                            path: devs_path.clone(),
-                            message: format!("Failed to write DebugFS fan boost register: {e}"),
-                        })?;
-                }
-
-                self.is_full_speed_active.store(true, Ordering::SeqCst);
-                tracing::info!("Activated Full Speed thermal mode");
-            }
-            ThermalProfileMode::Quiet
-            | ThermalProfileMode::Balanced
-            | ThermalProfileMode::Performance => {
-                // If previously full speed, disable fan boost first
-                if self.is_full_speed_active.load(Ordering::SeqCst) {
-                    if let Some(ref devs_path) = self.debugfs_devs_path {
-                        let cmd = format!("{:#010x} 0x0\n", self.debugfs_fan_register);
-                        let _ = fs::write(devs_path, cmd).await;
-                    }
-                    self.is_full_speed_active.store(false, Ordering::SeqCst);
-                }
-
-                let profile_str = match mode {
-                    ThermalProfileMode::Quiet => "quiet",
-                    ThermalProfileMode::Balanced => "balanced",
-                    ThermalProfileMode::Performance => "performance",
-                    _ => unreachable!(),
-                };
-
-                fs::write(&self.platform_profile_path, format!("{profile_str}\n"))
-                    .await
-                    .map_err(|e| match e.kind() {
-                        std::io::ErrorKind::PermissionDenied => {
-                            AlatusError::PermissionDenied(format!(
-                                "Permission denied writing to {}",
-                                self.platform_profile_path.display()
-                            ))
-                        }
-                        _ => AlatusError::Sysfs {
-                            path: self.platform_profile_path.clone(),
-                            message: format!("Failed to write platform_profile: {e}"),
-                        },
-                    })?;
-
-                tracing::info!("Set thermal profile to {profile_str}");
-            }
+        let fan_val = match mode {
+            ThermalProfileMode::Balanced => 0,
+            ThermalProfileMode::Quiet => 1,
+            ThermalProfileMode::Performance => 2,
+            ThermalProfileMode::FullSpeed => 3,
             ThermalProfileMode::Custom(_) => {
                 return Err(AlatusError::UnsupportedCapability(
                     "Custom thermal curves are not supported on this model",
                 ));
             }
+        };
+
+        // 1. Write to asus-nb-wmi DebugFS if available
+        if let Some(ref devs_path) = self.debugfs_devs_path {
+            let base = devs_path.parent().unwrap_or(devs_path);
+            let dev_id_path = base.join("dev_id");
+            let ctrl_param_path = base.join("ctrl_param");
+
+            if dev_id_path.exists() && ctrl_param_path.exists() {
+                let reg_str = format!("{:#x}\n", self.debugfs_fan_register);
+                if let Err(e) = fs::write(&dev_id_path, &reg_str).await {
+                    tracing::warn!("Failed writing to dev_id: {e}");
+                }
+                if let Err(e) = fs::write(&ctrl_param_path, format!("{fan_val}\n")).await {
+                    tracing::warn!("Failed writing to ctrl_param: {e}");
+                }
+                // Trigger ACPI evaluation by reading devs
+                let _ = fs::read_to_string(devs_path).await;
+            } else if devs_path.exists() {
+                // Fallback for mock environments / legacy kernels
+                let cmd = format!("{:#010x} 0x{fan_val}\n", self.debugfs_fan_register);
+                let _ = fs::write(devs_path, cmd).await;
+            }
         }
 
+        if mode == ThermalProfileMode::FullSpeed {
+            self.is_full_speed_active.store(true, Ordering::SeqCst);
+        } else {
+            self.is_full_speed_active.store(false, Ordering::SeqCst);
+        }
+
+        // 2. Also keep Linux kernel platform_profile in sync if it exists
+        if self.platform_profile_path.exists() {
+            let kernel_profile = match mode {
+                ThermalProfileMode::Quiet => "quiet\n",
+                ThermalProfileMode::Balanced => "balanced\n",
+                ThermalProfileMode::Performance | ThermalProfileMode::FullSpeed => "performance\n",
+                _ => "balanced\n",
+            };
+            let _ = fs::write(&self.platform_profile_path, kernel_profile).await;
+        }
+
+        tracing::info!("Set thermal profile to {:?}", mode);
         Ok(())
     }
 

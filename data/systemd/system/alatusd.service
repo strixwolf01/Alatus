@@ -8,6 +8,7 @@ Type=simple
 ExecStart=/usr/bin/alatusd
 Restart=on-failure
 RestartSec=3s
+Environment=RUST_LOG=info
 
 # Security Hardening & Isolation
 ProtectSystem=strict

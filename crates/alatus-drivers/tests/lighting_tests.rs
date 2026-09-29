@@ -21,11 +21,11 @@ async fn test_lighting_device_discovery_and_packet_serialization() {
 
     // Create mock /dev/hidraw1 file
     let mock_dev_file = dev_dir.join("hidraw1");
-    fs::write(&mock_dev_file, vec![0u8; 17]).unwrap();
+    fs::write(&mock_dev_file, vec![]).unwrap();
 
     let root = SysfsRoot::new(dir.path().join("sys"));
     let driver =
-        AsusIte5570LightingDriver::new(root, 0x0B05, 0x19B6, 0x5A, Some(&mock_dev_file), 3);
+        AsusIte5570LightingDriver::new(root, 0x0B05, 0x19B6, 0x0B, Some(&mock_dev_file), 3);
 
     let caps = driver.capabilities();
     assert!(caps.contains(LightingCapabilities::BRIGHTNESS_CONTROL));
@@ -46,19 +46,26 @@ async fn test_lighting_device_discovery_and_packet_serialization() {
 
     assert_eq!(driver.get_brightness().await.unwrap(), 2);
 
-    // Inspect the 17-byte packet written to the mock device file
+    // Inspect the packets written to the mock device file:
+    // 2-byte mode packet (host mode 0x00) + 10-byte color packet
     let packet = fs::read(&mock_dev_file).unwrap();
-    assert_eq!(packet.len(), 17);
-    assert_eq!(packet[0], 0x5A); // Report ID
-    assert_eq!(packet[1], 0xBA); // Command Sub-ID
-    assert_eq!(packet[2], 0x00); // Mode Static = 0
-    assert_eq!(packet[3], 255); // Red
-    assert_eq!(packet[4], 0); // Green
-    assert_eq!(packet[5], 0); // Blue
-    assert_eq!(packet[6], 1); // Speed
-    assert_eq!(packet[7], 2); // Brightness
+    assert_eq!(packet.len(), 12);
+    // Mode packet
+    assert_eq!(packet[0], 0x0B); // Firmware Report ID
+    assert_eq!(packet[1], 0x00); // Host mode (manual control)
+                                 // Color packet
+    assert_eq!(packet[2], 0x05); // Color Report ID
+    assert_eq!(packet[3], 0x01); // Header constant
+    assert_eq!(packet[4..8], [0x00, 0x00, 0x00, 0x00]); // Padding
+    assert_eq!(packet[8], 255); // Red
+    assert_eq!(packet[9], 0); // Green
+    assert_eq!(packet[10], 0); // Blue
+    assert_eq!(packet[11], 170); // Intensity for brightness 2 (170/255)
 
-    // Apply Rainbow Effect with brightness 3
+    // Clear mock file for rainbow test
+    fs::write(&mock_dev_file, vec![]).unwrap();
+
+    // Apply Rainbow Effect
     let rainbow_effect = LightingEffect {
         mode: LightingMode::Rainbow,
         primary_color: RgbColor::new(0, 0, 0),
@@ -69,9 +76,7 @@ async fn test_lighting_device_discovery_and_packet_serialization() {
     driver.apply_effect(&rainbow_effect).await.unwrap();
 
     let packet = fs::read(&mock_dev_file).unwrap();
-    assert_eq!(packet[0], 0x5A);
-    assert_eq!(packet[1], 0xBA);
-    assert_eq!(packet[2], 0x03); // Rainbow = 3
-    assert_eq!(packet[6], 2); // Speed
-    assert_eq!(packet[7], 3); // Brightness = 3
+    assert_eq!(packet.len(), 2);
+    assert_eq!(packet[0], 0x0B); // Firmware Report ID
+    assert_eq!(packet[1], 0x01); // Autonomous mode (Rainbow)
 }
