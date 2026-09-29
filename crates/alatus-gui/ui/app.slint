@@ -2,10 +2,12 @@ import { Button, Slider } from "std-widgets.slint";
 
 export component MainWindow inherits Window {
     title: "Alatus - ASUS Hardware Suite";
-    min-width: 680px;
-    min-height: 520px;
-    background: #101216;
-    default-font-family: "Inter, sans-serif";
+    min-width: 780px;
+    min-height: 560px;
+    preferred-width: 840px;
+    preferred-height: 600px;
+    background: #0D0F14;
+    default-font-family: "Inter, system-ui, sans-serif";
 
     // Callbacks to Rust backend
     callback set_battery_limit(int);
@@ -16,7 +18,7 @@ export component MainWindow inherits Window {
     callback open_de_color_picker();
 
     // State properties
-    in-out property <int> active_tab: 0;
+    in-out property <int> active_tab: 0; // 0: Dashboard, 1: Battery, 2: Cooling, 3: RGB, 4: System
 
     // Battery properties
     in-out property <int> battery_percentage: 0;
@@ -45,44 +47,111 @@ export component MainWindow inherits Window {
     in-out property <bool> supports_mode_strobe: false;
 
     VerticalLayout {
-        padding: 24px;
-        spacing: 20px;
+        padding: 20px;
+        spacing: 16px;
 
-        // Header
+        // Header Bar
         HorizontalLayout {
             alignment: space-between;
-            Text {
-                text: "ALATUS";
-                font-size: 22px;
-                font-weight: 800;
-                color: #00F0FF;
+            VerticalLayout {
+                spacing: 2px;
+                HorizontalLayout {
+                    spacing: 8px;
+                    Text {
+                        text: "ALATUS";
+                        font-size: 22px;
+                        font-weight: 800;
+                        color: #00F0FF;
+                    }
+                    Rectangle {
+                        border-radius: 4px;
+                        background: #00E676;
+                        width: 8px;
+                        height: 8px;
+                        y: 10px;
+                    }
+                    Text {
+                        text: "v0.1.0";
+                        font-size: 11px;
+                        font-weight: 600;
+                        color: #5A6275;
+                        vertical-alignment: center;
+                    }
+                }
+                Text {
+                    text: "ASUS HARDWARE CONTROL SUITE";
+                    font-size: 10px;
+                    font-weight: 700;
+                    letter-spacing: 1px;
+                    color: #5A6275;
+                }
             }
-            Text {
-                text: "ASUS Vivobook S 15 OLED (S5506MA)";
-                font-size: 13px;
-                color: #8A92A6;
-                vertical-alignment: center;
+
+            HorizontalLayout {
+                spacing: 12px;
+                Rectangle {
+                    border-radius: 8px;
+                    background: #141720;
+                    border-width: 1px;
+                    border-color: #242938;
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        padding-right: 12px;
+                        spacing: 8px;
+                        alignment: center;
+                        Rectangle {
+                            width: 6px;
+                            height: 6px;
+                            border-radius: 3px;
+                            background: #00E676;
+                            y: 11px;
+                        }
+                        Text {
+                            text: "DAEMON ONLINE";
+                            font-size: 11px;
+                            font-weight: 700;
+                            color: #00E676;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                Rectangle {
+                    border-radius: 8px;
+                    background: #141720;
+                    border-width: 1px;
+                    border-color: #242938;
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        padding-right: 12px;
+                        alignment: center;
+                        Text {
+                            text: "ASUS Vivobook S 15 OLED (S5506MA)";
+                            font-size: 12px;
+                            font-weight: 600;
+                            color: #8A92A6;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
             }
         }
 
-        // Tab Navigation
+        // Navigation Tabs (5 Tabs)
         HorizontalLayout {
-            spacing: 12px;
+            spacing: 8px;
             
+            // Tab 0: Dashboard
             Rectangle {
-                height: 42px;
+                height: 40px;
                 border-radius: 8px;
-                background: root.active_tab == 0 ? #1F232D : #16181F;
+                background: root.active_tab == 0 ? #1B2130 : #12151C;
                 border-width: 1px;
-                border-color: root.active_tab == 0 ? #00F0FF : #2A2E3B;
-                
-                TouchArea {
-                    clicked => { root.active_tab = 0; }
-                }
-
+                border-color: root.active_tab == 0 ? #00F0FF : #1E2330;
+                TouchArea { clicked => { root.active_tab = 0; } }
                 Text {
-                    text: "🔋 Battery Care";
-                    font-size: 14px;
+                    text: "📊 Dashboard";
+                    font-size: 13px;
                     font-weight: 600;
                     color: root.active_tab == 0 ? #FFFFFF : #8A92A6;
                     horizontal-alignment: center;
@@ -90,20 +159,17 @@ export component MainWindow inherits Window {
                 }
             }
 
+            // Tab 1: Battery Care
             Rectangle {
-                height: 42px;
+                height: 40px;
                 border-radius: 8px;
-                background: root.active_tab == 1 ? #1F232D : #16181F;
+                background: root.active_tab == 1 ? #1B2130 : #12151C;
                 border-width: 1px;
-                border-color: root.active_tab == 1 ? #00F0FF : #2A2E3B;
-                
-                TouchArea {
-                    clicked => { root.active_tab = 1; }
-                }
-
+                border-color: root.active_tab == 1 ? #00F0FF : #1E2330;
+                TouchArea { clicked => { root.active_tab = 1; } }
                 Text {
-                    text: "❄️ Cooling & Thermal";
-                    font-size: 14px;
+                    text: "🔋 Battery Care";
+                    font-size: 13px;
                     font-weight: 600;
                     color: root.active_tab == 1 ? #FFFFFF : #8A92A6;
                     horizontal-alignment: center;
@@ -111,37 +177,325 @@ export component MainWindow inherits Window {
                 }
             }
 
+            // Tab 2: Cooling & Thermal
             Rectangle {
-                height: 42px;
+                height: 40px;
                 border-radius: 8px;
-                background: root.active_tab == 2 ? #1F232D : #16181F;
+                background: root.active_tab == 2 ? #1B2130 : #12151C;
                 border-width: 1px;
-                border-color: root.active_tab == 2 ? #00F0FF : #2A2E3B;
-                
-                TouchArea {
-                    clicked => { root.active_tab = 2; }
-                }
-
+                border-color: root.active_tab == 2 ? #00F0FF : #1E2330;
+                TouchArea { clicked => { root.active_tab = 2; } }
                 Text {
-                    text: "💡 Keyboard RGB";
-                    font-size: 14px;
+                    text: "❄️ Cooling & Thermal";
+                    font-size: 13px;
                     font-weight: 600;
                     color: root.active_tab == 2 ? #FFFFFF : #8A92A6;
                     horizontal-alignment: center;
                     vertical-alignment: center;
                 }
             }
+
+            // Tab 3: Keyboard RGB
+            Rectangle {
+                height: 40px;
+                border-radius: 8px;
+                background: root.active_tab == 3 ? #1B2130 : #12151C;
+                border-width: 1px;
+                border-color: root.active_tab == 3 ? #00F0FF : #1E2330;
+                TouchArea { clicked => { root.active_tab = 3; } }
+                Text {
+                    text: "💡 Keyboard RGB";
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: root.active_tab == 3 ? #FFFFFF : #8A92A6;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+
+            // Tab 4: System Info
+            Rectangle {
+                height: 40px;
+                border-radius: 8px;
+                background: root.active_tab == 4 ? #1B2130 : #12151C;
+                border-width: 1px;
+                border-color: root.active_tab == 4 ? #00F0FF : #1E2330;
+                TouchArea { clicked => { root.active_tab = 4; } }
+                Text {
+                    text: "💻 System Info";
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: root.active_tab == 4 ? #FFFFFF : #8A92A6;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
         }
 
-        // Tab 0: Battery Care Content
+        // ==========================================
+        // TAB 0: DASHBOARD CONTENT (EXECUTIVE OVERVIEW)
+        // ==========================================
         if root.active_tab == 0: VerticalLayout {
-            spacing: 16px;
+            spacing: 14px;
+
+            // 3 Executive KPI Cards Row
+            HorizontalLayout {
+                spacing: 12px;
+
+                // KPI 1: Battery Vital Card
+                Rectangle {
+                    border-radius: 10px;
+                    background: #141720;
+                    border-width: 1px;
+                    border-color: #242938;
+                    VerticalLayout {
+                        padding: 16px;
+                        spacing: 8px;
+                        HorizontalLayout {
+                            alignment: space-between;
+                            Text { text: "BATTERY"; font-size: 11px; font-weight: 700; color: #8A92A6; }
+                            Text { text: root.battery_status; font-size: 11px; font-weight: 600; color: #00E676; }
+                        }
+                        HorizontalLayout {
+                            spacing: 8px;
+                            Text {
+                                text: root.battery_percentage + "%";
+                                font-size: 26px;
+                                font-weight: 800;
+                                color: #FFFFFF;
+                            }
+                            Text {
+                                text: "Limit: " + root.battery_limit + "%";
+                                font-size: 12px;
+                                font-weight: 600;
+                                color: #00F0FF;
+                                vertical-alignment: center;
+                            }
+                        }
+                        Text {
+                            text: "Health: " + root.battery_health + "%  •  Draw: " + root.battery_power;
+                            font-size: 11px;
+                            color: #718096;
+                        }
+                    }
+                }
+
+                // KPI 2: Thermal & Fan Vital Card
+                Rectangle {
+                    border-radius: 10px;
+                    background: #141720;
+                    border-width: 1px;
+                    border-color: #242938;
+                    VerticalLayout {
+                        padding: 16px;
+                        spacing: 8px;
+                        HorizontalLayout {
+                            alignment: space-between;
+                            Text { text: "THERMAL & FANS"; font-size: 11px; font-weight: 700; color: #8A92A6; }
+                            Text {
+                                text: root.current_profile;
+                                font-size: 11px;
+                                font-weight: 700;
+                                color: root.current_profile == "FullSpeed" ? #FF0055 : #00F0FF;
+                            }
+                        }
+                        HorizontalLayout {
+                            spacing: 6px;
+                            Text {
+                                text: root.fan_cpu_only_text;
+                                font-size: 20px;
+                                font-weight: 800;
+                                color: #00F0FF;
+                            }
+                        }
+                        Text {
+                            text: root.fan_rpm_subtext != "" ? root.fan_rpm_subtext + " (Max 8100 RPM)" : "Fans Active";
+                            font-size: 11px;
+                            color: #718096;
+                        }
+                    }
+                }
+
+                // KPI 3: RGB Lighting Vital Card
+                Rectangle {
+                    border-radius: 10px;
+                    background: #141720;
+                    border-width: 1px;
+                    border-color: #242938;
+                    VerticalLayout {
+                        padding: 16px;
+                        spacing: 8px;
+                        HorizontalLayout {
+                            alignment: space-between;
+                            Text { text: "AURA LIGHTING"; font-size: 11px; font-weight: 700; color: #8A92A6; }
+                            Text { text: root.lighting_mode; font-size: 11px; font-weight: 600; color: #7C4DFF; }
+                        }
+                        HorizontalLayout {
+                            spacing: 10px;
+                            Rectangle {
+                                width: 26px;
+                                height: 26px;
+                                border-radius: 6px;
+                                background: root.current_rgb_color;
+                                border-width: 1px;
+                                border-color: #383E50;
+                            }
+                            Text {
+                                text: root.lighting_hex;
+                                font-size: 18px;
+                                font-weight: 800;
+                                color: #FFFFFF;
+                                vertical-alignment: center;
+                            }
+                        }
+                        Text {
+                            text: "Brightness: Level " + root.lighting_brightness + " / 3";
+                            font-size: 11px;
+                            color: #718096;
+                        }
+                    }
+                }
+            }
+
+            // Quick Actions Panel
+            Rectangle {
+                border-radius: 10px;
+                background: #141720;
+                border-width: 1px;
+                border-color: #242938;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 14px;
+
+                    Text {
+                        text: "Quick Controls";
+                        font-size: 14px;
+                        font-weight: 700;
+                        color: #FFFFFF;
+                    }
+
+                    // Fast Thermal Mode Switcher
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Rectangle {
+                            height: 38px;
+                            border-radius: 6px;
+                            background: root.current_profile == "Quiet" ? #00F0FF : #1B202C;
+                            TouchArea { clicked => { root.set_thermal_profile("Quiet"); } }
+                            Text {
+                                text: "Whisper (Silent)";
+                                font-size: 12px;
+                                font-weight: 600;
+                                color: root.current_profile == "Quiet" ? #000 : #FFF;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                        Rectangle {
+                            height: 38px;
+                            border-radius: 6px;
+                            background: root.current_profile == "Balanced" ? #00F0FF : #1B202C;
+                            TouchArea { clicked => { root.set_thermal_profile("Balanced"); } }
+                            Text {
+                                text: "Balanced (Auto)";
+                                font-size: 12px;
+                                font-weight: 600;
+                                color: root.current_profile == "Balanced" ? #000 : #FFF;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                        Rectangle {
+                            height: 38px;
+                            border-radius: 6px;
+                            background: root.current_profile == "Performance" ? #00F0FF : #1B202C;
+                            TouchArea { clicked => { root.set_thermal_profile("Performance"); } }
+                            Text {
+                                text: "Performance";
+                                font-size: 12px;
+                                font-weight: 600;
+                                color: root.current_profile == "Performance" ? #000 : #FFF;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                        if root.full_speed_supported: Rectangle {
+                            height: 38px;
+                            border-radius: 6px;
+                            background: root.current_profile == "FullSpeed" ? #FF0055 : #1B202C;
+                            TouchArea { clicked => { root.set_thermal_profile("FullSpeed"); } }
+                            Text {
+                                text: "⚡ Full Speed (100%)";
+                                font-size: 12px;
+                                font-weight: 700;
+                                color: root.current_profile == "FullSpeed" ? #FFF : #FF4D7D;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    // Fast Battery Limit Switcher
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Rectangle {
+                            height: 36px;
+                            border-radius: 6px;
+                            background: root.battery_limit == 60 ? #00E676 : #1B202C;
+                            TouchArea { clicked => { root.set_battery_limit(60); } }
+                            Text {
+                                text: "Cap 60% (Max Lifespan)";
+                                font-size: 12px;
+                                font-weight: 600;
+                                color: root.battery_limit == 60 ? #000 : #FFF;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                        Rectangle {
+                            height: 36px;
+                            border-radius: 6px;
+                            background: root.battery_limit == 80 ? #00E676 : #1B202C;
+                            TouchArea { clicked => { root.set_battery_limit(80); } }
+                            Text {
+                                text: "Cap 80% (Balanced)";
+                                font-size: 12px;
+                                font-weight: 600;
+                                color: root.battery_limit == 80 ? #000 : #FFF;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                        Rectangle {
+                            height: 36px;
+                            border-radius: 6px;
+                            background: root.battery_limit == 100 ? #00E676 : #1B202C;
+                            TouchArea { clicked => { root.set_battery_limit(100); } }
+                            Text {
+                                text: "Cap 100% (Full Trip)";
+                                font-size: 12px;
+                                font-weight: 600;
+                                color: root.battery_limit == 100 ? #000 : #FFF;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ==========================================
+        // TAB 1: BATTERY CARE CONTENT
+        // ==========================================
+        if root.active_tab == 1: VerticalLayout {
+            spacing: 14px;
 
             Rectangle {
                 border-radius: 12px;
-                background: #16181F;
+                background: #141720;
                 border-width: 1px;
-                border-color: #2A2E3B;
+                border-color: #242938;
 
                 VerticalLayout {
                     padding: 20px;
@@ -152,43 +506,45 @@ export component MainWindow inherits Window {
                         Text {
                             text: "Battery Health Charging Threshold";
                             font-size: 16px;
-                            font-weight: 600;
+                            font-weight: 700;
                             color: #FFFFFF;
                         }
                         Text {
                             text: root.battery_status + " (" + root.battery_percentage + "%)";
                             font-size: 14px;
+                            font-weight: 600;
                             color: #00F0FF;
                         }
                     }
 
                     Text {
-                        text: "Protect battery lifespan by capping maximum charge level:";
+                        text: "Protect lithium battery lifespan by capping maximum charge level:";
                         font-size: 13px;
                         color: #8A92A6;
                     }
 
+                    // Charge Limit Presets
                     HorizontalLayout {
                         spacing: 12px;
 
                         Rectangle {
-                            height: 56px;
+                            height: 64px;
                             border-radius: 8px;
-                            background: root.battery_limit == 60 ? #00F0FF : #1F232D;
+                            background: root.battery_limit == 60 ? #00F0FF : #1A1F2B;
                             border-width: 1px;
-                            border-color: root.battery_limit == 60 ? #00F0FF : #323746;
+                            border-color: root.battery_limit == 60 ? #00F0FF : #2A3042;
                             TouchArea { clicked => { root.set_battery_limit(60); } }
                             VerticalLayout {
                                 alignment: center;
                                 Text {
                                     text: "60%";
-                                    font-size: 16px;
-                                    font-weight: 700;
+                                    font-size: 18px;
+                                    font-weight: 800;
                                     color: root.battery_limit == 60 ? #000000 : #FFFFFF;
                                     horizontal-alignment: center;
                                 }
                                 Text {
-                                    text: "Maximum Lifespan";
+                                    text: "Maximum Lifespan (Desk Plugged)";
                                     font-size: 11px;
                                     color: root.battery_limit == 60 ? #000000 : #8A92A6;
                                     horizontal-alignment: center;
@@ -197,23 +553,23 @@ export component MainWindow inherits Window {
                         }
 
                         Rectangle {
-                            height: 56px;
+                            height: 64px;
                             border-radius: 8px;
-                            background: root.battery_limit == 80 ? #00F0FF : #1F232D;
+                            background: root.battery_limit == 80 ? #00F0FF : #1A1F2B;
                             border-width: 1px;
-                            border-color: root.battery_limit == 80 ? #00F0FF : #323746;
+                            border-color: root.battery_limit == 80 ? #00F0FF : #2A3042;
                             TouchArea { clicked => { root.set_battery_limit(80); } }
                             VerticalLayout {
                                 alignment: center;
                                 Text {
                                     text: "80%";
-                                    font-size: 16px;
-                                    font-weight: 700;
+                                    font-size: 18px;
+                                    font-weight: 800;
                                     color: root.battery_limit == 80 ? #000000 : #FFFFFF;
                                     horizontal-alignment: center;
                                 }
                                 Text {
-                                    text: "Balanced Care";
+                                    text: "Balanced Care (Recommended)";
                                     font-size: 11px;
                                     color: root.battery_limit == 80 ? #000000 : #8A92A6;
                                     horizontal-alignment: center;
@@ -222,23 +578,23 @@ export component MainWindow inherits Window {
                         }
 
                         Rectangle {
-                            height: 56px;
+                            height: 64px;
                             border-radius: 8px;
-                            background: root.battery_limit == 100 ? #00F0FF : #1F232D;
+                            background: root.battery_limit == 100 ? #00F0FF : #1A1F2B;
                             border-width: 1px;
-                            border-color: root.battery_limit == 100 ? #00F0FF : #323746;
+                            border-color: root.battery_limit == 100 ? #00F0FF : #2A3042;
                             TouchArea { clicked => { root.set_battery_limit(100); } }
                             VerticalLayout {
                                 alignment: center;
                                 Text {
                                     text: "100%";
-                                    font-size: 16px;
-                                    font-weight: 700;
+                                    font-size: 18px;
+                                    font-weight: 800;
                                     color: root.battery_limit == 100 ? #000000 : #FFFFFF;
                                     horizontal-alignment: center;
                                 }
                                 Text {
-                                    text: "Full Capacity";
+                                    text: "Full Capacity (Travel)";
                                     font-size: 11px;
                                     color: root.battery_limit == 100 ? #000000 : #8A92A6;
                                     horizontal-alignment: center;
@@ -247,32 +603,49 @@ export component MainWindow inherits Window {
                         }
                     }
 
+                    // Battery Health & Diagnostics Stats
                     HorizontalLayout {
-                        spacing: 24px;
-                        Text {
-                            text: "Health: " + root.battery_health + "%";
-                            font-size: 13px;
-                            color: #A0AEC0;
+                        spacing: 12px;
+                        Rectangle {
+                            height: 48px;
+                            border-radius: 8px;
+                            background: #11141D;
+                            HorizontalLayout {
+                                padding-left: 16px;
+                                padding-right: 16px;
+                                alignment: space-between;
+                                Text { text: "Battery Health Condition:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
+                                Text { text: root.battery_health + "% (Healthy)"; font-size: 14px; font-weight: 700; color: #00E676; vertical-alignment: center; }
+                            }
                         }
-                        Text {
-                            text: "Discharge Rate: " + root.battery_power;
-                            font-size: 13px;
-                            color: #A0AEC0;
+                        Rectangle {
+                            height: 48px;
+                            border-radius: 8px;
+                            background: #11141D;
+                            HorizontalLayout {
+                                padding-left: 16px;
+                                padding-right: 16px;
+                                alignment: space-between;
+                                Text { text: "Real-time Discharge / Power:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
+                                Text { text: root.battery_power; font-size: 14px; font-weight: 700; color: #00F0FF; vertical-alignment: center; }
+                            }
                         }
                     }
                 }
             }
         }
 
-        // Tab 1: Thermal & Cooling Content
-        if root.active_tab == 1: VerticalLayout {
-            spacing: 16px;
+        // ==========================================
+        // TAB 2: COOLING & THERMAL CONTENT
+        // ==========================================
+        if root.active_tab == 2: VerticalLayout {
+            spacing: 14px;
 
             Rectangle {
                 border-radius: 12px;
-                background: #16181F;
+                background: #141720;
                 border-width: 1px;
-                border-color: #2A2E3B;
+                border-color: #242938;
 
                 VerticalLayout {
                     padding: 20px;
@@ -283,25 +656,27 @@ export component MainWindow inherits Window {
                         Text {
                             text: "Thermal Performance Mode";
                             font-size: 16px;
-                            font-weight: 600;
+                            font-weight: 700;
                             color: #FFFFFF;
                         }
                         Text {
-                            text: "Current: " + root.current_profile;
+                            text: "Active: " + root.current_profile;
                             font-size: 14px;
-                            color: #00F0FF;
+                            font-weight: 700;
+                            color: root.current_profile == "FullSpeed" ? #FF0055 : #00F0FF;
                         }
                     }
 
+                    // 4 Profile Cards Row
                     HorizontalLayout {
                         spacing: 10px;
 
                         Rectangle {
-                            height: 60px;
+                            height: 68px;
                             border-radius: 8px;
-                            background: root.current_profile == "Quiet" ? #00F0FF : #1F232D;
+                            background: root.current_profile == "Quiet" ? #00F0FF : #1A1F2B;
                             border-width: 1px;
-                            border-color: root.current_profile == "Quiet" ? #00F0FF : #323746;
+                            border-color: root.current_profile == "Quiet" ? #00F0FF : #2A3042;
                             TouchArea { clicked => { root.set_thermal_profile("Quiet"); } }
                             VerticalLayout {
                                 alignment: center;
@@ -313,7 +688,7 @@ export component MainWindow inherits Window {
                                     horizontal-alignment: center;
                                 }
                                 Text {
-                                    text: "Silent Fan";
+                                    text: "Silent Fan Curve";
                                     font-size: 11px;
                                     color: root.current_profile == "Quiet" ? #000000 : #8A92A6;
                                     horizontal-alignment: center;
@@ -322,11 +697,11 @@ export component MainWindow inherits Window {
                         }
 
                         Rectangle {
-                            height: 60px;
+                            height: 68px;
                             border-radius: 8px;
-                            background: root.current_profile == "Balanced" ? #00F0FF : #1F232D;
+                            background: root.current_profile == "Balanced" ? #00F0FF : #1A1F2B;
                             border-width: 1px;
-                            border-color: root.current_profile == "Balanced" ? #00F0FF : #323746;
+                            border-color: root.current_profile == "Balanced" ? #00F0FF : #2A3042;
                             TouchArea { clicked => { root.set_thermal_profile("Balanced"); } }
                             VerticalLayout {
                                 alignment: center;
@@ -338,7 +713,7 @@ export component MainWindow inherits Window {
                                     horizontal-alignment: center;
                                 }
                                 Text {
-                                    text: "Dynamic Curve";
+                                    text: "Balanced Auto Curve";
                                     font-size: 11px;
                                     color: root.current_profile == "Balanced" ? #000000 : #8A92A6;
                                     horizontal-alignment: center;
@@ -347,11 +722,11 @@ export component MainWindow inherits Window {
                         }
 
                         Rectangle {
-                            height: 60px;
+                            height: 68px;
                             border-radius: 8px;
-                            background: root.current_profile == "Performance" ? #00F0FF : #1F232D;
+                            background: root.current_profile == "Performance" ? #00F0FF : #1A1F2B;
                             border-width: 1px;
-                            border-color: root.current_profile == "Performance" ? #00F0FF : #323746;
+                            border-color: root.current_profile == "Performance" ? #00F0FF : #2A3042;
                             TouchArea { clicked => { root.set_thermal_profile("Performance"); } }
                             VerticalLayout {
                                 alignment: center;
@@ -363,7 +738,7 @@ export component MainWindow inherits Window {
                                     horizontal-alignment: center;
                                 }
                                 Text {
-                                    text: "Max Sustained";
+                                    text: "Max Sustained Boost";
                                     font-size: 11px;
                                     color: root.current_profile == "Performance" ? #000000 : #8A92A6;
                                     horizontal-alignment: center;
@@ -372,23 +747,23 @@ export component MainWindow inherits Window {
                         }
 
                         if root.full_speed_supported: Rectangle {
-                            height: 60px;
+                            height: 68px;
                             border-radius: 8px;
-                            background: root.current_profile == "FullSpeed" ? #FF0055 : #1F232D;
+                            background: root.current_profile == "FullSpeed" ? #FF0055 : #1A1F2B;
                             border-width: 1px;
-                            border-color: root.current_profile == "FullSpeed" ? #FF0055 : #323746;
+                            border-color: root.current_profile == "FullSpeed" ? #FF0055 : #2A3042;
                             TouchArea { clicked => { root.set_thermal_profile("FullSpeed"); } }
                             VerticalLayout {
                                 alignment: center;
                                 Text {
-                                    text: "Full Speed";
+                                    text: "⚡ Full Speed";
                                     font-size: 15px;
-                                    font-weight: 700;
+                                    font-weight: 800;
                                     color: root.current_profile == "FullSpeed" ? #FFFFFF : #FF4D7D;
                                     horizontal-alignment: center;
                                 }
                                 Text {
-                                    text: "100% Fan Boost";
+                                    text: "100% Fan Override (8100 RPM)";
                                     font-size: 11px;
                                     color: root.current_profile == "FullSpeed" ? #FFFFFF : #8A92A6;
                                     horizontal-alignment: center;
@@ -397,25 +772,27 @@ export component MainWindow inherits Window {
                         }
                     }
 
-                    // Fans Telemetry
+                    // Live Fans Telemetry Display
                     Rectangle {
-                        height: 50px;
+                        height: 56px;
                         border-radius: 8px;
-                        background: #111318;
+                        background: #11141D;
+                        border-width: 1px;
+                        border-color: #1E2330;
                         if root.is_cpu_only: HorizontalLayout {
                             alignment: center;
                             spacing: 12px;
                             Text {
                                 text: root.fan_cpu_only_text;
-                                font-size: 15px;
-                                font-weight: 700;
+                                font-size: 16px;
+                                font-weight: 800;
                                 color: #00F0FF;
                                 vertical-alignment: center;
                             }
                             if root.fan_rpm_subtext != "": Text {
-                                text: "(" + root.fan_rpm_subtext + ")";
-                                font-size: 12px;
-                                font-weight: 500;
+                                text: "(" + root.fan_rpm_subtext + " / 8100 Max RPM)";
+                                font-size: 13px;
+                                font-weight: 600;
                                 color: #8A92A6;
                                 vertical-alignment: center;
                             }
@@ -424,16 +801,16 @@ export component MainWindow inherits Window {
                             alignment: space-around;
                             Text {
                                 text: "CPU Fan: " + root.cpu_fan_rpm + " RPM";
-                                font-size: 13px;
-                                font-weight: 600;
-                                color: #A0AEC0;
+                                font-size: 14px;
+                                font-weight: 700;
+                                color: #00F0FF;
                                 vertical-alignment: center;
                             }
                             Text {
                                 text: "GPU Fan: " + root.gpu_fan_rpm + " RPM";
-                                font-size: 13px;
-                                font-weight: 600;
-                                color: #A0AEC0;
+                                font-size: 14px;
+                                font-weight: 700;
+                                color: #00F0FF;
                                 vertical-alignment: center;
                             }
                         }
@@ -442,15 +819,17 @@ export component MainWindow inherits Window {
             }
         }
 
-        // Tab 2: Keyboard RGB Content
-        if root.active_tab == 2: VerticalLayout {
-            spacing: 16px;
+        // ==========================================
+        // TAB 3: KEYBOARD RGB CONTENT
+        // ==========================================
+        if root.active_tab == 3: VerticalLayout {
+            spacing: 14px;
 
             Rectangle {
                 border-radius: 12px;
-                background: #16181F;
+                background: #141720;
                 border-width: 1px;
-                border-color: #2A2E3B;
+                border-color: #242938;
 
                 VerticalLayout {
                     padding: 20px;
@@ -461,12 +840,13 @@ export component MainWindow inherits Window {
                         Text {
                             text: "ITE5570 LampArray Backlight";
                             font-size: 16px;
-                            font-weight: 600;
+                            font-weight: 700;
                             color: #FFFFFF;
                         }
                         Text {
                             text: "Brightness: " + root.lighting_brightness + " / 3";
                             font-size: 14px;
+                            font-weight: 600;
                             color: #00F0FF;
                         }
                     }
@@ -475,32 +855,32 @@ export component MainWindow inherits Window {
                     HorizontalLayout {
                         spacing: 8px;
                         Rectangle {
-                            height: 36px;
+                            height: 38px;
                             border-radius: 6px;
-                            background: root.lighting_brightness == 0 ? #00F0FF : #1F232D;
+                            background: root.lighting_brightness == 0 ? #00F0FF : #1A1F2B;
                             TouchArea { clicked => { root.set_lighting_brightness(0); } }
-                            Text { text: "Off"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_brightness == 0 ? #000 : #FFF; }
+                            Text { text: "Off"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_brightness == 0 ? #000 : #FFF; }
                         }
                         Rectangle {
-                            height: 36px;
+                            height: 38px;
                             border-radius: 6px;
-                            background: root.lighting_brightness == 1 ? #00F0FF : #1F232D;
+                            background: root.lighting_brightness == 1 ? #00F0FF : #1A1F2B;
                             TouchArea { clicked => { root.set_lighting_brightness(1); } }
-                            Text { text: "Low (33%)"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_brightness == 1 ? #000 : #FFF; }
+                            Text { text: "Low (33%)"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_brightness == 1 ? #000 : #FFF; }
                         }
                         Rectangle {
-                            height: 36px;
+                            height: 38px;
                             border-radius: 6px;
-                            background: root.lighting_brightness == 2 ? #00F0FF : #1F232D;
+                            background: root.lighting_brightness == 2 ? #00F0FF : #1A1F2B;
                             TouchArea { clicked => { root.set_lighting_brightness(2); } }
-                            Text { text: "Med (66%)"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_brightness == 2 ? #000 : #FFF; }
+                            Text { text: "Med (66%)"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_brightness == 2 ? #000 : #FFF; }
                         }
                         Rectangle {
-                            height: 36px;
+                            height: 38px;
                             border-radius: 6px;
-                            background: root.lighting_brightness == 3 ? #00F0FF : #1F232D;
+                            background: root.lighting_brightness == 3 ? #00F0FF : #1A1F2B;
                             TouchArea { clicked => { root.set_lighting_brightness(3); } }
-                            Text { text: "High (100%)"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_brightness == 3 ? #000 : #FFF; }
+                            Text { text: "High (100%)"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_brightness == 3 ? #000 : #FFF; }
                         }
                     }
 
@@ -517,28 +897,28 @@ export component MainWindow inherits Window {
                             Rectangle {
                                 height: 36px;
                                 border-radius: 6px;
-                                background: root.lighting_mode == "Static" ? #00F0FF : #1F232D;
+                                background: root.lighting_mode == "Static" ? #00F0FF : #1A1F2B;
                                 TouchArea { clicked => { root.set_lighting_mode("Static", 1); } }
                                 Text { text: "Static"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_mode == "Static" ? #000 : #FFF; }
                             }
                             if root.supports_mode_breathing: Rectangle {
                                 height: 36px;
                                 border-radius: 6px;
-                                background: root.lighting_mode == "Breathing" ? #00F0FF : #1F232D;
+                                background: root.lighting_mode == "Breathing" ? #00F0FF : #1A1F2B;
                                 TouchArea { clicked => { root.set_lighting_mode("Breathing", 1); } }
                                 Text { text: "Breathing"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_mode == "Breathing" ? #000 : #FFF; }
                             }
                             if root.supports_mode_rainbow: Rectangle {
                                 height: 36px;
                                 border-radius: 6px;
-                                background: root.lighting_mode == "Rainbow" ? #00F0FF : #1F232D;
+                                background: root.lighting_mode == "Rainbow" ? #00F0FF : #1A1F2B;
                                 TouchArea { clicked => { root.set_lighting_mode("Rainbow", 2); } }
                                 Text { text: "Rainbow"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_mode == "Rainbow" ? #000 : #FFF; }
                             }
                             if root.supports_mode_strobe: Rectangle {
                                 height: 36px;
                                 border-radius: 6px;
-                                background: root.lighting_mode == "Strobe" ? #00F0FF : #1F232D;
+                                background: root.lighting_mode == "Strobe" ? #00F0FF : #1A1F2B;
                                 TouchArea { clicked => { root.set_lighting_mode("Strobe", 1); } }
                                 Text { text: "Strobe"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_mode == "Strobe" ? #000 : #FFF; }
                             }
@@ -549,17 +929,17 @@ export component MainWindow inherits Window {
                     HorizontalLayout {
                         alignment: space-between;
                         Text {
-                            text: "Color Palette:";
+                            text: "Preset Color Swatches:";
                             font-size: 14px;
-                            font-weight: 600;
+                            font-weight: 700;
                             color: #FFFFFF;
                             vertical-alignment: center;
                         }
                         HorizontalLayout {
                             spacing: 8px;
                             Rectangle {
-                                width: 16px;
-                                height: 16px;
+                                width: 18px;
+                                height: 18px;
                                 border-radius: 4px;
                                 background: root.current_rgb_color;
                                 border-width: 1px;
@@ -579,70 +959,58 @@ export component MainWindow inherits Window {
                     VerticalLayout {
                         spacing: 8px;
 
-                        // Row 1: Whites & Warm Tones
+                        // Row 1
                         HorizontalLayout {
                             spacing: 8px;
-                            // Pure White
                             Rectangle {
                                 height: 36px; border-radius: 6px; background: #FFFFFF;
                                 TouchArea { clicked => { root.set_lighting_color(255, 255, 255); } }
                             }
-                            // Warm White
                             Rectangle {
                                 height: 36px; border-radius: 6px; background: #FFE4B5;
                                 TouchArea { clicked => { root.set_lighting_color(255, 228, 181); } }
                             }
-                            // Crimson Red
                             Rectangle {
                                 height: 36px; border-radius: 6px; background: #FF1744;
                                 TouchArea { clicked => { root.set_lighting_color(255, 23, 68); } }
                             }
-                            // Bright Orange
                             Rectangle {
                                 height: 36px; border-radius: 6px; background: #FF6D00;
                                 TouchArea { clicked => { root.set_lighting_color(255, 109, 0); } }
                             }
-                            // Amber / Yellow
                             Rectangle {
                                 height: 36px; border-radius: 6px; background: #FFD600;
                                 TouchArea { clicked => { root.set_lighting_color(255, 214, 0); } }
                             }
-                            // Neon Green
                             Rectangle {
                                 height: 36px; border-radius: 6px; background: #00E676;
                                 TouchArea { clicked => { root.set_lighting_color(0, 230, 118); } }
                             }
                         }
 
-                        // Row 2: Cool & Vivid Tones
+                        // Row 2
                         HorizontalLayout {
                             spacing: 8px;
-                            // Cyan / Aqua
                             Rectangle {
                                 height: 36px; border-radius: 6px; background: #00E5FF;
                                 TouchArea { clicked => { root.set_lighting_color(0, 229, 255); } }
                             }
-                            // Sky Blue
                             Rectangle {
                                 height: 36px; border-radius: 6px; background: #2979FF;
                                 TouchArea { clicked => { root.set_lighting_color(41, 121, 255); } }
                             }
-                            // Deep Blue
                             Rectangle {
                                 height: 36px; border-radius: 6px; background: #3D5AFE;
                                 TouchArea { clicked => { root.set_lighting_color(61, 90, 254); } }
                             }
-                            // Vivid Purple
                             Rectangle {
                                 height: 36px; border-radius: 6px; background: #7C4DFF;
                                 TouchArea { clicked => { root.set_lighting_color(124, 77, 255); } }
                             }
-                            // Magenta
                             Rectangle {
                                 height: 36px; border-radius: 6px; background: #F50057;
                                 TouchArea { clicked => { root.set_lighting_color(245, 0, 87); } }
                             }
-                            // Hot Pink
                             Rectangle {
                                 height: 36px; border-radius: 6px; background: #FF4081;
                                 TouchArea { clicked => { root.set_lighting_color(255, 64, 129); } }
@@ -654,9 +1022,9 @@ export component MainWindow inherits Window {
                     Rectangle {
                         height: 42px;
                         border-radius: 8px;
-                        background: #1F232D;
+                        background: #1A1F2B;
                         border-width: 1px;
-                        border-color: #383E50;
+                        border-color: #2E364A;
 
                         TouchArea {
                             clicked => { root.open_de_color_picker(); }
@@ -671,11 +1039,106 @@ export component MainWindow inherits Window {
                                 vertical-alignment: center;
                             }
                             Text {
-                                text: "Custom Color (DE Color Selector)";
+                                text: "Custom Color (Native DE Color Selector)";
                                 font-size: 13px;
                                 font-weight: 600;
                                 color: #FFFFFF;
                                 vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ==========================================
+        // TAB 4: SYSTEM INFO & DIAGNOSTICS
+        // ==========================================
+        if root.active_tab == 4: VerticalLayout {
+            spacing: 14px;
+
+            Rectangle {
+                border-radius: 12px;
+                background: #141720;
+                border-width: 1px;
+                border-color: #242938;
+
+                VerticalLayout {
+                    padding: 20px;
+                    spacing: 16px;
+
+                    Text {
+                        text: "Hardware & Daemon Diagnostics";
+                        font-size: 16px;
+                        font-weight: 700;
+                        color: #FFFFFF;
+                    }
+
+                    VerticalLayout {
+                        spacing: 10px;
+
+                        Rectangle {
+                            height: 44px;
+                            border-radius: 6px;
+                            background: #11141D;
+                            HorizontalLayout {
+                                padding-left: 16px;
+                                padding-right: 16px;
+                                alignment: space-between;
+                                Text { text: "Device Model:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
+                                Text { text: "ASUS Vivobook S 15 OLED (S5506MA)"; font-size: 13px; font-weight: 700; color: #FFFFFF; vertical-alignment: center; }
+                            }
+                        }
+
+                        Rectangle {
+                            height: 44px;
+                            border-radius: 6px;
+                            background: #11141D;
+                            HorizontalLayout {
+                                padding-left: 16px;
+                                padding-right: 16px;
+                                alignment: space-between;
+                                Text { text: "Thermal Driver & ACPI Path:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
+                                Text { text: "/sys/firmware/acpi/platform_profile (asus-nb-wmi)"; font-size: 12px; font-weight: 600; color: #00F0FF; vertical-alignment: center; }
+                            }
+                        }
+
+                        Rectangle {
+                            height: 44px;
+                            border-radius: 6px;
+                            background: #11141D;
+                            HorizontalLayout {
+                                padding-left: 16px;
+                                padding-right: 16px;
+                                alignment: space-between;
+                                Text { text: "Max Fan Speed Calibration:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
+                                Text { text: "8100 RPM (Dual Fans Active)"; font-size: 13px; font-weight: 700; color: #00E676; vertical-alignment: center; }
+                            }
+                        }
+
+                        Rectangle {
+                            height: 44px;
+                            border-radius: 6px;
+                            background: #11141D;
+                            HorizontalLayout {
+                                padding-left: 16px;
+                                padding-right: 16px;
+                                alignment: space-between;
+                                Text { text: "Keyboard Lighting Interface:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
+                                Text { text: "ITE5570 HID LampArray (0x0B05:0x19B6)"; font-size: 12px; font-weight: 600; color: #7C4DFF; vertical-alignment: center; }
+                            }
+                        }
+
+                        Rectangle {
+                            height: 44px;
+                            border-radius: 6px;
+                            background: #11141D;
+                            HorizontalLayout {
+                                padding-left: 16px;
+                                padding-right: 16px;
+                                alignment: space-between;
+                                Text { text: "D-Bus System Service:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
+                                Text { text: "org.alatus.Daemon (/org/alatus/*) • ACTIVE"; font-size: 12px; font-weight: 700; color: #00E676; vertical-alignment: center; }
                             }
                         }
                     }
