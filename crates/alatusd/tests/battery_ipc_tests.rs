@@ -79,11 +79,17 @@ async fn test_battery_service_and_proxy_over_session_dbus() {
     assert_eq!(info.power_now_microwatts, Some(15000000));
 
     // 2. Query charge limit
-    let limit = proxy.get_charge_limit().await.expect("get_charge_limit over D-Bus");
+    let limit = proxy
+        .get_charge_limit()
+        .await
+        .expect("get_charge_limit over D-Bus");
     assert_eq!(limit, 80);
 
     // 3. Set charge limit over D-Bus
-    proxy.set_charge_limit(60).await.expect("set_charge_limit over D-Bus");
+    proxy
+        .set_charge_limit(60)
+        .await
+        .expect("set_charge_limit over D-Bus");
 
     // 4. Verify file on disk
     let updated_limit = fs::read_to_string(bat_dir.join("charge_control_end_threshold")).unwrap();

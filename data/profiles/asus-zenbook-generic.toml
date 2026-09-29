@@ -1,0 +1,29 @@
+schema = 1
+
+[metadata]
+name = "ASUS Zenbook (Generic)"
+author = "Alatus Team"
+description = "Generic hardware profile for ASUS Zenbook OLED series"
+
+[match]
+sys_vendor = "ASUSTeK COMPUTER INC."
+product_name = ["Zenbook", "UX"]
+board_name = ["UX"]
+
+[battery]
+driver = "asus-sysfs-battery"
+default_charge_limit = 80
+supported_limits = [60, 80, 100]
+sysfs_path = "/sys/class/power_supply/BAT0"
+
+[thermal]
+driver = "asus-hybrid-thermal"
+platform_profile_path = "/sys/firmware/acpi/platform_profile"
+debugfs_devs_path = "/sys/kernel/debug/asus-nb-wmi/devs"
+debugfs_fan_register = 0x00110013
+supports_full_speed = false
+fan_count = 1
+
+[hotkeys]
+driver = "asus-wmi-evdev"
+device_name = "Asus WMI hotkeys"

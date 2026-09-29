@@ -42,7 +42,9 @@ pub async fn check_authorization(
     let proxy = match authority_proxy {
         Ok(p) => p,
         Err(e) => {
-            tracing::warn!("Failed to connect to PolicyKit1 authority: {e}. Checking credentials fallback.");
+            tracing::warn!(
+                "Failed to connect to PolicyKit1 authority: {e}. Checking credentials fallback."
+            );
             return Ok(());
         }
     };

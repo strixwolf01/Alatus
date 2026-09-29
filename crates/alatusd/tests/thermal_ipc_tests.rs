@@ -12,7 +12,9 @@ async fn test_thermal_service_and_proxy_over_session_dbus() {
     let dir = tempdir().unwrap();
     let acpi_dir = dir.path().join("sys/firmware/acpi");
     let debugfs_dir = dir.path().join("sys/kernel/debug/asus-nb-wmi");
-    let hwmon_dir = dir.path().join("sys/devices/platform/asus-nb-wmi/hwmon/hwmon1");
+    let hwmon_dir = dir
+        .path()
+        .join("sys/devices/platform/asus-nb-wmi/hwmon/hwmon1");
     fs::create_dir_all(&acpi_dir).unwrap();
     fs::create_dir_all(&debugfs_dir).unwrap();
     fs::create_dir_all(&hwmon_dir).unwrap();
@@ -80,7 +82,10 @@ async fn test_thermal_service_and_proxy_over_session_dbus() {
         .unwrap();
 
     // 1. Check current profile
-    let current = proxy.get_current_profile().await.expect("get_current_profile");
+    let current = proxy
+        .get_current_profile()
+        .await
+        .expect("get_current_profile");
     assert_eq!(current, "Balanced");
 
     // 2. Check available profiles
@@ -99,7 +104,10 @@ async fn test_thermal_service_and_proxy_over_session_dbus() {
     assert_eq!(fans[1].current_rpm, 4100);
 
     // 4. Switch to Full Speed
-    proxy.set_profile("FullSpeed".into()).await.expect("set FullSpeed");
+    proxy
+        .set_profile("FullSpeed".into())
+        .await
+        .expect("set FullSpeed");
     assert_eq!(proxy.get_current_profile().await.unwrap(), "FullSpeed");
     let devs_content = fs::read_to_string(debugfs_dir.join("devs")).unwrap();
     assert_eq!(devs_content.trim(), "0x00110013 0x1");

@@ -1,0 +1,34 @@
+[Unit]
+Description=Alatus ASUS Hardware Control Root Daemon
+Documentation=https://github.com/strixwolf01/Alatus
+After=syslog.target dbus.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/alatusd
+Restart=on-failure
+RestartSec=3s
+
+# Security Hardening & Isolation
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+PrivateTmp=true
+ProtectHostname=true
+MemoryDenyWriteExecute=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictNamespaces=true
+RestrictSUIDSGID=true
+
+# Read-write paths required for hardware sysfs & config
+ReadWritePaths=/sys /etc/alatus
+
+# Device isolation
+DevicePolicy=closed
+DeviceAllow=char-hidraw rw
+DeviceAllow=char-input r
+
+[Install]
+WantedBy=multi-user.target

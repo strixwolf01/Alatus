@@ -5,7 +5,8 @@ use tempfile::tempdir;
 
 #[test]
 fn test_parse_valid_default_profile() {
-    let profile = Profile::parse_toml(S5506MA_DEFAULT_PROFILE).expect("Failed to parse embedded profile");
+    let profile =
+        Profile::parse_toml(S5506MA_DEFAULT_PROFILE).expect("Failed to parse embedded profile");
     assert_eq!(profile.schema, 1);
     assert_eq!(profile.battery.default_charge_limit, 80);
     assert_eq!(profile.battery.supported_limits, vec![60, 80, 100]);
@@ -17,12 +18,15 @@ fn test_parse_valid_default_profile() {
 fn test_reject_unsupported_schema() {
     let invalid_schema = S5506MA_DEFAULT_PROFILE.replace("schema = 1", "schema = 2");
     let err = Profile::parse_toml(&invalid_schema).unwrap_err();
-    assert!(err.to_string().contains("Unsupported profile schema version"));
+    assert!(err
+        .to_string()
+        .contains("Unsupported profile schema version"));
 }
 
 #[test]
 fn test_reject_invalid_default_limit() {
-    let invalid_limit = S5506MA_DEFAULT_PROFILE.replace("default_charge_limit = 80", "default_charge_limit = 75");
+    let invalid_limit =
+        S5506MA_DEFAULT_PROFILE.replace("default_charge_limit = 80", "default_charge_limit = 75");
     let err = Profile::parse_toml(&invalid_limit).unwrap_err();
     assert!(err.to_string().contains("not in supported limits"));
 }
@@ -45,11 +49,9 @@ fn test_dmi_matcher() {
     ));
 
     // Mismatched vendor
-    assert!(!profile.dmi_match.matches(
-        Some("Lenovo"),
-        Some("ThinkPad"),
-        Some("20XX"),
-    ));
+    assert!(!profile
+        .dmi_match
+        .matches(Some("Lenovo"), Some("ThinkPad"), Some("20XX"),));
 }
 
 #[test]
@@ -59,7 +61,11 @@ fn test_mocked_dmi_reader() {
     fs::create_dir_all(&dmi_dir).unwrap();
 
     fs::write(dmi_dir.join("sys_vendor"), "ASUSTeK COMPUTER INC.\n").unwrap();
-    fs::write(dmi_dir.join("product_name"), "ASUS Vivobook S 15 S5506MA_S5506MA\n").unwrap();
+    fs::write(
+        dmi_dir.join("product_name"),
+        "ASUS Vivobook S 15 S5506MA_S5506MA\n",
+    )
+    .unwrap();
     fs::write(dmi_dir.join("board_name"), "S5506MA\n").unwrap();
     fs::write(dmi_dir.join("bios_version"), "S5506MA.318\n").unwrap();
 
@@ -67,7 +73,10 @@ fn test_mocked_dmi_reader() {
     let info = reader.read_dmi().unwrap();
 
     assert_eq!(info.sys_vendor.as_deref(), Some("ASUSTeK COMPUTER INC."));
-    assert_eq!(info.product_name.as_deref(), Some("ASUS Vivobook S 15 S5506MA_S5506MA"));
+    assert_eq!(
+        info.product_name.as_deref(),
+        Some("ASUS Vivobook S 15 S5506MA_S5506MA")
+    );
     assert_eq!(info.board_name.as_deref(), Some("S5506MA"));
     assert_eq!(info.bios_version.as_deref(), Some("S5506MA.318"));
 }
@@ -85,8 +94,8 @@ fn test_profile_resolver_override_order() {
         .replace("default_charge_limit = 80", "default_charge_limit = 60");
     fs::write(etc_dir.join("custom.toml"), custom_etc).unwrap();
 
-    let usr_profile = S5506MA_DEFAULT_PROFILE
-        .replace("Embedded default hardware mapping", "USR Share mapping");
+    let usr_profile =
+        S5506MA_DEFAULT_PROFILE.replace("Embedded default hardware mapping", "USR Share mapping");
     fs::write(usr_dir.join("default.toml"), usr_profile).unwrap();
 
     let resolver = ProfileResolver::new(vec![etc_dir, usr_dir]);
@@ -119,6 +128,34 @@ fn test_profile_resolver_fallback_to_embedded() {
         bios_version: None,
     };
 
-    let resolved = resolver.resolve(&dmi).expect("Should fallback to embedded profile");
+    let resolved = resolver
+        .resolve(&dmi)
+        .expect("Should fallback to embedded profile");
     assert_eq!(resolved.battery.default_charge_limit, 80);
+}
+
+#[test]
+fn test_all_packaged_profiles() {
+    let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let profiles_dir = manifest_dir.join("../../data/profiles");
+    if !profiles_dir.exists() {
+        return;
+    }
+
+    let entries = fs::read_dir(profiles_dir).unwrap();
+    let mut count = 0;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|ext| ext.to_str()) == Some("toml") {
+            let content = fs::read_to_string(&path).unwrap();
+            let profile = Profile::parse_toml(&content)
+                .unwrap_or_else(|e| panic!("Invalid profile at {}: {e}", path.display()));
+            assert_eq!(profile.schema, 1);
+            count += 1;
+        }
+    }
+    assert!(
+        count >= 3,
+        "Expected at least 3 packaged profiles, found {count}"
+    );
 }

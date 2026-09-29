@@ -1,0 +1,14 @@
+[Unit]
+Description=Alatus User Session Agent and Tray Notifier
+Documentation=https://github.com/strixwolf01/Alatus
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/alatus-session
+Restart=on-failure
+RestartSec=3s
+
+[Install]
+WantedBy=graphical-session.target

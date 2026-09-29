@@ -29,12 +29,18 @@ async fn test_battery_driver_read_and_write() {
     assert_eq!(info.power_now_microwatts, Some(12000000));
 
     // Test writing threshold: 60%
-    driver.set_charge_limit(60).await.expect("Failed to set 60%");
+    driver
+        .set_charge_limit(60)
+        .await
+        .expect("Failed to set 60%");
     let updated = fs::read_to_string(bat_dir.join("charge_control_end_threshold")).unwrap();
     assert_eq!(updated.trim(), "60");
 
     // Test writing threshold: 100%
-    driver.set_charge_limit(100).await.expect("Failed to set 100%");
+    driver
+        .set_charge_limit(100)
+        .await
+        .expect("Failed to set 100%");
     let updated = fs::read_to_string(bat_dir.join("charge_control_end_threshold")).unwrap();
     assert_eq!(updated.trim(), "100");
 

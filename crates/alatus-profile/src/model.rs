@@ -18,10 +18,18 @@ pub struct DmiMatch {
 }
 
 impl DmiMatch {
-    pub fn matches(&self, vendor: Option<&str>, product: Option<&str>, board: Option<&str>) -> bool {
+    pub fn matches(
+        &self,
+        vendor: Option<&str>,
+        product: Option<&str>,
+        board: Option<&str>,
+    ) -> bool {
         if let Some(ref expected_vendor) = self.sys_vendor {
             if let Some(actual_vendor) = vendor {
-                if !actual_vendor.to_lowercase().contains(&expected_vendor.to_lowercase()) {
+                if !actual_vendor
+                    .to_lowercase()
+                    .contains(&expected_vendor.to_lowercase())
+                {
                     return false;
                 }
             } else {
@@ -128,7 +136,11 @@ impl Profile {
                 "Battery configuration must define at least one supported limit".into(),
             ));
         }
-        if !self.battery.supported_limits.contains(&self.battery.default_charge_limit) {
+        if !self
+            .battery
+            .supported_limits
+            .contains(&self.battery.default_charge_limit)
+        {
             return Err(AlatusError::Profile(format!(
                 "Default charge limit {} is not in supported limits {:?}",
                 self.battery.default_charge_limit, self.battery.supported_limits

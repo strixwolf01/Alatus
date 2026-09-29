@@ -79,7 +79,9 @@ impl AsusHybridThermalDriver {
         }
 
         // Try standard asus-nb-wmi hwmon path
-        let default_hwmon = self.sysfs_root.resolve("/devices/platform/asus-nb-wmi/hwmon");
+        let default_hwmon = self
+            .sysfs_root
+            .resolve("/devices/platform/asus-nb-wmi/hwmon");
         if let Ok(entries) = std::fs::read_dir(&default_hwmon) {
             for entry in entries.flatten() {
                 let path = entry.path();

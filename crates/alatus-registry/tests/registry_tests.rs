@@ -51,9 +51,7 @@ impl BatteryDriver for MockBatteryDriver {
 #[test]
 fn test_registry_registration_and_fallback() {
     let mut registry = DriverRegistry::new();
-    registry.register_battery("asus-sysfs-battery", |_cfg| {
-        Ok(Arc::new(MockBatteryDriver))
-    });
+    registry.register_battery("asus-sysfs-battery", |_cfg| Ok(Arc::new(MockBatteryDriver)));
 
     let profile = Profile::parse_toml(S5506MA_DEFAULT_PROFILE).unwrap();
     let drivers = registry.build_from_profile(&profile);

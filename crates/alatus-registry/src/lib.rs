@@ -97,23 +97,35 @@ impl DriverRegistry {
 
     pub fn register_battery<F>(&mut self, name: impl Into<String>, factory: F)
     where
-        F: Fn(&BatteryConfig) -> Result<Arc<dyn BatteryDriver>, AlatusError> + Send + Sync + 'static,
+        F: Fn(&BatteryConfig) -> Result<Arc<dyn BatteryDriver>, AlatusError>
+            + Send
+            + Sync
+            + 'static,
     {
-        self.battery_factories.insert(name.into(), Arc::new(factory));
+        self.battery_factories
+            .insert(name.into(), Arc::new(factory));
     }
 
     pub fn register_thermal<F>(&mut self, name: impl Into<String>, factory: F)
     where
-        F: Fn(&ThermalConfig) -> Result<Arc<dyn ThermalDriver>, AlatusError> + Send + Sync + 'static,
+        F: Fn(&ThermalConfig) -> Result<Arc<dyn ThermalDriver>, AlatusError>
+            + Send
+            + Sync
+            + 'static,
     {
-        self.thermal_factories.insert(name.into(), Arc::new(factory));
+        self.thermal_factories
+            .insert(name.into(), Arc::new(factory));
     }
 
     pub fn register_lighting<F>(&mut self, name: impl Into<String>, factory: F)
     where
-        F: Fn(&LightingConfig) -> Result<Arc<dyn LightingDriver>, AlatusError> + Send + Sync + 'static,
+        F: Fn(&LightingConfig) -> Result<Arc<dyn LightingDriver>, AlatusError>
+            + Send
+            + Sync
+            + 'static,
     {
-        self.lighting_factories.insert(name.into(), Arc::new(factory));
+        self.lighting_factories
+            .insert(name.into(), Arc::new(factory));
     }
 
     pub fn register_hotkey<F>(&mut self, name: impl Into<String>, factory: F)
@@ -123,43 +135,59 @@ impl DriverRegistry {
         self.hotkey_factories.insert(name.into(), Arc::new(factory));
     }
 
-    pub fn create_battery(&self, config: &BatteryConfig) -> Result<Arc<dyn BatteryDriver>, AlatusError> {
-        let factory = self.battery_factories.get(&config.driver).ok_or_else(|| {
-            AlatusError::Driver {
-                driver: "registry",
-                message: format!("Unknown battery driver: {}", config.driver),
-            }
-        })?;
+    pub fn create_battery(
+        &self,
+        config: &BatteryConfig,
+    ) -> Result<Arc<dyn BatteryDriver>, AlatusError> {
+        let factory =
+            self.battery_factories
+                .get(&config.driver)
+                .ok_or_else(|| AlatusError::Driver {
+                    driver: "registry",
+                    message: format!("Unknown battery driver: {}", config.driver),
+                })?;
         factory(config)
     }
 
-    pub fn create_thermal(&self, config: &ThermalConfig) -> Result<Arc<dyn ThermalDriver>, AlatusError> {
-        let factory = self.thermal_factories.get(&config.driver).ok_or_else(|| {
-            AlatusError::Driver {
-                driver: "registry",
-                message: format!("Unknown thermal driver: {}", config.driver),
-            }
-        })?;
+    pub fn create_thermal(
+        &self,
+        config: &ThermalConfig,
+    ) -> Result<Arc<dyn ThermalDriver>, AlatusError> {
+        let factory =
+            self.thermal_factories
+                .get(&config.driver)
+                .ok_or_else(|| AlatusError::Driver {
+                    driver: "registry",
+                    message: format!("Unknown thermal driver: {}", config.driver),
+                })?;
         factory(config)
     }
 
-    pub fn create_lighting(&self, config: &LightingConfig) -> Result<Arc<dyn LightingDriver>, AlatusError> {
-        let factory = self.lighting_factories.get(&config.driver).ok_or_else(|| {
-            AlatusError::Driver {
-                driver: "registry",
-                message: format!("Unknown lighting driver: {}", config.driver),
-            }
-        })?;
+    pub fn create_lighting(
+        &self,
+        config: &LightingConfig,
+    ) -> Result<Arc<dyn LightingDriver>, AlatusError> {
+        let factory =
+            self.lighting_factories
+                .get(&config.driver)
+                .ok_or_else(|| AlatusError::Driver {
+                    driver: "registry",
+                    message: format!("Unknown lighting driver: {}", config.driver),
+                })?;
         factory(config)
     }
 
-    pub fn create_hotkey(&self, config: &HotkeyConfig) -> Result<Box<dyn HotkeyDriver>, AlatusError> {
-        let factory = self.hotkey_factories.get(&config.driver).ok_or_else(|| {
-            AlatusError::Driver {
-                driver: "registry",
-                message: format!("Unknown hotkey driver: {}", config.driver),
-            }
-        })?;
+    pub fn create_hotkey(
+        &self,
+        config: &HotkeyConfig,
+    ) -> Result<Box<dyn HotkeyDriver>, AlatusError> {
+        let factory =
+            self.hotkey_factories
+                .get(&config.driver)
+                .ok_or_else(|| AlatusError::Driver {
+                    driver: "registry",
+                    message: format!("Unknown hotkey driver: {}", config.driver),
+                })?;
         factory(config)
     }
 
@@ -174,7 +202,11 @@ impl DriverRegistry {
                 drivers.battery = Some(b);
             }
             Err(e) => {
-                tracing::warn!("Failed to initialize battery driver '{}': {}", profile.battery.driver, e);
+                tracing::warn!(
+                    "Failed to initialize battery driver '{}': {}",
+                    profile.battery.driver,
+                    e
+                );
             }
         }
 
@@ -184,7 +216,11 @@ impl DriverRegistry {
                 drivers.thermal = Some(t);
             }
             Err(e) => {
-                tracing::warn!("Failed to initialize thermal driver '{}': {}", profile.thermal.driver, e);
+                tracing::warn!(
+                    "Failed to initialize thermal driver '{}': {}",
+                    profile.thermal.driver,
+                    e
+                );
             }
         }
 
@@ -195,7 +231,11 @@ impl DriverRegistry {
                     drivers.lighting = Some(l);
                 }
                 Err(e) => {
-                    tracing::warn!("Failed to initialize lighting driver '{}': {}", l_config.driver, e);
+                    tracing::warn!(
+                        "Failed to initialize lighting driver '{}': {}",
+                        l_config.driver,
+                        e
+                    );
                 }
             }
         }
@@ -207,7 +247,11 @@ impl DriverRegistry {
                     drivers.hotkeys = Some(h);
                 }
                 Err(e) => {
-                    tracing::warn!("Failed to initialize hotkey driver '{}': {}", h_config.driver, e);
+                    tracing::warn!(
+                        "Failed to initialize hotkey driver '{}': {}",
+                        h_config.driver,
+                        e
+                    );
                 }
             }
         }

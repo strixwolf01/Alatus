@@ -86,7 +86,10 @@ async fn test_lighting_service_and_proxy_over_session_dbus() {
     proxy.set_color(0, 255, 0).await.expect("set_color");
 
     // 4. Set mode to Breathing
-    proxy.set_mode("Breathing".into(), 2).await.expect("set_mode");
+    proxy
+        .set_mode("Breathing".into(), 2)
+        .await
+        .expect("set_mode");
 
     // 5. Inspect state
     let state = proxy.get_state().await.expect("get_state");
@@ -102,11 +105,11 @@ async fn test_lighting_service_and_proxy_over_session_dbus() {
     assert_eq!(packet[0], 0x5A); // Report ID
     assert_eq!(packet[1], 0xBA); // Command Sub-ID
     assert_eq!(packet[2], 0x01); // Breathing = 1
-    assert_eq!(packet[3], 0);    // Red
-    assert_eq!(packet[4], 255);  // Green
-    assert_eq!(packet[5], 0);    // Blue
-    assert_eq!(packet[6], 2);    // Speed
-    assert_eq!(packet[7], 2);    // Brightness
+    assert_eq!(packet[3], 0); // Red
+    assert_eq!(packet[4], 255); // Green
+    assert_eq!(packet[5], 0); // Blue
+    assert_eq!(packet[6], 2); // Speed
+    assert_eq!(packet[7], 2); // Brightness
 
     drop(server_conn);
 }

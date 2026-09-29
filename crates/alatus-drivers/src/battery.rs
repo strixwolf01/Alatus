@@ -82,7 +82,10 @@ impl BatteryDriver for AsusSysfsBatteryDriver {
 
     fn capabilities(&self) -> BatteryCapabilities {
         let mut caps = BatteryCapabilities::empty();
-        if self.battery_dir.join("charge_control_end_threshold").exists()
+        if self
+            .battery_dir
+            .join("charge_control_end_threshold")
+            .exists()
             || self.battery_dir.join("charge_control_limit_max").exists()
         {
             caps |= BatteryCapabilities::CHARGE_LIMIT_CONFIGURABLE;
@@ -146,9 +149,10 @@ impl BatteryDriver for AsusSysfsBatteryDriver {
         fs::write(&path, format!("{limit}\n"))
             .await
             .map_err(|e| match e.kind() {
-                std::io::ErrorKind::PermissionDenied => {
-                    AlatusError::PermissionDenied(format!("Permission denied writing to {}", path.display()))
-                }
+                std::io::ErrorKind::PermissionDenied => AlatusError::PermissionDenied(format!(
+                    "Permission denied writing to {}",
+                    path.display()
+                )),
                 _ => AlatusError::Sysfs {
                     path: path.clone(),
                     message: format!("Failed to write charge limit: {e}"),

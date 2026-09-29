@@ -174,7 +174,10 @@ async fn handle_lighting(conn: &Connection, action: LightingAction) -> Result<()
             println!("--- ASUS Keyboard RGB Lighting ---");
             println!("  Mode       : {}", state.mode);
             println!("  Brightness : {} / 3", state.brightness);
-            println!("  Color      : RGB({}, {}, {}) [#{:02X}{:02X}{:02X}]", state.r, state.g, state.b, state.r, state.g, state.b);
+            println!(
+                "  Color      : RGB({}, {}, {}) [#{:02X}{:02X}{:02X}]",
+                state.r, state.g, state.b, state.r, state.g, state.b
+            );
             println!("  Speed      : {}", state.speed);
         }
         LightingAction::Brightness { level } => {
@@ -195,12 +198,18 @@ async fn handle_lighting(conn: &Connection, action: LightingAction) -> Result<()
             let b = u8::from_str_radix(&cleaned[4..6], 16)
                 .map_err(|_| "Invalid blue component in hex string")?;
 
-            println!("Setting keyboard static color to RGB({}, {}, {})...", r, g, b);
+            println!(
+                "Setting keyboard static color to RGB({}, {}, {})...",
+                r, g, b
+            );
             proxy.set_color(r, g, b).await?;
             println!("✓ Successfully updated keyboard color.");
         }
         LightingAction::Mode { mode, speed } => {
-            println!("Setting keyboard lighting mode to '{}' (speed {})...", mode, speed);
+            println!(
+                "Setting keyboard lighting mode to '{}' (speed {})...",
+                mode, speed
+            );
             proxy.set_mode(mode.clone(), speed).await?;
             println!("✓ Successfully set lighting mode to {}.", mode);
         }

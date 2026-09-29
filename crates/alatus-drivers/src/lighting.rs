@@ -71,11 +71,8 @@ impl AsusIte5570LightingDriver {
 
     fn scan_hidraw_dir(&self, dir: &Path) -> Option<PathBuf> {
         let entries = std::fs::read_dir(dir).ok()?;
-        let target_pattern = format!(
-            "{:04x}:{:04x}",
-            self.hid_vendor_id, self.hid_product_id
-        )
-        .to_lowercase();
+        let target_pattern =
+            format!("{:04x}:{:04x}", self.hid_vendor_id, self.hid_product_id).to_lowercase();
 
         for entry in entries.flatten() {
             let path = entry.path();
@@ -102,7 +99,7 @@ impl AsusIte5570LightingDriver {
     ) -> [u8; 17] {
         let mut buf = [0u8; 17];
         buf[0] = self.report_id; // 0x5A
-        buf[1] = 0xBA;           // Keyboard lighting command sub-id
+        buf[1] = 0xBA; // Keyboard lighting command sub-id
 
         buf[2] = match mode {
             LightingMode::Static => 0x00,
@@ -196,12 +193,8 @@ impl LightingDriver for AsusIte5570LightingDriver {
 
     async fn apply_effect(&self, effect: &LightingEffect) -> Result<(), AlatusError> {
         let brightness = effect.brightness.min(3);
-        let mut report = self.build_report(
-            effect.mode,
-            effect.primary_color,
-            effect.speed,
-            brightness,
-        );
+        let mut report =
+            self.build_report(effect.mode, effect.primary_color, effect.speed, brightness);
         self.send_report(&mut report).await?;
 
         *self.current_mode.lock().unwrap() = effect.mode;

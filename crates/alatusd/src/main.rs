@@ -69,7 +69,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let conn = builder.build().await?;
-    tracing::info!("alatusd daemon successfully registered on system bus. Listening for requests...");
+    tracing::info!(
+        "alatusd daemon successfully registered on system bus. Listening for requests..."
+    );
 
     // 5. Start Hotkey background listener if available
     if let Some(mut hotkey_driver) = drivers.hotkeys {
@@ -88,17 +90,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                     let next_profile = available[(idx + 1) % available.len()];
                                     tracing::info!(
                                         "Advancing thermal profile via hotkey: {} -> {}",
-                                        current, next_profile
+                                        current,
+                                        next_profile
                                     );
                                     if let Err(e) = thermal.set_profile(next_profile).await {
                                         tracing::error!("Failed to update thermal profile: {e}");
                                     } else {
                                         let next_str = next_profile.to_string();
-                                        if let Ok(path) = alatus_ipc::THERMAL_OBJECT_PATH.try_into() {
-                                            let emitter = zbus::object_server::SignalContext::from_parts(
-                                                conn_clone.clone(),
-                                                path,
-                                            );
+                                        if let Ok(path) = alatus_ipc::THERMAL_OBJECT_PATH.try_into()
+                                        {
+                                            let emitter =
+                                                zbus::object_server::SignalContext::from_parts(
+                                                    conn_clone.clone(),
+                                                    path,
+                                                );
                                             let _ = alatusd::ThermalService::profile_changed(
                                                 &emitter, &next_str,
                                             )

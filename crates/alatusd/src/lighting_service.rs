@@ -96,11 +96,7 @@ impl LightingService {
     ) -> zbus::fdo::Result<()> {
         check_authorization(conn, &hdr, "org.alatus.manage-lighting").await?;
 
-        let brightness = self
-            .driver
-            .get_brightness()
-            .await
-            .unwrap_or(3);
+        let brightness = self.driver.get_brightness().await.unwrap_or(3);
         let speed = self.current_speed.load(Ordering::SeqCst);
         let mode = *self.current_mode.lock().unwrap();
 
@@ -147,11 +143,7 @@ impl LightingService {
             }
         };
 
-        let brightness = self
-            .driver
-            .get_brightness()
-            .await
-            .unwrap_or(3);
+        let brightness = self.driver.get_brightness().await.unwrap_or(3);
         let color = *self.current_color.lock().unwrap();
 
         let effect = LightingEffect {
@@ -180,5 +172,8 @@ impl LightingService {
     }
 
     #[zbus(signal)]
-    pub async fn state_changed(signal_ctxt: &SignalContext<'_>, state: LightingStateMsg) -> zbus::Result<()>;
+    pub async fn state_changed(
+        signal_ctxt: &SignalContext<'_>,
+        state: LightingStateMsg,
+    ) -> zbus::Result<()>;
 }

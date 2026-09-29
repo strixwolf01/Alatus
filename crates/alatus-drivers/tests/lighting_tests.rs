@@ -24,14 +24,8 @@ async fn test_lighting_device_discovery_and_packet_serialization() {
     fs::write(&mock_dev_file, vec![0u8; 17]).unwrap();
 
     let root = SysfsRoot::new(dir.path().join("sys"));
-    let driver = AsusIte5570LightingDriver::new(
-        root,
-        0x0B05,
-        0x19B6,
-        0x5A,
-        Some(&mock_dev_file),
-        3,
-    );
+    let driver =
+        AsusIte5570LightingDriver::new(root, 0x0B05, 0x19B6, 0x5A, Some(&mock_dev_file), 3);
 
     let caps = driver.capabilities();
     assert!(caps.contains(LightingCapabilities::BRIGHTNESS_CONTROL));
@@ -58,11 +52,11 @@ async fn test_lighting_device_discovery_and_packet_serialization() {
     assert_eq!(packet[0], 0x5A); // Report ID
     assert_eq!(packet[1], 0xBA); // Command Sub-ID
     assert_eq!(packet[2], 0x00); // Mode Static = 0
-    assert_eq!(packet[3], 255);  // Red
-    assert_eq!(packet[4], 0);    // Green
-    assert_eq!(packet[5], 0);    // Blue
-    assert_eq!(packet[6], 1);    // Speed
-    assert_eq!(packet[7], 2);    // Brightness
+    assert_eq!(packet[3], 255); // Red
+    assert_eq!(packet[4], 0); // Green
+    assert_eq!(packet[5], 0); // Blue
+    assert_eq!(packet[6], 1); // Speed
+    assert_eq!(packet[7], 2); // Brightness
 
     // Apply Rainbow Effect with brightness 3
     let rainbow_effect = LightingEffect {
@@ -78,6 +72,6 @@ async fn test_lighting_device_discovery_and_packet_serialization() {
     assert_eq!(packet[0], 0x5A);
     assert_eq!(packet[1], 0xBA);
     assert_eq!(packet[2], 0x03); // Rainbow = 3
-    assert_eq!(packet[6], 2);    // Speed
-    assert_eq!(packet[7], 3);    // Brightness = 3
+    assert_eq!(packet[6], 2); // Speed
+    assert_eq!(packet[7], 3); // Brightness = 3
 }

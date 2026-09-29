@@ -47,13 +47,18 @@ async fn test_thermal_standard_profiles() {
     );
 
     // Switch to performance
-    driver.set_profile(ThermalProfileMode::Performance).await.unwrap();
+    driver
+        .set_profile(ThermalProfileMode::Performance)
+        .await
+        .unwrap();
     assert_eq!(
         driver.get_current_profile().await.unwrap(),
         ThermalProfileMode::Performance
     );
     assert_eq!(
-        fs::read_to_string(acpi_dir.join("platform_profile")).unwrap().trim(),
+        fs::read_to_string(acpi_dir.join("platform_profile"))
+            .unwrap()
+            .trim(),
         "performance"
     );
 
@@ -91,10 +96,15 @@ async fn test_thermal_full_speed_with_debugfs() {
         true,
     );
 
-    assert!(driver.capabilities().contains(ThermalCapabilities::FULL_SPEED_FAN));
+    assert!(driver
+        .capabilities()
+        .contains(ThermalCapabilities::FULL_SPEED_FAN));
 
     // Activate Full Speed
-    driver.set_profile(ThermalProfileMode::FullSpeed).await.unwrap();
+    driver
+        .set_profile(ThermalProfileMode::FullSpeed)
+        .await
+        .unwrap();
     assert_eq!(
         driver.get_current_profile().await.unwrap(),
         ThermalProfileMode::FullSpeed
@@ -118,7 +128,9 @@ async fn test_thermal_full_speed_with_debugfs() {
 async fn test_thermal_hwmon_fan_readback() {
     let dir = tempdir().unwrap();
     let acpi_dir = dir.path().join("sys/firmware/acpi");
-    let hwmon_dir = dir.path().join("sys/devices/platform/asus-nb-wmi/hwmon/hwmon1");
+    let hwmon_dir = dir
+        .path()
+        .join("sys/devices/platform/asus-nb-wmi/hwmon/hwmon1");
     fs::create_dir_all(&acpi_dir).unwrap();
     fs::create_dir_all(&hwmon_dir).unwrap();
 

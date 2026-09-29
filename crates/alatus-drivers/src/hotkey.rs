@@ -75,7 +75,10 @@ impl AsusWmiHotkeyDriver {
                 .ok();
 
             if let Some(content) = name_content {
-                if content.to_lowercase().contains(&self.device_name.to_lowercase()) {
+                if content
+                    .to_lowercase()
+                    .contains(&self.device_name.to_lowercase())
+                {
                     let dev_path = PathBuf::from(format!("/dev/input/{file_name}"));
                     return Some(self.sysfs_root.resolve(dev_path));
                 }

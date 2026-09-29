@@ -63,7 +63,11 @@ impl StatusNotifierItemService {
 
     #[zbus(property)]
     fn tool_tip(&self) -> (&str, Vec<(&str, &str)>, &str) {
-        ("preferences-system-power", vec![("Alatus", "ASUS Hardware Control")], "Alatus Active")
+        (
+            "preferences-system-power",
+            vec![("Alatus", "ASUS Hardware Control")],
+            "Alatus Active",
+        )
     }
 
     async fn activate(&self, _x: i32, _y: i32) -> zbus::fdo::Result<()> {
@@ -92,7 +96,8 @@ pub async fn register_tray_watcher(session_conn: &Connection) -> Result<(), zbus
 
     if let Ok(watcher) = watcher_proxy {
         let service: &str = session_conn.unique_name().map(|n| n.as_str()).unwrap_or("");
-        let _: Result<(), zbus::Error> = watcher.call("RegisterStatusNotifierItem", &(service)).await;
+        let _: Result<(), zbus::Error> =
+            watcher.call("RegisterStatusNotifierItem", &(service)).await;
         tracing::info!("Registered Alatus with StatusNotifierWatcher");
     } else {
         tracing::debug!("StatusNotifierWatcher not present in this session.");
