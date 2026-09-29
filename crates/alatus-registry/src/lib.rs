@@ -48,6 +48,19 @@ impl DriverRegistry {
         }
     }
 
+    pub fn with_default_drivers(sysfs_root: alatus_drivers::SysfsRoot) -> Self {
+        let mut registry = Self::new();
+        let root = sysfs_root.clone();
+        registry.register_battery("asus-sysfs-battery", move |cfg| {
+            Ok(Arc::new(alatus_drivers::AsusSysfsBatteryDriver::new(
+                root.clone(),
+                &cfg.sysfs_path,
+                cfg.supported_limits.clone(),
+            )))
+        });
+        registry
+    }
+
     pub fn register_battery<F>(&mut self, name: impl Into<String>, factory: F)
     where
         F: Fn(&BatteryConfig) -> Result<Arc<dyn BatteryDriver>, AlatusError> + Send + Sync + 'static,

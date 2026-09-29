@@ -59,6 +59,7 @@ dependencies = [
  "alatus-core",
  "serde",
  "zbus",
+ "zvariant",
 ]
 
 [[package]]
@@ -105,6 +106,7 @@ dependencies = [
  "alatus-ipc",
  "alatus-profile",
  "alatus-registry",
+ "tempfile",
  "tokio",
  "tracing",
  "tracing-subscriber",

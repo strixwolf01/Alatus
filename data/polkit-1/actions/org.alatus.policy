@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Alatus Hardware Control Suite</vendor>
+  <vendor_url>https://github.com/strixwolf01/Alatus</vendor_url>
+
+  <action id="org.alatus.manage-battery">
+    <description>Configure ASUS battery charge limits</description>
+    <message>Authentication is required to modify battery charging thresholds</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.alatus.manage-thermal">
+    <description>Configure ASUS thermal profiles and fan curves</description>
+    <message>Authentication is required to change thermal modes</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.alatus.manage-lighting">
+    <description>Configure ASUS keyboard backlight and RGB lighting</description>
+    <message>Authentication is required to adjust keyboard lighting</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+</policyconfig>
