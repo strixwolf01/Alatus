@@ -180,5 +180,5 @@ impl LightingService {
     }
 
     #[zbus(signal)]
-    async fn state_changed(signal_ctxt: &SignalContext<'_>, state: LightingStateMsg) -> zbus::Result<()>;
+    pub async fn state_changed(signal_ctxt: &SignalContext<'_>, state: LightingStateMsg) -> zbus::Result<()>;
 }

@@ -67,5 +67,5 @@ impl BatteryService {
     }
 
     #[zbus(signal)]
-    async fn limit_changed(signal_ctxt: &SignalContext<'_>, new_limit: u8) -> zbus::Result<()>;
+    pub async fn limit_changed(signal_ctxt: &SignalContext<'_>, new_limit: u8) -> zbus::Result<()>;
 }

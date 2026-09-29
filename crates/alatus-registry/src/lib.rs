@@ -83,6 +83,15 @@ impl DriverRegistry {
             )))
         });
 
+        let root_hotkey = sysfs_root.clone();
+        registry.register_hotkey("asus-wmi-evdev", move |cfg| {
+            Ok(Box::new(alatus_drivers::AsusWmiHotkeyDriver::new(
+                root_hotkey.clone(),
+                &cfg.device_name,
+                None::<&str>,
+            )))
+        });
+
         registry
     }
 

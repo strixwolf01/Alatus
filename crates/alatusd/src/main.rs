@@ -46,12 +46,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         tracing::warn!("No battery driver available for this machine profile.");
     }
 
-    if let Some(thermal_driver) = drivers.thermal {
+    if let Some(ref thermal_driver) = drivers.thermal {
         tracing::info!(
             "Registering org.alatus.Thermal D-Bus interface at {}",
             alatus_ipc::THERMAL_OBJECT_PATH
         );
-        let thermal_svc = alatusd::ThermalService::new(thermal_driver);
+        let thermal_svc = alatusd::ThermalService::new(thermal_driver.clone());
         builder = builder.serve_at(alatus_ipc::THERMAL_OBJECT_PATH, thermal_svc)?;
     } else {
         tracing::warn!("No thermal driver available for this machine profile.");
@@ -68,8 +68,51 @@ async fn main() -> Result<(), Box<dyn Error>> {
         tracing::warn!("No lighting driver available for this machine profile.");
     }
 
-    let _conn = builder.build().await?;
+    let conn = builder.build().await?;
     tracing::info!("alatusd daemon successfully registered on system bus. Listening for requests...");
+
+    // 5. Start Hotkey background listener if available
+    if let Some(mut hotkey_driver) = drivers.hotkeys {
+        let thermal_opt = drivers.thermal.clone();
+        let conn_clone = conn.clone();
+
+        tokio::spawn(async move {
+            tracing::info!("Starting background Asus WMI hotkey listener...");
+            while let Ok(event) = hotkey_driver.next_event().await {
+                tracing::info!("Received hotkey event: {:?}", event.action);
+                if let alatus_core::hotkey::HotkeyAction::FanModeToggle = event.action {
+                    if let Some(ref thermal) = thermal_opt {
+                        if let Ok(available) = thermal.available_profiles().await {
+                            if let Ok(current) = thermal.get_current_profile().await {
+                                if let Some(idx) = available.iter().position(|&p| p == current) {
+                                    let next_profile = available[(idx + 1) % available.len()];
+                                    tracing::info!(
+                                        "Advancing thermal profile via hotkey: {} -> {}",
+                                        current, next_profile
+                                    );
+                                    if let Err(e) = thermal.set_profile(next_profile).await {
+                                        tracing::error!("Failed to update thermal profile: {e}");
+                                    } else {
+                                        let next_str = next_profile.to_string();
+                                        if let Ok(path) = alatus_ipc::THERMAL_OBJECT_PATH.try_into() {
+                                            let emitter = zbus::object_server::SignalContext::from_parts(
+                                                conn_clone.clone(),
+                                                path,
+                                            );
+                                            let _ = alatusd::ThermalService::profile_changed(
+                                                &emitter, &next_str,
+                                            )
+                                            .await;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
 
     tokio::signal::ctrl_c().await?;
     tracing::info!("Shutting down alatusd...");

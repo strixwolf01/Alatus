@@ -80,5 +80,5 @@ impl ThermalService {
     }
 
     #[zbus(signal)]
-    async fn profile_changed(signal_ctxt: &SignalContext<'_>, new_profile: &str) -> zbus::Result<()>;
+    pub async fn profile_changed(signal_ctxt: &SignalContext<'_>, new_profile: &str) -> zbus::Result<()>;
 }
