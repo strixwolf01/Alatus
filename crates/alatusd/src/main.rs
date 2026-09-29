@@ -46,6 +46,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
         tracing::warn!("No battery driver available for this machine profile.");
     }
 
+    if let Some(thermal_driver) = drivers.thermal {
+        tracing::info!(
+            "Registering org.alatus.Thermal D-Bus interface at {}",
+            alatus_ipc::THERMAL_OBJECT_PATH
+        );
+        let thermal_svc = alatusd::ThermalService::new(thermal_driver);
+        builder = builder.serve_at(alatus_ipc::THERMAL_OBJECT_PATH, thermal_svc)?;
+    } else {
+        tracing::warn!("No thermal driver available for this machine profile.");
+    }
+
     let _conn = builder.build().await?;
     tracing::info!("alatusd daemon successfully registered on system bus. Listening for requests...");
 

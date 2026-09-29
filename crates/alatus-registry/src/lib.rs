@@ -50,14 +50,27 @@ impl DriverRegistry {
 
     pub fn with_default_drivers(sysfs_root: alatus_drivers::SysfsRoot) -> Self {
         let mut registry = Self::new();
-        let root = sysfs_root.clone();
+        let root_bat = sysfs_root.clone();
         registry.register_battery("asus-sysfs-battery", move |cfg| {
             Ok(Arc::new(alatus_drivers::AsusSysfsBatteryDriver::new(
-                root.clone(),
+                root_bat.clone(),
                 &cfg.sysfs_path,
                 cfg.supported_limits.clone(),
             )))
         });
+
+        let root_thermal = sysfs_root.clone();
+        registry.register_thermal("asus-hybrid-thermal", move |cfg| {
+            Ok(Arc::new(alatus_drivers::AsusHybridThermalDriver::new(
+                root_thermal.clone(),
+                &cfg.platform_profile_path,
+                cfg.debugfs_devs_path.as_deref(),
+                cfg.debugfs_fan_register,
+                None::<&str>,
+                cfg.supports_full_speed,
+            )))
+        });
+
         registry
     }
 

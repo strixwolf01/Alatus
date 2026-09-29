@@ -1,4 +1,4 @@
-use alatus_ipc::BatteryProxy;
+use alatus_ipc::{BatteryProxy, ThermalProxy};
 use clap::{Args, Parser, Subcommand};
 use std::error::Error;
 use zbus::Connection;
@@ -18,6 +18,8 @@ struct Cli {
 enum Commands {
     /// Battery controls and telemetry
     Battery(BatteryArgs),
+    /// Thermal profile switching and fan telemetry
+    Thermal(ThermalArgs),
 }
 
 #[derive(Args)]
@@ -37,6 +39,23 @@ enum BatteryAction {
     },
 }
 
+#[derive(Args)]
+struct ThermalArgs {
+    #[command(subcommand)]
+    action: ThermalAction,
+}
+
+#[derive(Subcommand)]
+enum ThermalAction {
+    /// Display current thermal profile, supported modes, and fan speeds
+    Status,
+    /// Set thermal profile mode (Quiet, Balanced, Performance, FullSpeed)
+    Set {
+        #[arg(help = "Profile mode: quiet, balanced, performance, fullspeed")]
+        mode: String,
+    },
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
@@ -46,6 +65,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     match cli.command {
         Commands::Battery(args) => handle_battery(&conn, args.action).await?,
+        Commands::Thermal(args) => handle_thermal(&conn, args.action).await?,
     }
 
     Ok(())
@@ -77,6 +97,36 @@ async fn handle_battery(conn: &Connection, action: BatteryAction) -> Result<(), 
             println!("Setting battery charge limit to {}%...", limit);
             proxy.set_charge_limit(limit).await?;
             println!("✓ Successfully updated battery charge limit to {}%.", limit);
+        }
+    }
+
+    Ok(())
+}
+
+async fn handle_thermal(conn: &Connection, action: ThermalAction) -> Result<(), Box<dyn Error>> {
+    let proxy = ThermalProxy::new(conn).await?;
+
+    match action {
+        ThermalAction::Status => {
+            let current = proxy.get_current_profile().await?;
+            let available = proxy.list_profiles().await?;
+            let fans = proxy.get_fans().await?;
+
+            println!("--- ASUS Thermal & Cooling Status ---");
+            println!("  Current Profile    : {}", current);
+            println!("  Available Profiles : {}", available.join(", "));
+
+            if !fans.is_empty() {
+                println!("\n  Fans Telemetry:");
+                for fan in fans {
+                    println!("    • {:<12} : {} RPM", fan.label, fan.current_rpm);
+                }
+            }
+        }
+        ThermalAction::Set { mode } => {
+            println!("Switching thermal profile to '{}'...", mode);
+            proxy.set_profile(mode.clone()).await?;
+            println!("✓ Successfully updated thermal profile to {}.", mode);
         }
     }
 
