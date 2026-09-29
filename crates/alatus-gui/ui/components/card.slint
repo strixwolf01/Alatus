@@ -1,0 +1,37 @@
+export component GroupCard inherits Rectangle {
+    border-radius: 10px;
+    background: #1B1D23;
+    border-width: 1px;
+    border-color: #2D3038;
+    clip: true;
+    @children
+}
+
+export component SectionHeader inherits VerticalLayout {
+    in property <string> title: "";
+    in property <string> subtitle: "";
+
+    spacing: 3px;
+
+    Text {
+        text: root.title;
+        font-size: 15px;
+        font-weight: 700;
+        color: #FFFFFF;
+    }
+
+    if root.subtitle != "" : Text {
+        text: root.subtitle;
+        font-size: 11px;
+        color: #8C929E;
+        wrap: word-wrap;
+    }
+}
+
+export component NoticeText inherits Text {
+    in property <string> message: "";
+    text: root.message;
+    font-size: 11px;
+    color: #8C929E;
+    wrap: word-wrap;
+}

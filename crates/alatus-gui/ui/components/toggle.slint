@@ -1,0 +1,31 @@
+export component ToggleSwitch inherits Rectangle {
+    in property <bool> checked: false;
+    in property <color> accent_color: #3B82F6;
+    callback toggled(bool);
+
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    background: root.checked ? root.accent_color : #2A2E39;
+    border-width: 1px;
+    border-color: root.checked ? root.accent_color : #3E4352;
+
+    animate background { duration: 150ms; }
+    animate border-color { duration: 150ms; }
+
+    Rectangle {
+        width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        background: #FFFFFF;
+        x: root.checked ? 22px : 3px;
+        y: 2px;
+        animate x { duration: 150ms; easing: ease-out; }
+    }
+
+    TouchArea {
+        clicked => {
+            root.toggled(!root.checked);
+        }
+    }
+}

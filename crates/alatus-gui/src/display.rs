@@ -39,6 +39,8 @@ pub struct KScreenConfig {
 
 #[derive(Debug, Clone)]
 pub struct DisplayState {
+    pub is_kde: bool,
+    pub accent_color: Option<(u8, u8, u8)>,
     pub output_name: String,
     pub current_refresh_rate: u32,
     pub supported_refresh_rates: Vec<u32>,
@@ -52,6 +54,8 @@ pub struct DisplayState {
 impl Default for DisplayState {
     fn default() -> Self {
         Self {
+            is_kde: true,
+            accent_color: None,
             output_name: "eDP-1".to_string(),
             current_refresh_rate: 120,
             supported_refresh_rates: vec![60, 120],
@@ -66,6 +70,15 @@ impl Default for DisplayState {
 
 pub async fn query_display_state() -> DisplayState {
     let mut state = DisplayState::default();
+    let desktop = std::env::var("XDG_CURRENT_DESKTOP")
+        .unwrap_or_default()
+        .to_lowercase();
+    state.is_kde = desktop.contains("kde");
+    state.accent_color = get_kde_accent_color();
+
+    if !state.is_kde {
+        return state;
+    }
 
     // 1. Query kscreen-doctor -j
     if let Ok(output) = tokio::process::Command::new("kscreen-doctor")
@@ -312,4 +325,24 @@ fn read_power_idle_time() -> Option<u32> {
         .ok()?;
     let s = String::from_utf8_lossy(&output.stdout).trim().to_string();
     s.parse::<u32>().ok()
+}
+
+pub fn get_kde_accent_color() -> Option<(u8, u8, u8)> {
+    let home = std::env::var("HOME").ok()?;
+    let path = std::path::Path::new(&home).join(".config/kdeglobals");
+    let content = std::fs::read_to_string(path).ok()?;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("AccentColor=") {
+            let val = trimmed.trim_start_matches("AccentColor=").trim();
+            let parts: Vec<&str> = val.split(',').collect();
+            if parts.len() >= 3 {
+                let r = parts[0].trim().parse::<u8>().ok()?;
+                let g = parts[1].trim().parse::<u8>().ok()?;
+                let b = parts[2].trim().parse::<u8>().ok()?;
+                return Some((r, g, b));
+            }
+        }
+    }
+    None
 }

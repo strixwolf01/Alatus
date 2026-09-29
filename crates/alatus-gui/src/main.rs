@@ -15,6 +15,41 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let main_window = MainWindow::new()?;
     let handle = main_window.as_weak();
 
+    // 0. Initial Real DMI & System Hardware Query
+    let device_model = {
+        let p = std::fs::read_to_string("/sys/class/dmi/id/product_name")
+            .unwrap_or_default()
+            .trim()
+            .to_string();
+        if p.is_empty() || p.contains("S5506") {
+            "ASUS Vivobook S 15 OLED (S5506MA)".to_string()
+        } else {
+            p
+        }
+    };
+    let board_name = std::fs::read_to_string("/sys/class/dmi/id/board_name")
+        .unwrap_or_else(|_| "S5506MA".into())
+        .trim()
+        .to_string();
+    let bios_version = std::fs::read_to_string("/sys/class/dmi/id/bios_version")
+        .unwrap_or_else(|_| "S5506MA.318".into())
+        .trim()
+        .to_string();
+    let kernel_version = match std::process::Command::new("uname").arg("-r").output() {
+        Ok(out) => format!("Linux {}", String::from_utf8_lossy(&out.stdout).trim()),
+        Err(_) => "Linux x86_64".to_string(),
+    };
+
+    let handle_dmi = handle.clone();
+    let _ = slint::invoke_from_event_loop(move || {
+        if let Some(ui) = handle_dmi.upgrade() {
+            ui.set_device_model(device_model.into());
+            ui.set_board_name(board_name.into());
+            ui.set_bios_version(bios_version.into());
+            ui.set_kernel_version(kernel_version.into());
+        }
+    });
+
     let conn = Connection::system().await.map_err(|e| {
         format!("Failed to connect to system D-Bus. Is alatusd daemon running? Error: {e}")
     })?;
@@ -119,6 +154,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let handle_clone_disp = handle.clone();
     let _ = slint::invoke_from_event_loop(move || {
         if let Some(ui) = handle_clone_disp.upgrade() {
+            ui.set_is_kde(disp_state.is_kde);
+            if let Some((r, g, b)) = disp_state.accent_color {
+                ui.set_accent_color(slint::Color::from_rgb_u8(r, g, b));
+            }
             ui.set_display_output_name(disp_state.output_name.into());
             ui.set_display_refresh_rate(disp_state.current_refresh_rate as i32);
             ui.set_oled_dimming_level(disp_state.current_dimming as i32);
@@ -147,7 +186,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
     }
 
-    // 5. Wire UI Callbacks: Thermal Profile
+    // 6. Wire UI Callbacks: Thermal Profile
     if let Some(tp) = thermal_proxy.clone() {
         let handle_clone = handle.clone();
         main_window.on_set_thermal_profile(move |mode| {
@@ -166,7 +205,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
     }
 
-    // 6. Wire UI Callbacks: Lighting
+    // 7. Wire UI Callbacks: Lighting
     if let Some(lp) = lighting_proxy.clone() {
         let lp_brightness = lp.clone();
         let handle_b = handle.clone();
@@ -240,7 +279,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
     }
 
-    // 7. Wire UI Callbacks: Display & OLED
+    // 8. Wire UI Callbacks: Display & OLED
     let handle_disp_r = handle.clone();
     main_window.on_set_display_refresh(move |hz| {
         let handle_inner = handle_disp_r.clone();
@@ -337,7 +376,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
     });
 
-    // 8. Background Signal Monitors for Live Hardware Updates
+    // 9. Background Signal Monitors for Live Hardware Updates
     if let Some(tp) = thermal_proxy.clone() {
         let handle_t = handle.clone();
         tokio::spawn(async move {
@@ -383,7 +422,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
     }
 
-    // 8. Periodic Polling for Live Telemetry (Battery & Fans)
+    // 10. Periodic Polling for Live Telemetry (Battery & Fans)
     let poller_timer = slint::Timer::default();
     {
         let bp_poll = battery_proxy.clone();

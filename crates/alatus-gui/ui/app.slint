@@ -5,15 +5,16 @@ import { RgbTab } from "tabs/rgb.slint";
 import { DisplayTab } from "tabs/display.slint";
 import { GesturesTab } from "tabs/gestures.slint";
 import { SystemTab } from "tabs/system.slint";
+import { ScrollView } from "std-widgets.slint";
 
 export component MainWindow inherits Window {
-    title: "Alatus - ASUS Hardware Suite";
-    min-width: 840px;
-    min-height: 600px;
-    preferred-width: 900px;
-    preferred-height: 650px;
-    background: #0D0F14;
-    default-font-family: "Inter, system-ui, sans-serif";
+    title: "Alatus - ASUS Hardware Control Suite";
+    min-width: 900px;
+    min-height: 640px;
+    preferred-width: 960px;
+    preferred-height: 680px;
+    background: #1B1C20;
+    default-font-family: "Noto Sans, Inter, system-ui, sans-serif";
 
     // Callbacks to Rust backend
     callback set_battery_limit(int);
@@ -30,7 +31,15 @@ export component MainWindow inherits Window {
     callback set_dpms_pixel_refresh(bool);
 
     // State properties
-    in-out property <int> active_tab: 0; // 0: Dashboard, 1: Battery, 2: Cooling, 3: RGB, 4: Display, 5: Gestures, 6: System
+    in-out property <int> active_tab: 0; // 0: Dashboard, 1: Battery, 2: Cooling, 3: Aura RGB, 4: Display, 5: Gestures, 6: System
+    in-out property <bool> is_kde: true;
+    in-out property <color> accent_color: #3B82F6;
+
+    // Real DMI and hardware strings
+    in-out property <string> device_model: "ASUS Vivobook S 15 OLED (S5506MA)";
+    in-out property <string> board_name: "S5506MA";
+    in-out property <string> bios_version: "S5506MA.318";
+    in-out property <string> kernel_version: "Linux x86_64";
 
     // Display & Gesture properties
     in-out property <int> display_refresh_rate: 120;
@@ -67,302 +76,400 @@ export component MainWindow inherits Window {
     in-out property <bool> supports_mode_rainbow: false;
     in-out property <bool> supports_mode_strobe: false;
 
-    VerticalLayout {
-        padding: 20px;
-        spacing: 16px;
+    HorizontalLayout {
+        // ==========================================
+        // LEFT SIDEBAR (KDE Breeze Style)
+        // ==========================================
+        Rectangle {
+            width: 210px;
+            background: #16171B;
 
-        // Header Bar
-        HorizontalLayout {
-            alignment: space-between;
+            // 1px right border separating sidebar from content
+            Rectangle {
+                x: parent.width - 1px;
+                width: 1px;
+                height: 100%;
+                background: #252830;
+            }
+
             VerticalLayout {
-                spacing: 2px;
+                padding: 12px;
+                spacing: 6px;
+
+                // Brand Header: App Logo + Title + Status
                 HorizontalLayout {
-                    spacing: 8px;
-                    Text {
-                        text: "ALATUS";
-                        font-size: 22px;
-                        font-weight: 800;
-                        color: #00F0FF;
+                    padding_left: 6px;
+                    padding_right: 6px;
+                    padding_top: 6px;
+                    padding_bottom: 12px;
+                    alignment: space-between;
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Text {
+                            text: "▲";
+                            font-size: 18px;
+                            font-weight: 900;
+                            color: root.accent_color;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: "Alatus";
+                            font-size: 15px;
+                            font-weight: 700;
+                            color: #FFFFFF;
+                            vertical-alignment: center;
+                        }
                     }
+
                     Rectangle {
-                        border-radius: 4px;
-                        background: #00E676;
                         width: 8px;
                         height: 8px;
-                        y: 10px;
+                        border-radius: 4px;
+                        background: #00E676;
+                        y: 8px;
                     }
+                }
+
+                Rectangle { height: 1px; background: #252830; }
+
+                // Sidebar Navigation Items
+                VerticalLayout {
+                    spacing: 4px;
+                    padding-top: 6px;
+
+                    // Item 0: Dashboard (Home)
+                    Rectangle {
+                        height: 38px;
+                        border-radius: 8px;
+                        background: root.active_tab == 0 ? #2A2D35 : (item0_touch.has-hover ? #1F2128 : transparent);
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 12px;
+                            spacing: 12px;
+                            alignment: start;
+                            Text { text: "🏠"; font-size: 13px; vertical-alignment: center; }
+                            Text {
+                                text: "Home";
+                                font-size: 13px;
+                                font-weight: root.active_tab == 0 ? 600 : 500;
+                                color: root.active_tab == 0 ? #FFFFFF : #9CA3AF;
+                                vertical-alignment: center;
+                            }
+                        }
+                        item0_touch := TouchArea { mouse-cursor: pointer; clicked => { root.active_tab = 0; } }
+                    }
+
+                    // Item 1: Battery Care
+                    Rectangle {
+                        height: 38px;
+                        border-radius: 8px;
+                        background: root.active_tab == 1 ? #2A2D35 : (item1_touch.has-hover ? #1F2128 : transparent);
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 12px;
+                            spacing: 12px;
+                            alignment: start;
+                            Text { text: "🔋"; font-size: 13px; vertical-alignment: center; }
+                            Text {
+                                text: "Battery";
+                                font-size: 13px;
+                                font-weight: root.active_tab == 1 ? 600 : 500;
+                                color: root.active_tab == 1 ? #FFFFFF : #9CA3AF;
+                                vertical-alignment: center;
+                            }
+                        }
+                        item1_touch := TouchArea { mouse-cursor: pointer; clicked => { root.active_tab = 1; } }
+                    }
+
+                    // Item 2: Cooling & Thermal
+                    Rectangle {
+                        height: 38px;
+                        border-radius: 8px;
+                        background: root.active_tab == 2 ? #2A2D35 : (item2_touch.has-hover ? #1F2128 : transparent);
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 12px;
+                            spacing: 12px;
+                            alignment: start;
+                            Text { text: "❄️"; font-size: 13px; vertical-alignment: center; }
+                            Text {
+                                text: "Cooling";
+                                font-size: 13px;
+                                font-weight: root.active_tab == 2 ? 600 : 500;
+                                color: root.active_tab == 2 ? #FFFFFF : #9CA3AF;
+                                vertical-alignment: center;
+                            }
+                        }
+                        item2_touch := TouchArea { mouse-cursor: pointer; clicked => { root.active_tab = 2; } }
+                    }
+
+                    // Item 3: Aura RGB Keyboard Lighting
+                    Rectangle {
+                        height: 38px;
+                        border-radius: 8px;
+                        background: root.active_tab == 3 ? #2A2D35 : (item3_touch.has-hover ? #1F2128 : transparent);
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 12px;
+                            spacing: 12px;
+                            alignment: start;
+                            Text { text: "💡"; font-size: 13px; vertical-alignment: center; }
+                            Text {
+                                text: "Aura RGB";
+                                font-size: 13px;
+                                font-weight: root.active_tab == 3 ? 600 : 500;
+                                color: root.active_tab == 3 ? #FFFFFF : #9CA3AF;
+                                vertical-alignment: center;
+                            }
+                        }
+                        item3_touch := TouchArea { mouse-cursor: pointer; clicked => { root.active_tab = 3; } }
+                    }
+
+                    // Item 4: Display & OLED (KDE Plasma only)
+                    if root.is_kde: Rectangle {
+                        height: 38px;
+                        border-radius: 8px;
+                        background: root.active_tab == 4 ? #2A2D35 : (item4_touch.has-hover ? #1F2128 : transparent);
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 12px;
+                            spacing: 12px;
+                            alignment: start;
+                            Text { text: "🖥️"; font-size: 13px; vertical-alignment: center; }
+                            Text {
+                                text: "Display";
+                                font-size: 13px;
+                                font-weight: root.active_tab == 4 ? 600 : 500;
+                                color: root.active_tab == 4 ? #FFFFFF : #9CA3AF;
+                                vertical-alignment: center;
+                            }
+                        }
+                        item4_touch := TouchArea { mouse-cursor: pointer; clicked => { root.active_tab = 4; } }
+                    }
+
+                    // Item 5: Touchpad Gestures (KDE Plasma only)
+                    if root.is_kde: Rectangle {
+                        height: 38px;
+                        border-radius: 8px;
+                        background: root.active_tab == 5 ? #2A2D35 : (item5_touch.has-hover ? #1F2128 : transparent);
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 12px;
+                            spacing: 12px;
+                            alignment: start;
+                            Text { text: "👆"; font-size: 13px; vertical-alignment: center; }
+                            Text {
+                                text: "Touchpad";
+                                font-size: 13px;
+                                font-weight: root.active_tab == 5 ? 600 : 500;
+                                color: root.active_tab == 5 ? #FFFFFF : #9CA3AF;
+                                vertical-alignment: center;
+                            }
+                        }
+                        item5_touch := TouchArea { mouse-cursor: pointer; clicked => { root.active_tab = 5; } }
+                    }
+
+                    // Item 6: System Information
+                    Rectangle {
+                        height: 38px;
+                        border-radius: 8px;
+                        background: root.active_tab == 6 ? #2A2D35 : (item6_touch.has-hover ? #1F2128 : transparent);
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 12px;
+                            spacing: 12px;
+                            alignment: start;
+                            Text { text: "⚙️"; font-size: 13px; vertical-alignment: center; }
+                            Text {
+                                text: "System";
+                                font-size: 13px;
+                                font-weight: root.active_tab == 6 ? 600 : 500;
+                                color: root.active_tab == 6 ? #FFFFFF : #9CA3AF;
+                                vertical-alignment: center;
+                            }
+                        }
+                        item6_touch := TouchArea { mouse-cursor: pointer; clicked => { root.active_tab = 6; } }
+                    }
+                }
+
+                // Spacer pushing footer to bottom
+                Rectangle { }
+
+                // Sidebar Footer (Brand info + version)
+                Rectangle { height: 1px; background: #252830; }
+                HorizontalLayout {
+                    padding-left: 6px;
+                    padding-right: 6px;
+                    padding-top: 6px;
+                    spacing: 8px;
+                    alignment: space-between;
+
+                    HorizontalLayout {
+                        spacing: 6px;
+                        Text { text: "⚡"; font-size: 11px; vertical-alignment: center; }
+                        Text { text: "Alatus Suite"; font-size: 11px; color: #8C929E; vertical-alignment: center; }
+                    }
+                    Text { text: "v0.1.0"; font-size: 11px; color: #5A6070; vertical-alignment: center; }
+                }
+            }
+        }
+
+        // ==========================================
+        // RIGHT MAIN CONTENT AREA
+        // ==========================================
+        VerticalLayout {
+            // Header Bar with Centered Tab Name and Subtle Status
+            Rectangle {
+                height: 48px;
+                background: #1B1C20;
+                
+                // Bottom divider
+                Rectangle {
+                    y: parent.height - 1px;
+                    height: 1px;
+                    width: 100%;
+                    background: #252830;
+                }
+
+                HorizontalLayout {
+                    padding-left: 24px;
+                    padding-right: 24px;
+                    alignment: space-between;
+
+                    // Left spacer
+                    Rectangle { width: 100px; }
+
+                    // Centered Current View Title
                     Text {
-                        text: "v0.1.0";
-                        font-size: 11px;
-                        font-weight: 600;
-                        color: #5A6275;
+                        text: root.active_tab == 0 ? "Home" :
+                              root.active_tab == 1 ? "Battery Care" :
+                              root.active_tab == 2 ? "Cooling & Fans" :
+                              root.active_tab == 3 ? "Aura RGB Lighting" :
+                              root.active_tab == 4 ? "Display & OLED" :
+                              root.active_tab == 5 ? "Touchpad Gestures" : "System Information";
+                        font-size: 14px;
+                        font-weight: 700;
+                        color: #FFFFFF;
+                        horizontal-alignment: center;
                         vertical-alignment: center;
                     }
-                }
-                Text {
-                    text: "ASUS HARDWARE CONTROL SUITE";
-                    font-size: 10px;
-                    font-weight: 700;
-                    letter-spacing: 1px;
-                    color: #5A6275;
-                }
-            }
 
-            HorizontalLayout {
-                spacing: 12px;
-                Rectangle {
-                    border-radius: 8px;
-                    background: #141720;
-                    border-width: 1px;
-                    border-color: #242938;
-                    HorizontalLayout {
-                        padding-left: 12px;
-                        padding-right: 12px;
-                        spacing: 8px;
-                        alignment: center;
-                        Rectangle {
-                            width: 6px;
-                            height: 6px;
-                            border-radius: 3px;
-                            background: #00E676;
-                            y: 11px;
-                        }
-                        Text {
-                            text: "DAEMON ONLINE";
-                            font-size: 11px;
-                            font-weight: 700;
-                            color: #00E676;
-                            vertical-alignment: center;
-                        }
-                    }
-                }
-
-                Rectangle {
-                    border-radius: 8px;
-                    background: #141720;
-                    border-width: 1px;
-                    border-color: #242938;
-                    HorizontalLayout {
-                        padding-left: 12px;
-                        padding-right: 12px;
-                        alignment: center;
-                        Text {
-                            text: "ASUS Vivobook S 15 OLED (S5506MA)";
-                            font-size: 12px;
-                            font-weight: 600;
-                            color: #8A92A6;
-                            vertical-alignment: center;
+                    // Right Active Profile Badge
+                    Rectangle {
+                        width: 100px;
+                        height: 24px;
+                        y: 12px;
+                        border-radius: 4px;
+                        background: #23262F;
+                        HorizontalLayout {
+                            alignment: center;
+                            spacing: 6px;
+                            Rectangle {
+                                width: 6px;
+                                height: 6px;
+                                border-radius: 3px;
+                                background: root.current_profile == "FullSpeed" ? #FF0055 : root.accent_color;
+                                y: 9px;
+                            }
+                            Text {
+                                text: root.current_profile;
+                                font-size: 11px;
+                                font-weight: 700;
+                                color: #FFFFFF;
+                                vertical-alignment: center;
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // Navigation Tabs (7 Tabs)
-        HorizontalLayout {
-            spacing: 6px;
-            
-            // Tab 0: Dashboard
-            Rectangle {
-                height: 38px;
-                border-radius: 8px;
-                background: root.active_tab == 0 ? #1B2130 : #12151C;
-                border-width: 1px;
-                border-color: root.active_tab == 0 ? #00F0FF : #1E2330;
-                TouchArea { clicked => { root.active_tab = 0; } }
-                Text {
-                    text: "📊 Dashboard";
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: root.active_tab == 0 ? #FFFFFF : #8A92A6;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
-                }
-            }
+            // Scrollable Tab View Content
+            ScrollView {
+                VerticalLayout {
+                    padding: 24px;
+                    alignment: start;
 
-            // Tab 1: Battery Care
-            Rectangle {
-                height: 38px;
-                border-radius: 8px;
-                background: root.active_tab == 1 ? #1B2130 : #12151C;
-                border-width: 1px;
-                border-color: root.active_tab == 1 ? #00F0FF : #1E2330;
-                TouchArea { clicked => { root.active_tab = 1; } }
-                Text {
-                    text: "🔋 Battery";
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: root.active_tab == 1 ? #FFFFFF : #8A92A6;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
-                }
-            }
+                    if root.active_tab == 0: DashboardTab {
+                        battery_percentage: root.battery_percentage;
+                        battery_status: root.battery_status;
+                        battery_limit: root.battery_limit;
+                        battery_health: root.battery_health;
+                        battery_power: root.battery_power;
+                        current_profile: root.current_profile;
+                        full_speed_supported: root.full_speed_supported;
+                        fan_cpu_only_text: root.fan_cpu_only_text;
+                        fan_rpm_subtext: root.fan_rpm_subtext;
+                        lighting_mode: root.lighting_mode;
+                        current_rgb_color: root.current_rgb_color;
+                        lighting_hex: root.lighting_hex;
+                        lighting_brightness: root.lighting_brightness;
+                        accent_color: root.accent_color;
+                        device_model: root.device_model;
+                        board_name: root.board_name;
+                        bios_version: root.bios_version;
+                        kernel_version: root.kernel_version;
+                        set_thermal_profile(p) => { root.set_thermal_profile(p); }
+                        set_battery_limit(l) => { root.set_battery_limit(l); }
+                    }
 
-            // Tab 2: Cooling & Thermal
-            Rectangle {
-                height: 38px;
-                border-radius: 8px;
-                background: root.active_tab == 2 ? #1B2130 : #12151C;
-                border-width: 1px;
-                border-color: root.active_tab == 2 ? #00F0FF : #1E2330;
-                TouchArea { clicked => { root.active_tab = 2; } }
-                Text {
-                    text: "❄️ Cooling";
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: root.active_tab == 2 ? #FFFFFF : #8A92A6;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
-                }
-            }
+                    if root.active_tab == 1: BatteryTab {
+                        battery_percentage: root.battery_percentage;
+                        battery_status: root.battery_status;
+                        battery_limit: root.battery_limit;
+                        battery_health: root.battery_health;
+                        battery_power: root.battery_power;
+                        set_battery_limit(l) => { root.set_battery_limit(l); }
+                    }
 
-            // Tab 3: Keyboard RGB
-            Rectangle {
-                height: 38px;
-                border-radius: 8px;
-                background: root.active_tab == 3 ? #1B2130 : #12151C;
-                border-width: 1px;
-                border-color: root.active_tab == 3 ? #00F0FF : #1E2330;
-                TouchArea { clicked => { root.active_tab = 3; } }
-                Text {
-                    text: "💡 Aura RGB";
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: root.active_tab == 3 ? #FFFFFF : #8A92A6;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
-                }
-            }
+                    if root.active_tab == 2: CoolingTab {
+                        current_profile: root.current_profile;
+                        full_speed_supported: root.full_speed_supported;
+                        is_cpu_only: root.is_cpu_only;
+                        cpu_fan_rpm: root.cpu_fan_rpm;
+                        gpu_fan_rpm: root.gpu_fan_rpm;
+                        fan_cpu_only_text: root.fan_cpu_only_text;
+                        fan_rpm_subtext: root.fan_rpm_subtext;
+                        set_thermal_profile(p) => { root.set_thermal_profile(p); }
+                    }
 
-            // Tab 4: Display & OLED
-            Rectangle {
-                height: 38px;
-                border-radius: 8px;
-                background: root.active_tab == 4 ? #1B2130 : #12151C;
-                border-width: 1px;
-                border-color: root.active_tab == 4 ? #00F0FF : #1E2330;
-                TouchArea { clicked => { root.active_tab = 4; } }
-                Text {
-                    text: "🖥️ Display & OLED";
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: root.active_tab == 4 ? #FFFFFF : #8A92A6;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
-                }
-            }
+                    if root.active_tab == 3: RgbTab {
+                        lighting_brightness: root.lighting_brightness;
+                        lighting_mode: root.lighting_mode;
+                        current_rgb_color: root.current_rgb_color;
+                        lighting_hex: root.lighting_hex;
+                        has_multiple_modes: root.has_multiple_modes;
+                        supports_mode_breathing: root.supports_mode_breathing;
+                        supports_mode_rainbow: root.supports_mode_rainbow;
+                        supports_mode_strobe: root.supports_mode_strobe;
+                        set_lighting_brightness(b) => { root.set_lighting_brightness(b); }
+                        set_lighting_mode(m, s) => { root.set_lighting_mode(m, s); }
+                        set_lighting_color(r, g, b) => { root.set_lighting_color(r, g, b); }
+                        open_de_color_picker => { root.open_de_color_picker(); }
+                    }
 
-            // Tab 5: Touchpad Gestures
-            Rectangle {
-                height: 38px;
-                border-radius: 8px;
-                background: root.active_tab == 5 ? #1B2130 : #12151C;
-                border-width: 1px;
-                border-color: root.active_tab == 5 ? #00F0FF : #1E2330;
-                TouchArea { clicked => { root.active_tab = 5; } }
-                Text {
-                    text: "👆 Gestures";
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: root.active_tab == 5 ? #FFFFFF : #8A92A6;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
-                }
-            }
+                    if root.active_tab == 4 && root.is_kde: DisplayTab {
+                        display_refresh_rate: root.display_refresh_rate;
+                        oled_dimming_level: root.oled_dimming_level;
+                        target_mode_active: root.target_mode_active;
+                        panel_autohide_active: root.panel_autohide_active;
+                        panel_transparency_active: root.panel_transparency_active;
+                        dpms_pixel_refresh_active: root.dpms_pixel_refresh_active;
+                        display_output_name: root.display_output_name;
+                        accent_color: root.accent_color;
+                        set_display_refresh(hz) => { root.set_display_refresh(hz); }
+                        set_oled_dimming(val) => { root.set_oled_dimming(val); }
+                        set_target_mode(en) => { root.set_target_mode(en); }
+                        set_panel_autohide(en) => { root.set_panel_autohide(en); }
+                        set_panel_transparency(en) => { root.set_panel_transparency(en); }
+                        set_dpms_pixel_refresh(en) => { root.set_dpms_pixel_refresh(en); }
+                    }
 
-            // Tab 6: System Info
-            Rectangle {
-                height: 38px;
-                border-radius: 8px;
-                background: root.active_tab == 6 ? #1B2130 : #12151C;
-                border-width: 1px;
-                border-color: root.active_tab == 6 ? #00F0FF : #1E2330;
-                TouchArea { clicked => { root.active_tab = 6; } }
-                Text {
-                    text: "💻 System";
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: root.active_tab == 6 ? #FFFFFF : #8A92A6;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
+                    if root.active_tab == 5 && root.is_kde: GesturesTab {}
+
+                    if root.active_tab == 6: SystemTab {}
                 }
             }
         }
-
-        // ==========================================
-        // TAB CONTENTS (MODULAR COMPONENTS)
-        // ==========================================
-        if root.active_tab == 0: DashboardTab {
-            battery_percentage: root.battery_percentage;
-            battery_status: root.battery_status;
-            battery_limit: root.battery_limit;
-            battery_health: root.battery_health;
-            battery_power: root.battery_power;
-            current_profile: root.current_profile;
-            full_speed_supported: root.full_speed_supported;
-            fan_cpu_only_text: root.fan_cpu_only_text;
-            fan_rpm_subtext: root.fan_rpm_subtext;
-            lighting_mode: root.lighting_mode;
-            current_rgb_color: root.current_rgb_color;
-            lighting_hex: root.lighting_hex;
-            lighting_brightness: root.lighting_brightness;
-            set_thermal_profile(p) => { root.set_thermal_profile(p); }
-            set_battery_limit(l) => { root.set_battery_limit(l); }
-        }
-
-        if root.active_tab == 1: BatteryTab {
-            battery_percentage: root.battery_percentage;
-            battery_status: root.battery_status;
-            battery_limit: root.battery_limit;
-            battery_health: root.battery_health;
-            battery_power: root.battery_power;
-            set_battery_limit(l) => { root.set_battery_limit(l); }
-        }
-
-        if root.active_tab == 2: CoolingTab {
-            current_profile: root.current_profile;
-            full_speed_supported: root.full_speed_supported;
-            is_cpu_only: root.is_cpu_only;
-            cpu_fan_rpm: root.cpu_fan_rpm;
-            gpu_fan_rpm: root.gpu_fan_rpm;
-            fan_cpu_only_text: root.fan_cpu_only_text;
-            fan_rpm_subtext: root.fan_rpm_subtext;
-            set_thermal_profile(p) => { root.set_thermal_profile(p); }
-        }
-
-        if root.active_tab == 3: RgbTab {
-            lighting_brightness: root.lighting_brightness;
-            lighting_mode: root.lighting_mode;
-            current_rgb_color: root.current_rgb_color;
-            lighting_hex: root.lighting_hex;
-            has_multiple_modes: root.has_multiple_modes;
-            supports_mode_breathing: root.supports_mode_breathing;
-            supports_mode_rainbow: root.supports_mode_rainbow;
-            supports_mode_strobe: root.supports_mode_strobe;
-            set_lighting_brightness(b) => { root.set_lighting_brightness(b); }
-            set_lighting_mode(m, s) => { root.set_lighting_mode(m, s); }
-            set_lighting_color(r, g, b) => { root.set_lighting_color(r, g, b); }
-            open_de_color_picker => { root.open_de_color_picker(); }
-        }
-
-        if root.active_tab == 4: DisplayTab {
-            display_refresh_rate: root.display_refresh_rate;
-            oled_dimming_level: root.oled_dimming_level;
-            target_mode_active: root.target_mode_active;
-            panel_autohide_active: root.panel_autohide_active;
-            panel_transparency_active: root.panel_transparency_active;
-            dpms_pixel_refresh_active: root.dpms_pixel_refresh_active;
-            display_output_name: root.display_output_name;
-            set_display_refresh(hz) => { root.set_display_refresh(hz); }
-            set_oled_dimming(val) => { root.set_oled_dimming(val); }
-            set_target_mode(en) => { root.set_target_mode(en); }
-            set_panel_autohide(en) => { root.set_panel_autohide(en); }
-            set_panel_transparency(en) => { root.set_panel_transparency(en); }
-            set_dpms_pixel_refresh(en) => { root.set_dpms_pixel_refresh(en); }
-        }
-
-        if root.active_tab == 5: GesturesTab {}
-
-        if root.active_tab == 6: SystemTab {}
     }
 }
