@@ -1,3 +1,5 @@
+import { GroupCard, SectionHeader } from "../components/card.slint";
+
 export component RgbTab inherits VerticalLayout {
     in property <int> lighting_brightness: 3;
     in property <string> lighting_mode: "Static";
@@ -7,20 +9,23 @@ export component RgbTab inherits VerticalLayout {
     in property <bool> supports_mode_breathing: false;
     in property <bool> supports_mode_rainbow: false;
     in property <bool> supports_mode_strobe: false;
+    in property <color> accent_color: #3B82F6;
+
+    // Keyboard Idle Timeout properties
+    in property <string> kbd_idle_mode: "always_on"; // "always_on", "battery_ac", "battery_only"
+    in property <int> kbd_idle_timeout_min: 1; // 1, 3, 5, 10
 
     callback set_lighting_brightness(int);
     callback set_lighting_mode(string, int);
     callback set_lighting_color(int, int, int);
     callback open_de_color_picker();
+    callback set_kbd_idle_mode(string);
+    callback set_kbd_idle_timeout(int);
 
-    spacing: 14px;
+    spacing: 16px;
 
-    Rectangle {
-        border-radius: 12px;
-        background: #141720;
-        border-width: 1px;
-        border-color: #242938;
-
+    // Card 1: Keyboard Backlight & RGB Controls
+    GroupCard {
         VerticalLayout {
             padding: 20px;
             spacing: 16px;
@@ -28,16 +33,17 @@ export component RgbTab inherits VerticalLayout {
             HorizontalLayout {
                 alignment: space-between;
                 Text {
-                    text: "ITE5570 LampArray Backlight";
+                    text: "Keyboard Backlight & RGB";
                     font-size: 16px;
                     font-weight: 700;
                     color: #FFFFFF;
                 }
                 Text {
                     text: "Brightness: " + root.lighting_brightness + " / 3";
-                    font-size: 14px;
+                    font-size: 13px;
                     font-weight: 600;
                     color: #00F0FF;
+                    vertical-alignment: center;
                 }
             }
 
@@ -47,193 +53,370 @@ export component RgbTab inherits VerticalLayout {
                 Rectangle {
                     height: 38px;
                     border-radius: 6px;
-                    background: root.lighting_brightness == 0 ? #00F0FF : #1A1F2B;
+                    background: root.lighting_brightness == 0 ? root.accent_color : #23262E;
+                    border-width: 1px;
+                    border-color: root.lighting_brightness == 0 ? root.accent_color : #2D3038;
                     TouchArea { clicked => { root.set_lighting_brightness(0); } }
                     Text { text: "Off"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_brightness == 0 ? #000 : #FFF; }
                 }
                 Rectangle {
                     height: 38px;
                     border-radius: 6px;
-                    background: root.lighting_brightness == 1 ? #00F0FF : #1A1F2B;
+                    background: root.lighting_brightness == 1 ? root.accent_color : #23262E;
+                    border-width: 1px;
+                    border-color: root.lighting_brightness == 1 ? root.accent_color : #2D3038;
                     TouchArea { clicked => { root.set_lighting_brightness(1); } }
                     Text { text: "Low (33%)"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_brightness == 1 ? #000 : #FFF; }
                 }
                 Rectangle {
                     height: 38px;
                     border-radius: 6px;
-                    background: root.lighting_brightness == 2 ? #00F0FF : #1A1F2B;
+                    background: root.lighting_brightness == 2 ? root.accent_color : #23262E;
+                    border-width: 1px;
+                    border-color: root.lighting_brightness == 2 ? root.accent_color : #2D3038;
                     TouchArea { clicked => { root.set_lighting_brightness(2); } }
                     Text { text: "Med (66%)"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_brightness == 2 ? #000 : #FFF; }
                 }
                 Rectangle {
                     height: 38px;
                     border-radius: 6px;
-                    background: root.lighting_brightness == 3 ? #00F0FF : #1A1F2B;
+                    background: root.lighting_brightness == 3 ? root.accent_color : #23262E;
+                    border-width: 1px;
+                    border-color: root.lighting_brightness == 3 ? root.accent_color : #2D3038;
                     TouchArea { clicked => { root.set_lighting_brightness(3); } }
                     Text { text: "High (100%)"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_brightness == 3 ? #000 : #FFF; }
                 }
             }
 
-            // Mode Selection (Only shown when hardware supports 2 or more modes)
+            // Lighting Modes
             if root.has_multiple_modes: VerticalLayout {
                 spacing: 8px;
-                Text {
-                    text: "Lighting Effect Mode:";
-                    font-size: 13px;
-                    color: #8A92A6;
-                }
+                Text { text: "Aura Lighting Effect"; font-size: 13px; font-weight: 600; color: #8C929E; }
                 HorizontalLayout {
                     spacing: 8px;
                     Rectangle {
                         height: 36px;
                         border-radius: 6px;
-                        background: root.lighting_mode == "Static" ? #00F0FF : #1A1F2B;
-                        TouchArea { clicked => { root.set_lighting_mode("Static", 1); } }
-                        Text { text: "Static"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_mode == "Static" ? #000 : #FFF; }
+                        background: root.lighting_mode == "Static" ? root.accent_color : #23262E;
+                        border-width: 1px;
+                        border-color: root.lighting_mode == "Static" ? root.accent_color : #2D3038;
+                        TouchArea { clicked => { root.set_lighting_mode("Static", 0); } }
+                        Text { text: "Static"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_mode == "Static" ? #000 : #FFF; }
                     }
                     if root.supports_mode_breathing: Rectangle {
                         height: 36px;
                         border-radius: 6px;
-                        background: root.lighting_mode == "Breathing" ? #00F0FF : #1A1F2B;
+                        background: root.lighting_mode == "Breathing" ? root.accent_color : #23262E;
+                        border-width: 1px;
+                        border-color: root.lighting_mode == "Breathing" ? root.accent_color : #2D3038;
                         TouchArea { clicked => { root.set_lighting_mode("Breathing", 1); } }
-                        Text { text: "Breathing"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_mode == "Breathing" ? #000 : #FFF; }
+                        Text { text: "Breathing"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_mode == "Breathing" ? #000 : #FFF; }
                     }
                     if root.supports_mode_rainbow: Rectangle {
                         height: 36px;
                         border-radius: 6px;
-                        background: root.lighting_mode == "Rainbow" ? #00F0FF : #1A1F2B;
+                        background: root.lighting_mode == "Rainbow" ? root.accent_color : #23262E;
+                        border-width: 1px;
+                        border-color: root.lighting_mode == "Rainbow" ? root.accent_color : #2D3038;
                         TouchArea { clicked => { root.set_lighting_mode("Rainbow", 2); } }
-                        Text { text: "Rainbow"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_mode == "Rainbow" ? #000 : #FFF; }
+                        Text { text: "Rainbow"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_mode == "Rainbow" ? #000 : #FFF; }
                     }
                     if root.supports_mode_strobe: Rectangle {
                         height: 36px;
                         border-radius: 6px;
-                        background: root.lighting_mode == "Strobe" ? #00F0FF : #1A1F2B;
-                        TouchArea { clicked => { root.set_lighting_mode("Strobe", 1); } }
-                        Text { text: "Strobe"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_mode == "Strobe" ? #000 : #FFF; }
-                    }
-                }
-            }
-
-            // Ready Color Palette Header & Live Indicator
-            HorizontalLayout {
-                alignment: space-between;
-                Text {
-                    text: "Preset Color Swatches:";
-                    font-size: 14px;
-                    font-weight: 700;
-                    color: #FFFFFF;
-                    vertical-alignment: center;
-                }
-                HorizontalLayout {
-                    spacing: 8px;
-                    Rectangle {
-                        width: 18px;
-                        height: 18px;
-                        border-radius: 4px;
-                        background: root.current_rgb_color;
+                        background: root.lighting_mode == "Strobe" ? root.accent_color : #23262E;
                         border-width: 1px;
-                        border-color: #4A5568;
-                    }
-                    Text {
-                        text: root.lighting_hex;
-                        font-size: 13px;
-                        font-weight: 700;
-                        color: #00F0FF;
-                        vertical-alignment: center;
+                        border-color: root.lighting_mode == "Strobe" ? root.accent_color : #2D3038;
+                        TouchArea { clicked => { root.set_lighting_mode("Strobe", 3); } }
+                        Text { text: "Strobe"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_mode == "Strobe" ? #000 : #FFF; }
                     }
                 }
             }
 
-            // 12 Curated Vibrant Swatches (2 rows of 6)
+            // Color Palette Selector
             VerticalLayout {
-                spacing: 8px;
-
-                // Row 1
+                spacing: 10px;
                 HorizontalLayout {
-                    spacing: 8px;
-                    Rectangle {
-                        height: 36px; border-radius: 6px; background: #FFFFFF;
-                        TouchArea { clicked => { root.set_lighting_color(255, 255, 255); } }
-                    }
-                    Rectangle {
-                        height: 36px; border-radius: 6px; background: #FFE4B5;
-                        TouchArea { clicked => { root.set_lighting_color(255, 228, 181); } }
-                    }
-                    Rectangle {
-                        height: 36px; border-radius: 6px; background: #FF1744;
-                        TouchArea { clicked => { root.set_lighting_color(255, 23, 68); } }
-                    }
-                    Rectangle {
-                        height: 36px; border-radius: 6px; background: #FF6D00;
-                        TouchArea { clicked => { root.set_lighting_color(255, 109, 0); } }
-                    }
-                    Rectangle {
-                        height: 36px; border-radius: 6px; background: #FFD600;
-                        TouchArea { clicked => { root.set_lighting_color(255, 214, 0); } }
-                    }
-                    Rectangle {
-                        height: 36px; border-radius: 6px; background: #00E676;
-                        TouchArea { clicked => { root.set_lighting_color(0, 230, 118); } }
+                    alignment: space-between;
+                    Text { text: "Color Presets & Swatches"; font-size: 13px; font-weight: 600; color: #8C929E; vertical-alignment: center; }
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Rectangle {
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 4px;
+                            background: root.current_rgb_color;
+                            border-width: 1px;
+                            border-color: #2D3038;
+                        }
+                        Text {
+                            text: root.lighting_hex;
+                            font-size: 13px;
+                            font-weight: 700;
+                            color: #FFFFFF;
+                            vertical-alignment: center;
+                        }
                     }
                 }
 
-                // Row 2
+                // Row 1 Swatches
                 HorizontalLayout {
                     spacing: 8px;
-                    Rectangle {
-                        height: 36px; border-radius: 6px; background: #00E5FF;
-                        TouchArea { clicked => { root.set_lighting_color(0, 229, 255); } }
+                    Rectangle { height: 36px; border-radius: 6px; background: #FFFFFF; TouchArea { clicked => { root.set_lighting_color(255, 255, 255); } } }
+                    Rectangle { height: 36px; border-radius: 6px; background: #FFE4B5; TouchArea { clicked => { root.set_lighting_color(255, 228, 181); } } }
+                    Rectangle { height: 36px; border-radius: 6px; background: #FF1744; TouchArea { clicked => { root.set_lighting_color(255, 23, 68); } } }
+                    Rectangle { height: 36px; border-radius: 6px; background: #FF6D00; TouchArea { clicked => { root.set_lighting_color(255, 109, 0); } } }
+                    Rectangle { height: 36px; border-radius: 6px; background: #FFD600; TouchArea { clicked => { root.set_lighting_color(255, 214, 0); } } }
+                    Rectangle { height: 36px; border-radius: 6px; background: #00E676; TouchArea { clicked => { root.set_lighting_color(0, 230, 118); } } }
+                }
+
+                // Row 2 Swatches
+                HorizontalLayout {
+                    spacing: 8px;
+                    Rectangle { height: 36px; border-radius: 6px; background: #00E5FF; TouchArea { clicked => { root.set_lighting_color(0, 229, 255); } } }
+                    Rectangle { height: 36px; border-radius: 6px; background: #2979FF; TouchArea { clicked => { root.set_lighting_color(41, 121, 255); } } }
+                    Rectangle { height: 36px; border-radius: 6px; background: #3D5AFE; TouchArea { clicked => { root.set_lighting_color(61, 90, 254); } } }
+                    Rectangle { height: 36px; border-radius: 6px; background: #7C4DFF; TouchArea { clicked => { root.set_lighting_color(124, 77, 255); } } }
+                    Rectangle { height: 36px; border-radius: 6px; background: #F50057; TouchArea { clicked => { root.set_lighting_color(245, 0, 87); } } }
+                    Rectangle { height: 36px; border-radius: 6px; background: #FF4081; TouchArea { clicked => { root.set_lighting_color(255, 64, 129); } } }
+                }
+
+                // KDE Desktop Color Dialog Trigger
+                Rectangle {
+                    height: 38px;
+                    border-radius: 6px;
+                    background: #23262E;
+                    border-width: 1px;
+                    border-color: #2D3038;
+                    TouchArea { clicked => { root.open_de_color_picker(); } }
+                    HorizontalLayout {
+                        alignment: center;
+                        spacing: 8px;
+                        Text { text: "🎨"; font-size: 13px; vertical-alignment: center; }
+                        Text { text: "Open KDE Desktop Color Picker..."; font-size: 12px; font-weight: 600; color: #FFFFFF; vertical-alignment: center; }
                     }
-                    Rectangle {
-                        height: 36px; border-radius: 6px; background: #2979FF;
-                        TouchArea { clicked => { root.set_lighting_color(41, 121, 255); } }
-                    }
-                    Rectangle {
-                        height: 36px; border-radius: 6px; background: #3D5AFE;
-                        TouchArea { clicked => { root.set_lighting_color(61, 90, 254); } }
-                    }
-                    Rectangle {
-                        height: 36px; border-radius: 6px; background: #7C4DFF;
-                        TouchArea { clicked => { root.set_lighting_color(124, 77, 255); } }
-                    }
-                    Rectangle {
-                        height: 36px; border-radius: 6px; background: #F50057;
-                        TouchArea { clicked => { root.set_lighting_color(245, 0, 87); } }
-                    }
-                    Rectangle {
-                        height: 36px; border-radius: 6px; background: #FF4081;
-                        TouchArea { clicked => { root.set_lighting_color(255, 64, 129); } }
+                }
+            }
+        }
+    }
+
+    // Card 2: Keyboard Backlight Idle Mode (Ayuz Reference)
+    GroupCard {
+        VerticalLayout {
+            padding: 20px;
+            spacing: 14px;
+
+            SectionHeader {
+                title: "Keyboard Backlight Idle Mode";
+                subtitle: "Defines when the keyboard backlight enters idle sleep mode to save energy.";
+            }
+
+            // Mode 1: Do Nothing
+            Rectangle {
+                border-radius: 8px;
+                background: root.kbd_idle_mode == "always_on" ? root.accent_color.with_alpha(0.15) : #23262E;
+                border-width: root.kbd_idle_mode == "always_on" ? 2px : 1px;
+                border-color: root.kbd_idle_mode == "always_on" ? root.accent_color : #2D3038;
+                TouchArea { clicked => { root.set_kbd_idle_mode("always_on"); } }
+
+                HorizontalLayout {
+                    padding: 12px;
+                    spacing: 12px;
+                    alignment: space-between;
+
+                    HorizontalLayout {
+                        spacing: 10px;
+                        VerticalLayout {
+                            alignment: center;
+                            Rectangle {
+                                width: 16px;
+                                height: 16px;
+                                border-radius: 8px;
+                                border-width: 2px;
+                                border-color: root.kbd_idle_mode == "always_on" ? root.accent_color : #8C929E;
+                                if root.kbd_idle_mode == "always_on": Rectangle {
+                                    width: 8px;
+                                    height: 8px;
+                                    border-radius: 4px;
+                                    background: root.accent_color;
+                                    x: 2px;
+                                    y: 2px;
+                                }
+                            }
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 2px;
+                            Text {
+                                text: "Do Nothing";
+                                font-size: 13px;
+                                font-weight: 600;
+                                color: #FFFFFF;
+                            }
+                            Text {
+                                text: "Keep keyboard backlight always on while awake.";
+                                font-size: 11px;
+                                color: #8C929E;
+                            }
+                        }
                     }
                 }
             }
 
-            // Desktop Environment Color Picker Button
+            // Mode 2: On Battery or AC Power
             Rectangle {
-                height: 42px;
                 border-radius: 8px;
-                background: #1A1F2B;
-                border-width: 1px;
-                border-color: #2E364A;
-
-                TouchArea {
-                    clicked => { root.open_de_color_picker(); }
-                }
+                background: root.kbd_idle_mode == "battery_ac" ? root.accent_color.with_alpha(0.15) : #23262E;
+                border-width: root.kbd_idle_mode == "battery_ac" ? 2px : 1px;
+                border-color: root.kbd_idle_mode == "battery_ac" ? root.accent_color : #2D3038;
+                TouchArea { clicked => { root.set_kbd_idle_mode("battery_ac"); } }
 
                 HorizontalLayout {
-                    alignment: center;
-                    spacing: 10px;
-                    Text {
-                        text: "🎨";
-                        font-size: 16px;
-                        vertical-alignment: center;
+                    padding: 12px;
+                    spacing: 12px;
+                    alignment: space-between;
+
+                    HorizontalLayout {
+                        spacing: 10px;
+                        VerticalLayout {
+                            alignment: center;
+                            Rectangle {
+                                width: 16px;
+                                height: 16px;
+                                border-radius: 8px;
+                                border-width: 2px;
+                                border-color: root.kbd_idle_mode == "battery_ac" ? root.accent_color : #8C929E;
+                                if root.kbd_idle_mode == "battery_ac": Rectangle {
+                                    width: 8px;
+                                    height: 8px;
+                                    border-radius: 4px;
+                                    background: root.accent_color;
+                                    x: 2px;
+                                    y: 2px;
+                                }
+                            }
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 2px;
+                            Text {
+                                text: "On Battery or AC Power";
+                                font-size: 13px;
+                                font-weight: 600;
+                                color: #FFFFFF;
+                            }
+                            Text {
+                                text: "Sleeps backlight after idle on both charger and battery.";
+                                font-size: 11px;
+                                color: #8C929E;
+                            }
+                        }
                     }
-                    Text {
-                        text: "Custom Color (Native DE Color Selector)";
-                        font-size: 13px;
-                        font-weight: 600;
-                        color: #FFFFFF;
-                        vertical-alignment: center;
+
+                    // Timeout Selector Pills
+                    HorizontalLayout {
+                        spacing: 6px;
+                        for min in [1, 3, 5, 10]: Rectangle {
+                            height: 28px;
+                            min-width: 48px;
+                            border-radius: 4px;
+                            background: root.kbd_idle_timeout_min == min ? root.accent_color : #1B1D23;
+                            border-width: 1px;
+                            border-color: root.kbd_idle_timeout_min == min ? root.accent_color : #2D3038;
+                            TouchArea {
+                                clicked => {
+                                    root.set_kbd_idle_mode("battery_ac");
+                                    root.set_kbd_idle_timeout(min);
+                                }
+                            }
+                            Text {
+                                text: min + "m";
+                                font-size: 11px;
+                                font-weight: 700;
+                                color: root.kbd_idle_timeout_min == min ? #000 : #FFF;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Mode 3: On Battery Only
+            Rectangle {
+                border-radius: 8px;
+                background: root.kbd_idle_mode == "battery_only" ? root.accent_color.with_alpha(0.15) : #23262E;
+                border-width: root.kbd_idle_mode == "battery_only" ? 2px : 1px;
+                border-color: root.kbd_idle_mode == "battery_only" ? root.accent_color : #2D3038;
+                TouchArea { clicked => { root.set_kbd_idle_mode("battery_only"); } }
+
+                HorizontalLayout {
+                    padding: 12px;
+                    spacing: 12px;
+                    alignment: space-between;
+
+                    HorizontalLayout {
+                        spacing: 10px;
+                        VerticalLayout {
+                            alignment: center;
+                            Rectangle {
+                                width: 16px;
+                                height: 16px;
+                                border-radius: 8px;
+                                border-width: 2px;
+                                border-color: root.kbd_idle_mode == "battery_only" ? root.accent_color : #8C929E;
+                                if root.kbd_idle_mode == "battery_only": Rectangle {
+                                    width: 8px;
+                                    height: 8px;
+                                    border-radius: 4px;
+                                    background: root.accent_color;
+                                    x: 2px;
+                                    y: 2px;
+                                }
+                            }
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 2px;
+                            Text {
+                                text: "On Battery Only";
+                                font-size: 13px;
+                                font-weight: 600;
+                                color: #FFFFFF;
+                            }
+                            Text {
+                                text: "Sleeps backlight after idle only when unplugged.";
+                                font-size: 11px;
+                                color: #8C929E;
+                            }
+                        }
+                    }
+
+                    // Timeout Selector Pills
+                    HorizontalLayout {
+                        spacing: 6px;
+                        for min in [1, 3, 5, 10]: Rectangle {
+                            height: 28px;
+                            min-width: 48px;
+                            border-radius: 4px;
+                            background: root.kbd_idle_timeout_min == min ? root.accent_color : #1B1D23;
+                            border-width: 1px;
+                            border-color: root.kbd_idle_timeout_min == min ? root.accent_color : #2D3038;
+                            TouchArea {
+                                clicked => {
+                                    root.set_kbd_idle_mode("battery_only");
+                                    root.set_kbd_idle_timeout(min);
+                                }
+                            }
+                            Text {
+                                text: min + "m";
+                                font-size: 11px;
+                                font-weight: 700;
+                                color: root.kbd_idle_timeout_min == min ? #000 : #FFF;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
                     }
                 }
             }

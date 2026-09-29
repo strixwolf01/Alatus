@@ -1,3 +1,5 @@
+import { GroupCard, SectionHeader } from "../components/card.slint";
+
 export component CoolingTab inherits VerticalLayout {
     in property <string> current_profile: "Balanced";
     in property <bool> full_speed_supported: true;
@@ -6,17 +8,13 @@ export component CoolingTab inherits VerticalLayout {
     in property <int> gpu_fan_rpm: 0;
     in property <string> fan_cpu_only_text: " CPU : 0%/0% ";
     in property <string> fan_rpm_subtext: "";
+    in property <color> accent_color: #3B82F6;
 
     callback set_thermal_profile(string);
 
-    spacing: 14px;
+    spacing: 16px;
 
-    Rectangle {
-        border-radius: 12px;
-        background: #141720;
-        border-width: 1px;
-        border-color: #242938;
-
+    GroupCard {
         VerticalLayout {
             padding: 20px;
             spacing: 16px;
@@ -31,111 +29,126 @@ export component CoolingTab inherits VerticalLayout {
                 }
                 Text {
                     text: "Active: " + root.current_profile;
-                    font-size: 14px;
+                    font-size: 13px;
                     font-weight: 700;
-                    color: root.current_profile == "FullSpeed" ? #FF0055 : #00F0FF;
+                    color: root.current_profile == "FullSpeed" ? #FF0055 : root.accent_color;
+                    vertical-alignment: center;
                 }
+            }
+
+            Text {
+                text: "Regulate ASUS hardware thermal power targets and fan curves:";
+                font-size: 12px;
+                color: #8C929E;
             }
 
             // 4 Profile Cards Row
             HorizontalLayout {
                 spacing: 10px;
 
+                // Whisper / Quiet
                 Rectangle {
-                    height: 68px;
+                    height: 70px;
                     border-radius: 8px;
-                    background: root.current_profile == "Quiet" ? #00F0FF : #1A1F2B;
-                    border-width: 1px;
-                    border-color: root.current_profile == "Quiet" ? #00F0FF : #2A3042;
+                    background: root.current_profile == "Quiet" ? root.accent_color.with_alpha(0.2) : #23262E;
+                    border-width: root.current_profile == "Quiet" ? 2px : 1px;
+                    border-color: root.current_profile == "Quiet" ? root.accent_color : #2D3038;
                     TouchArea { clicked => { root.set_thermal_profile("Quiet"); } }
                     VerticalLayout {
                         alignment: center;
+                        spacing: 2px;
                         Text {
                             text: "Whisper";
                             font-size: 15px;
                             font-weight: 700;
-                            color: root.current_profile == "Quiet" ? #000000 : #FFFFFF;
+                            color: root.current_profile == "Quiet" ? root.accent_color : #FFFFFF;
                             horizontal-alignment: center;
                         }
                         Text {
                             text: "Silent Fan Curve";
                             font-size: 11px;
-                            color: root.current_profile == "Quiet" ? #000000 : #8A92A6;
+                            color: #8C929E;
                             horizontal-alignment: center;
                         }
                     }
                 }
 
+                // Standard / Balanced
                 Rectangle {
-                    height: 68px;
+                    height: 70px;
                     border-radius: 8px;
-                    background: root.current_profile == "Balanced" ? #00F0FF : #1A1F2B;
-                    border-width: 1px;
-                    border-color: root.current_profile == "Balanced" ? #00F0FF : #2A3042;
+                    background: root.current_profile == "Balanced" ? root.accent_color.with_alpha(0.2) : #23262E;
+                    border-width: root.current_profile == "Balanced" ? 2px : 1px;
+                    border-color: root.current_profile == "Balanced" ? root.accent_color : #2D3038;
                     TouchArea { clicked => { root.set_thermal_profile("Balanced"); } }
                     VerticalLayout {
                         alignment: center;
+                        spacing: 2px;
                         Text {
                             text: "Standard";
                             font-size: 15px;
                             font-weight: 700;
-                            color: root.current_profile == "Balanced" ? #000000 : #FFFFFF;
+                            color: root.current_profile == "Balanced" ? root.accent_color : #FFFFFF;
                             horizontal-alignment: center;
                         }
                         Text {
                             text: "Balanced Auto Curve";
                             font-size: 11px;
-                            color: root.current_profile == "Balanced" ? #000000 : #8A92A6;
+                            color: #8C929E;
                             horizontal-alignment: center;
                         }
                     }
                 }
 
+                // Performance
                 Rectangle {
-                    height: 68px;
+                    height: 70px;
                     border-radius: 8px;
-                    background: root.current_profile == "Performance" ? #00F0FF : #1A1F2B;
-                    border-width: 1px;
-                    border-color: root.current_profile == "Performance" ? #00F0FF : #2A3042;
+                    background: root.current_profile == "Performance" ? root.accent_color.with_alpha(0.2) : #23262E;
+                    border-width: root.current_profile == "Performance" ? 2px : 1px;
+                    border-color: root.current_profile == "Performance" ? root.accent_color : #2D3038;
                     TouchArea { clicked => { root.set_thermal_profile("Performance"); } }
                     VerticalLayout {
                         alignment: center;
+                        spacing: 2px;
                         Text {
                             text: "Performance";
                             font-size: 15px;
                             font-weight: 700;
-                            color: root.current_profile == "Performance" ? #000000 : #FFFFFF;
+                            color: root.current_profile == "Performance" ? root.accent_color : #FFFFFF;
                             horizontal-alignment: center;
                         }
                         Text {
                             text: "Max Sustained Boost";
                             font-size: 11px;
-                            color: root.current_profile == "Performance" ? #000000 : #8A92A6;
+                            color: #8C929E;
                             horizontal-alignment: center;
                         }
                     }
                 }
 
+                // Full Speed
                 if root.full_speed_supported: Rectangle {
-                    height: 68px;
+                    height: 70px;
                     border-radius: 8px;
-                    background: root.current_profile == "FullSpeed" ? #FF0055 : #1A1F2B;
-                    border-width: 1px;
-                    border-color: root.current_profile == "FullSpeed" ? #FF0055 : #2A3042;
+                    background: root.current_profile == "FullSpeed" ? #FF005525 : #23262E;
+                    border-width: root.current_profile == "FullSpeed" ? 2px : 1px;
+                    border-color: root.current_profile == "FullSpeed" ? #FF0055 : #2D3038;
                     TouchArea { clicked => { root.set_thermal_profile("FullSpeed"); } }
                     VerticalLayout {
                         alignment: center;
+                        spacing: 2px;
                         Text {
                             text: "⚡ Full Speed";
                             font-size: 15px;
                             font-weight: 800;
-                            color: root.current_profile == "FullSpeed" ? #FFFFFF : #FF4D7D;
+                            color: root.current_profile == "FullSpeed" ? #FF0055 : #FF6688;
                             horizontal-alignment: center;
                         }
                         Text {
-                            text: "100% Fan Override (8100 RPM)";
+                            text: "100% Fan Override";
                             font-size: 11px;
-                            color: root.current_profile == "FullSpeed" ? #FFFFFF : #8A92A6;
+                            color: #8C929E;
                             horizontal-alignment: center;
                         }
                     }
@@ -146,42 +159,40 @@ export component CoolingTab inherits VerticalLayout {
             Rectangle {
                 height: 56px;
                 border-radius: 8px;
-                background: #11141D;
+                background: #23262E;
                 border-width: 1px;
-                border-color: #1E2330;
+                border-color: #2D3038;
                 if root.is_cpu_only: HorizontalLayout {
                     alignment: center;
                     spacing: 12px;
                     Text {
                         text: root.fan_cpu_only_text;
-                        font-size: 16px;
+                        font-size: 15px;
                         font-weight: 800;
                         color: #00F0FF;
                         vertical-alignment: center;
                     }
                     if root.fan_rpm_subtext != "": Text {
-                        text: "(" + root.fan_rpm_subtext + " / 8100 Max RPM)";
-                        font-size: 13px;
-                        font-weight: 600;
-                        color: #8A92A6;
+                        text: "(" + root.fan_rpm_subtext + " • Max 8100 RPM)";
+                        font-size: 12px;
+                        color: #8C929E;
                         vertical-alignment: center;
                     }
                 }
+
                 if !root.is_cpu_only: HorizontalLayout {
-                    alignment: space-around;
-                    Text {
-                        text: "CPU Fan: " + root.cpu_fan_rpm + " RPM";
-                        font-size: 14px;
-                        font-weight: 700;
-                        color: #00F0FF;
-                        vertical-alignment: center;
+                    padding-left: 20px;
+                    padding-right: 20px;
+                    alignment: space-between;
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Text { text: "CPU Fan:"; font-size: 13px; color: #8C929E; vertical-alignment: center; }
+                        Text { text: root.cpu_fan_rpm + " RPM"; font-size: 14px; font-weight: 700; color: #00F0FF; vertical-alignment: center; }
                     }
-                    Text {
-                        text: "GPU Fan: " + root.gpu_fan_rpm + " RPM";
-                        font-size: 14px;
-                        font-weight: 700;
-                        color: #00F0FF;
-                        vertical-alignment: center;
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Text { text: "GPU Fan:"; font-size: 13px; color: #8C929E; vertical-alignment: center; }
+                        Text { text: root.gpu_fan_rpm + " RPM"; font-size: 14px; font-weight: 700; color: #00F0FF; vertical-alignment: center; }
                     }
                 }
             }

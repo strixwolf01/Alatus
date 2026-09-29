@@ -40,6 +40,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Err(_) => "Linux x86_64".to_string(),
     };
 
+    let device_serial = std::fs::read_to_string("/run/alatus/serial")
+        .or_else(|_| std::fs::read_to_string("/sys/class/dmi/id/product_serial"))
+        .unwrap_or_else(|_| "S3N0KD006297137".to_string())
+        .trim()
+        .to_string();
+
+    let kbd_cfg = display::read_keyboard_idle_config();
+
     let handle_dmi = handle.clone();
     let _ = slint::invoke_from_event_loop(move || {
         if let Some(ui) = handle_dmi.upgrade() {
@@ -47,6 +55,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             ui.set_board_name(board_name.into());
             ui.set_bios_version(bios_version.into());
             ui.set_kernel_version(kernel_version.into());
+            ui.set_device_serial(device_serial.into());
+            ui.set_kbd_idle_mode(kbd_cfg.mode.into());
+            ui.set_kbd_idle_timeout_min(kbd_cfg.timeout_min as i32);
         }
     });
 
@@ -374,6 +385,29 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 });
             }
         });
+    });
+
+    let handle_kbd_m = handle.clone();
+    main_window.on_set_kbd_idle_mode(move |mode| {
+        let m = mode.to_string();
+        if let Some(ui) = handle_kbd_m.upgrade() {
+            ui.set_kbd_idle_mode(mode.clone());
+            let timeout = ui.get_kbd_idle_timeout_min() as u32;
+            tokio::spawn(async move {
+                let _ = display::set_keyboard_idle_config(&m, timeout).await;
+            });
+        }
+    });
+
+    let handle_kbd_t = handle.clone();
+    main_window.on_set_kbd_idle_timeout(move |timeout| {
+        if let Some(ui) = handle_kbd_t.upgrade() {
+            ui.set_kbd_idle_timeout_min(timeout);
+            let mode = ui.get_kbd_idle_mode().to_string();
+            tokio::spawn(async move {
+                let _ = display::set_keyboard_idle_config(&mode, timeout as u32).await;
+            });
+        }
     });
 
     // 9. Background Signal Monitors for Live Hardware Updates

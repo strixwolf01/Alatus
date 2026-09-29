@@ -30,7 +30,7 @@ impl Tray for AlatusTray {
     }
 
     fn icon_name(&self) -> String {
-        "preferences-system-power".into()
+        "alatus-gui".into()
     }
 
     fn tool_tip(&self) -> ToolTip {
@@ -40,7 +40,7 @@ impl Tray for AlatusTray {
                 "Profile: {}\nBattery Limit: {}%\nRefresh: {}Hz",
                 self.current_profile, self.current_limit, self.current_refresh
             ),
-            icon_name: "preferences-system-power".into(),
+            icon_name: "alatus-gui".into(),
             icon_pixmap: Vec::new(),
         }
     }

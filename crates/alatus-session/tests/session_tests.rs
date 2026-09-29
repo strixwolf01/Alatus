@@ -11,7 +11,7 @@ fn test_status_notifier_item_metadata() {
 
     assert_eq!(tray.id(), "alatus");
     assert_eq!(tray.title(), "Alatus Hardware Suite");
-    assert_eq!(tray.icon_name(), "preferences-system-power");
+    assert_eq!(tray.icon_name(), "alatus-gui");
 
     let tooltip = tray.tool_tip();
     assert!(tooltip.description.contains("Performance"));

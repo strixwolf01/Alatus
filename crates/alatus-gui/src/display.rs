@@ -346,3 +346,76 @@ pub fn get_kde_accent_color() -> Option<(u8, u8, u8)> {
     }
     None
 }
+
+#[derive(Debug, Clone)]
+pub struct KeyboardIdleConfig {
+    pub mode: String, // "always_on", "battery_ac", "battery_only"
+    pub timeout_min: u32,
+}
+
+pub fn read_keyboard_idle_config() -> KeyboardIdleConfig {
+    let idle_ac = read_powerdevil_u32("AC", "DimKeyboard", "idleTime").unwrap_or(0);
+    let idle_bat = read_powerdevil_u32("Battery", "DimKeyboard", "idleTime").unwrap_or(0);
+
+    let (mode, secs) = if idle_ac > 0 && idle_bat > 0 {
+        ("battery_ac", idle_bat)
+    } else if idle_bat > 0 {
+        ("battery_only", idle_bat)
+    } else {
+        ("always_on", 60)
+    };
+
+    let timeout_min = (secs / 60).max(1);
+    KeyboardIdleConfig {
+        mode: mode.to_string(),
+        timeout_min,
+    }
+}
+
+pub async fn set_keyboard_idle_config(mode: &str, timeout_min: u32) -> Result<(), String> {
+    let secs = (timeout_min * 60).to_string();
+    let (ac_time, bat_time) = match mode {
+        "battery_ac" => (secs.as_str(), secs.as_str()),
+        "battery_only" => ("0", secs.as_str()),
+        _ => ("0", "0"),
+    };
+
+    for (group, time) in [("AC", ac_time), ("Battery", bat_time)] {
+        let _ = Command::new("kwriteconfig6")
+            .args([
+                "--file",
+                "powerdevilrc",
+                "--group",
+                group,
+                "--group",
+                "DimKeyboard",
+                "--key",
+                "idleTime",
+                time,
+            ])
+            .status();
+    }
+
+    Ok(())
+}
+
+fn read_powerdevil_u32(profile: &str, group: &str, key: &str) -> Option<u32> {
+    let output = Command::new("kreadconfig6")
+        .args([
+            "--file",
+            "powerdevilrc",
+            "--group",
+            profile,
+            "--group",
+            group,
+            "--key",
+            key,
+            "--default",
+            "0",
+        ])
+        .output()
+        .ok()?;
+    let s = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    s.parse::<u32>().ok()
+}
+

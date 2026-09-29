@@ -24,6 +24,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
         dmi_info.board_name
     );
 
+    // Cache serial for unprivileged clients (alatus-gui)
+    if let Ok(serial) = std::fs::read_to_string("/sys/class/dmi/id/product_serial") {
+        let clean = serial.trim();
+        if !clean.is_empty() {
+            let _ = std::fs::create_dir_all("/run/alatus");
+            let _ = std::fs::write("/run/alatus/serial", clean);
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let _ = std::fs::set_permissions("/run/alatus/serial", std::fs::Permissions::from_mode(0o644));
+            }
+        }
+    }
+
     // 2. Resolve Profile
     let resolver = ProfileResolver::default();
     let profile = resolver.resolve(&dmi_info)?;

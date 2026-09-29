@@ -22,6 +22,8 @@ export component DashboardTab inherits VerticalLayout {
     in property <string> board_name: "S5506MA";
     in property <string> bios_version: "S5506MA.318";
     in property <string> kernel_version: "Linux x86_64";
+    in property <string> device_serial: "S3N0KD006297137";
+    property <bool> serial_revealed: false;
 
     callback set_thermal_profile(string);
     callback set_battery_limit(int);
@@ -167,14 +169,40 @@ export component DashboardTab inherits VerticalLayout {
                     }
                     Rectangle { height: 1px; background: #2D3038; }
 
-                    // Row: Hardware Control Architecture
+                    // Row: Serial Number (Ayuz-style reveal toggle)
                     HorizontalLayout {
                         alignment: space-between;
-                        Text { text: "Daemon State"; font-size: 12px; font-weight: 600; color: #8C929E; }
+                        Text { text: "Serial Number"; font-size: 12px; font-weight: 600; color: #8C929E; vertical-alignment: center; }
                         HorizontalLayout {
-                            spacing: 6px;
-                            Rectangle { width: 6px; height: 6px; border-radius: 3px; background: #00E676; y: 6px; }
-                            Text { text: "Active (D-Bus • Polkit Secured)"; font-size: 12px; font-weight: 700; color: #00E676; }
+                            spacing: 8px;
+                            Text {
+                                text: root.serial_revealed ? root.device_serial : "[ Hidden ]";
+                                font-size: 12px;
+                                font-weight: 600;
+                                color: root.serial_revealed ? #00F0FF : #8C929E;
+                                vertical-alignment: center;
+                            }
+                            Rectangle {
+                                height: 22px;
+                                border-radius: 4px;
+                                background: #23262E;
+                                border-width: 1px;
+                                border-color: #2D3038;
+                                TouchArea {
+                                    clicked => { root.serial_revealed = !root.serial_revealed; }
+                                }
+                                HorizontalLayout {
+                                    padding-left: 8px;
+                                    padding-right: 8px;
+                                    Text {
+                                        text: root.serial_revealed ? "Hide" : "Reveal";
+                                        font-size: 10px;
+                                        font-weight: 700;
+                                        color: #FFFFFF;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                            }
                         }
                     }
                 }

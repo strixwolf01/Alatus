@@ -167,8 +167,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     tracing::info!("alatus-session is active and running.");
-    tokio::signal::ctrl_c().await?;
-    tracing::info!("Shutting down alatus-session...");
+    let mut sigterm = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
+    tokio::select! {
+        _ = tokio::signal::ctrl_c() => {
+            tracing::info!("Received SIGINT, shutting down alatus-session...");
+        }
+        _ = sigterm.recv() => {
+            tracing::info!("Received SIGTERM, shutting down alatus-session...");
+        }
+    }
     let _ = shutdown_tx.send(true);
     Ok(())
 }

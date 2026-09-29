@@ -1,21 +1,22 @@
+import { GroupCard, SectionHeader } from "../components/card.slint";
+
 export component SystemTab inherits VerticalLayout {
-    spacing: 14px;
+    in property <string> device_model: "ASUS Vivobook S 15 OLED (S5506MA)";
+    in property <string> board_name: "S5506MA";
+    in property <string> bios_version: "S5506MA.318";
+    in property <string> kernel_version: "Linux x86_64";
+    in property <string> device_serial: "S3N0KD006297137";
 
-    Rectangle {
-        border-radius: 12px;
-        background: #141720;
-        border-width: 1px;
-        border-color: #242938;
+    spacing: 16px;
 
+    GroupCard {
         VerticalLayout {
             padding: 20px;
             spacing: 16px;
 
-            Text {
-                text: "Hardware & Daemon Diagnostics";
-                font-size: 16px;
-                font-weight: 700;
-                color: #FFFFFF;
+            SectionHeader {
+                title: "Hardware & Daemon Diagnostics";
+                subtitle: "Low-level Linux kernel interfaces and driver subsystem status.";
             }
 
             VerticalLayout {
@@ -24,25 +25,44 @@ export component SystemTab inherits VerticalLayout {
                 Rectangle {
                     height: 44px;
                     border-radius: 6px;
-                    background: #11141D;
+                    background: #23262E;
+                    border-width: 1px;
+                    border-color: #2D3038;
                     HorizontalLayout {
                         padding-left: 16px;
                         padding-right: 16px;
                         alignment: space-between;
-                        Text { text: "Device Model:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
-                        Text { text: "ASUS Vivobook S 15 OLED (S5506MA)"; font-size: 13px; font-weight: 700; color: #FFFFFF; vertical-alignment: center; }
+                        Text { text: "Device Model:"; font-size: 12px; color: #8C929E; vertical-alignment: center; }
+                        Text { text: root.device_model; font-size: 13px; font-weight: 700; color: #FFFFFF; vertical-alignment: center; }
                     }
                 }
 
                 Rectangle {
                     height: 44px;
                     border-radius: 6px;
-                    background: #11141D;
+                    background: #23262E;
+                    border-width: 1px;
+                    border-color: #2D3038;
                     HorizontalLayout {
                         padding-left: 16px;
                         padding-right: 16px;
                         alignment: space-between;
-                        Text { text: "Thermal Driver & ACPI Path:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
+                        Text { text: "Mainboard & Firmware:"; font-size: 12px; color: #8C929E; vertical-alignment: center; }
+                        Text { text: root.board_name + " • BIOS " + root.bios_version; font-size: 12px; font-weight: 600; color: #00F0FF; vertical-alignment: center; }
+                    }
+                }
+
+                Rectangle {
+                    height: 44px;
+                    border-radius: 6px;
+                    background: #23262E;
+                    border-width: 1px;
+                    border-color: #2D3038;
+                    HorizontalLayout {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                        alignment: space-between;
+                        Text { text: "Thermal Driver & ACPI Path:"; font-size: 12px; color: #8C929E; vertical-alignment: center; }
                         Text { text: "/sys/firmware/acpi/platform_profile (asus-nb-wmi)"; font-size: 12px; font-weight: 600; color: #00F0FF; vertical-alignment: center; }
                     }
                 }
@@ -50,39 +70,45 @@ export component SystemTab inherits VerticalLayout {
                 Rectangle {
                     height: 44px;
                     border-radius: 6px;
-                    background: #11141D;
+                    background: #23262E;
+                    border-width: 1px;
+                    border-color: #2D3038;
                     HorizontalLayout {
                         padding-left: 16px;
                         padding-right: 16px;
                         alignment: space-between;
-                        Text { text: "Max Fan Speed Calibration:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
-                        Text { text: "8100 RPM (Dual Fans Active)"; font-size: 13px; font-weight: 700; color: #00E676; vertical-alignment: center; }
+                        Text { text: "Fan Calibration (Dual Active):"; font-size: 12px; color: #8C929E; vertical-alignment: center; }
+                        Text { text: "Max 8100 RPM calibrated"; font-size: 13px; font-weight: 700; color: #00E676; vertical-alignment: center; }
                     }
                 }
 
                 Rectangle {
                     height: 44px;
                     border-radius: 6px;
-                    background: #11141D;
+                    background: #23262E;
+                    border-width: 1px;
+                    border-color: #2D3038;
                     HorizontalLayout {
                         padding-left: 16px;
                         padding-right: 16px;
                         alignment: space-between;
-                        Text { text: "Keyboard Lighting Interface:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
-                        Text { text: "ITE5570 HID LampArray (0x0B05:0x19B6)"; font-size: 12px; font-weight: 600; color: #7C4DFF; vertical-alignment: center; }
+                        Text { text: "D-Bus Daemon Architecture:"; font-size: 12px; color: #8C929E; vertical-alignment: center; }
+                        Text { text: "org.alatus.Daemon (Root System Bus • Polkit)"; font-size: 12px; font-weight: 700; color: #00E676; vertical-alignment: center; }
                     }
                 }
 
                 Rectangle {
                     height: 44px;
                     border-radius: 6px;
-                    background: #11141D;
+                    background: #23262E;
+                    border-width: 1px;
+                    border-color: #2D3038;
                     HorizontalLayout {
                         padding-left: 16px;
                         padding-right: 16px;
                         alignment: space-between;
-                        Text { text: "D-Bus System Service:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
-                        Text { text: "org.alatus.Daemon (/org/alatus/*) • ACTIVE"; font-size: 12px; font-weight: 700; color: #00E676; vertical-alignment: center; }
+                        Text { text: "User Session Service:"; font-size: 12px; color: #8C929E; vertical-alignment: center; }
+                        Text { text: "alatus-session (StatusNotifierItem Tray • Gestures)"; font-size: 12px; font-weight: 600; color: #FFFFFF; vertical-alignment: center; }
                     }
                 }
             }

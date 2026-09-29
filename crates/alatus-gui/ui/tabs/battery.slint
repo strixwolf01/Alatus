@@ -1,20 +1,18 @@
+import { GroupCard, SectionHeader } from "../components/card.slint";
+
 export component BatteryTab inherits VerticalLayout {
     in property <int> battery_percentage: 0;
     in property <string> battery_status: "--";
     in property <int> battery_limit: 80;
     in property <int> battery_health: 100;
     in property <string> battery_power: "-- W";
+    in property <color> accent_color: #3B82F6;
 
     callback set_battery_limit(int);
 
-    spacing: 14px;
+    spacing: 16px;
 
-    Rectangle {
-        border-radius: 12px;
-        background: #141720;
-        border-width: 1px;
-        border-color: #242938;
-
+    GroupCard {
         VerticalLayout {
             padding: 20px;
             spacing: 16px;
@@ -29,92 +27,99 @@ export component BatteryTab inherits VerticalLayout {
                 }
                 Text {
                     text: root.battery_status + " (" + root.battery_percentage + "%)";
-                    font-size: 14px;
+                    font-size: 13px;
                     font-weight: 600;
                     color: #00F0FF;
+                    vertical-alignment: center;
                 }
             }
 
             Text {
                 text: "Protect lithium battery lifespan by capping maximum charge level:";
-                font-size: 13px;
-                color: #8A92A6;
+                font-size: 12px;
+                color: #8C929E;
             }
 
             // Charge Limit Presets
             HorizontalLayout {
                 spacing: 12px;
 
+                // 60% Preset
                 Rectangle {
-                    height: 64px;
+                    height: 68px;
                     border-radius: 8px;
-                    background: root.battery_limit == 60 ? #00F0FF : #1A1F2B;
-                    border-width: 1px;
-                    border-color: root.battery_limit == 60 ? #00F0FF : #2A3042;
+                    background: root.battery_limit == 60 ? root.accent_color.with_alpha(0.2) : #23262E;
+                    border-width: root.battery_limit == 60 ? 2px : 1px;
+                    border-color: root.battery_limit == 60 ? root.accent_color : #2D3038;
                     TouchArea { clicked => { root.set_battery_limit(60); } }
                     VerticalLayout {
                         alignment: center;
+                        spacing: 2px;
                         Text {
                             text: "60%";
                             font-size: 18px;
                             font-weight: 800;
-                            color: root.battery_limit == 60 ? #000000 : #FFFFFF;
+                            color: root.battery_limit == 60 ? root.accent_color : #FFFFFF;
                             horizontal-alignment: center;
                         }
                         Text {
-                            text: "Maximum Lifespan (Desk Plugged)";
+                            text: "Maximum Lifespan (Desk)";
                             font-size: 11px;
-                            color: root.battery_limit == 60 ? #000000 : #8A92A6;
+                            color: #8C929E;
                             horizontal-alignment: center;
                         }
                     }
                 }
 
+                // 80% Preset
                 Rectangle {
-                    height: 64px;
+                    height: 68px;
                     border-radius: 8px;
-                    background: root.battery_limit == 80 ? #00F0FF : #1A1F2B;
-                    border-width: 1px;
-                    border-color: root.battery_limit == 80 ? #00F0FF : #2A3042;
+                    background: root.battery_limit == 80 ? root.accent_color.with_alpha(0.2) : #23262E;
+                    border-width: root.battery_limit == 80 ? 2px : 1px;
+                    border-color: root.battery_limit == 80 ? root.accent_color : #2D3038;
                     TouchArea { clicked => { root.set_battery_limit(80); } }
                     VerticalLayout {
                         alignment: center;
+                        spacing: 2px;
                         Text {
                             text: "80%";
                             font-size: 18px;
                             font-weight: 800;
-                            color: root.battery_limit == 80 ? #000000 : #FFFFFF;
+                            color: root.battery_limit == 80 ? root.accent_color : #FFFFFF;
                             horizontal-alignment: center;
                         }
                         Text {
                             text: "Balanced Care (Recommended)";
                             font-size: 11px;
-                            color: root.battery_limit == 80 ? #000000 : #8A92A6;
+                            color: #8C929E;
                             horizontal-alignment: center;
                         }
                     }
                 }
 
+                // 100% Preset
                 Rectangle {
-                    height: 64px;
+                    height: 68px;
                     border-radius: 8px;
-                    background: root.battery_limit == 100 ? #00F0FF : #1A1F2B;
-                    border-width: 1px;
-                    border-color: root.battery_limit == 100 ? #00F0FF : #2A3042;
+                    background: root.battery_limit == 100 ? root.accent_color.with_alpha(0.2) : #23262E;
+                    border-width: root.battery_limit == 100 ? 2px : 1px;
+                    border-color: root.battery_limit == 100 ? root.accent_color : #2D3038;
                     TouchArea { clicked => { root.set_battery_limit(100); } }
                     VerticalLayout {
                         alignment: center;
+                        spacing: 2px;
                         Text {
                             text: "100%";
                             font-size: 18px;
                             font-weight: 800;
-                            color: root.battery_limit == 100 ? #000000 : #FFFFFF;
+                            color: root.battery_limit == 100 ? root.accent_color : #FFFFFF;
                             horizontal-alignment: center;
                         }
                         Text {
                             text: "Full Capacity (Travel)";
                             font-size: 11px;
-                            color: root.battery_limit == 100 ? #000000 : #8A92A6;
+                            color: #8C929E;
                             horizontal-alignment: center;
                         }
                     }
@@ -127,25 +132,29 @@ export component BatteryTab inherits VerticalLayout {
                 Rectangle {
                     height: 48px;
                     border-radius: 8px;
-                    background: #11141D;
+                    background: #23262E;
+                    border-width: 1px;
+                    border-color: #2D3038;
                     HorizontalLayout {
                         padding-left: 16px;
                         padding-right: 16px;
                         alignment: space-between;
-                        Text { text: "Battery Health Condition:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
-                        Text { text: root.battery_health + "% (Healthy)"; font-size: 14px; font-weight: 700; color: #00E676; vertical-alignment: center; }
+                        Text { text: "Battery Health Condition:"; font-size: 12px; color: #8C929E; vertical-alignment: center; }
+                        Text { text: root.battery_health + "% (Healthy)"; font-size: 13px; font-weight: 700; color: #00E676; vertical-alignment: center; }
                     }
                 }
                 Rectangle {
                     height: 48px;
                     border-radius: 8px;
-                    background: #11141D;
+                    background: #23262E;
+                    border-width: 1px;
+                    border-color: #2D3038;
                     HorizontalLayout {
                         padding-left: 16px;
                         padding-right: 16px;
                         alignment: space-between;
-                        Text { text: "Real-time Discharge / Power:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
-                        Text { text: root.battery_power; font-size: 14px; font-weight: 700; color: #00F0FF; vertical-alignment: center; }
+                        Text { text: "Real-time Discharge / Power:"; font-size: 12px; color: #8C929E; vertical-alignment: center; }
+                        Text { text: root.battery_power; font-size: 13px; font-weight: 700; color: #00F0FF; vertical-alignment: center; }
                     }
                 }
             }

@@ -29,6 +29,8 @@ export component MainWindow inherits Window {
     callback set_panel_autohide(bool);
     callback set_panel_transparency(bool);
     callback set_dpms_pixel_refresh(bool);
+    callback set_kbd_idle_mode(string);
+    callback set_kbd_idle_timeout(int);
 
     // State properties
     in-out property <int> active_tab: 0; // 0: Dashboard, 1: Battery, 2: Cooling, 3: Aura RGB, 4: Display, 5: Gestures, 6: System
@@ -40,6 +42,11 @@ export component MainWindow inherits Window {
     in-out property <string> board_name: "S5506MA";
     in-out property <string> bios_version: "S5506MA.318";
     in-out property <string> kernel_version: "Linux x86_64";
+    in-out property <string> device_serial: "S3N0KD006297137";
+
+    // Keyboard Backlight Idle Mode
+    in-out property <string> kbd_idle_mode: "always_on";
+    in-out property <int> kbd_idle_timeout_min: 1;
 
     // Display & Gesture properties
     in-out property <int> display_refresh_rate: 120;
@@ -409,6 +416,7 @@ export component MainWindow inherits Window {
                         board_name: root.board_name;
                         bios_version: root.bios_version;
                         kernel_version: root.kernel_version;
+                        device_serial: root.device_serial;
                         set_thermal_profile(p) => { root.set_thermal_profile(p); }
                         set_battery_limit(l) => { root.set_battery_limit(l); }
                     }
@@ -419,6 +427,7 @@ export component MainWindow inherits Window {
                         battery_limit: root.battery_limit;
                         battery_health: root.battery_health;
                         battery_power: root.battery_power;
+                        accent_color: root.accent_color;
                         set_battery_limit(l) => { root.set_battery_limit(l); }
                     }
 
@@ -430,6 +439,7 @@ export component MainWindow inherits Window {
                         gpu_fan_rpm: root.gpu_fan_rpm;
                         fan_cpu_only_text: root.fan_cpu_only_text;
                         fan_rpm_subtext: root.fan_rpm_subtext;
+                        accent_color: root.accent_color;
                         set_thermal_profile(p) => { root.set_thermal_profile(p); }
                     }
 
@@ -442,10 +452,15 @@ export component MainWindow inherits Window {
                         supports_mode_breathing: root.supports_mode_breathing;
                         supports_mode_rainbow: root.supports_mode_rainbow;
                         supports_mode_strobe: root.supports_mode_strobe;
+                        accent_color: root.accent_color;
+                        kbd_idle_mode: root.kbd_idle_mode;
+                        kbd_idle_timeout_min: root.kbd_idle_timeout_min;
                         set_lighting_brightness(b) => { root.set_lighting_brightness(b); }
                         set_lighting_mode(m, s) => { root.set_lighting_mode(m, s); }
                         set_lighting_color(r, g, b) => { root.set_lighting_color(r, g, b); }
                         open_de_color_picker => { root.open_de_color_picker(); }
+                        set_kbd_idle_mode(m) => { root.set_kbd_idle_mode(m); }
+                        set_kbd_idle_timeout(t) => { root.set_kbd_idle_timeout(t); }
                     }
 
                     if root.active_tab == 4 && root.is_kde: DisplayTab {
@@ -465,9 +480,17 @@ export component MainWindow inherits Window {
                         set_dpms_pixel_refresh(en) => { root.set_dpms_pixel_refresh(en); }
                     }
 
-                    if root.active_tab == 5 && root.is_kde: GesturesTab {}
+                    if root.active_tab == 5 && root.is_kde: GesturesTab {
+                        accent_color: root.accent_color;
+                    }
 
-                    if root.active_tab == 6: SystemTab {}
+                    if root.active_tab == 6: SystemTab {
+                        device_model: root.device_model;
+                        board_name: root.board_name;
+                        bios_version: root.bios_version;
+                        kernel_version: root.kernel_version;
+                        device_serial: root.device_serial;
+                    }
                 }
             }
         }
