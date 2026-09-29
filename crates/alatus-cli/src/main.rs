@@ -153,8 +153,8 @@ async fn handle_thermal(conn: &Connection, action: ThermalAction) -> Result<(), 
                 println!("\n  Fans Telemetry:");
                 if is_cpu_only {
                     if fans.len() >= 2 {
-                        let max1 = fans[0].max_rpm.unwrap_or(6000).max(1);
-                        let max2 = fans[1].max_rpm.unwrap_or(6000).max(1);
+                        let max1 = fans[0].max_rpm.unwrap_or(8100).max(1);
+                        let max2 = fans[1].max_rpm.unwrap_or(8100).max(1);
                         let pct1 = ((fans[0].current_rpm as u64 * 100) / max1 as u64).min(100);
                         let pct2 = ((fans[1].current_rpm as u64 * 100) / max2 as u64).min(100);
                         println!(
@@ -162,7 +162,7 @@ async fn handle_thermal(conn: &Connection, action: ThermalAction) -> Result<(), 
                             pct1, pct2, fans[0].current_rpm, fans[1].current_rpm
                         );
                     } else if let Some(fan) = fans.first() {
-                        let max = fan.max_rpm.unwrap_or(6000).max(1);
+                        let max = fan.max_rpm.unwrap_or(8100).max(1);
                         let pct = ((fan.current_rpm as u64 * 100) / max as u64).min(100);
                         println!("    • CPU : {}% ({} RPM)", pct, fan.current_rpm);
                     }

@@ -89,8 +89,10 @@ impl AsusHybridThermalDriver {
 
         // Try standard asus-nb-wmi hwmon paths
         let candidates = [
-            self.sysfs_root.resolve("/sys/devices/platform/asus-nb-wmi/hwmon"),
-            self.sysfs_root.resolve("/devices/platform/asus-nb-wmi/hwmon"),
+            self.sysfs_root
+                .resolve("/sys/devices/platform/asus-nb-wmi/hwmon"),
+            self.sysfs_root
+                .resolve("/devices/platform/asus-nb-wmi/hwmon"),
         ];
 
         for base_hwmon in candidates {

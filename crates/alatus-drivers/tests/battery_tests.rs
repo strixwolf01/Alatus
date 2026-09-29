@@ -70,3 +70,28 @@ async fn test_battery_driver_fallback_threshold_file() {
     let updated = fs::read_to_string(bat_dir.join("charge_control_limit_max")).unwrap();
     assert_eq!(updated.trim(), "60");
 }
+
+#[tokio::test]
+async fn test_battery_driver_charge_and_power_fallback() {
+    let dir = tempdir().unwrap();
+    let bat_dir = dir.path().join("sys/class/power_supply/BAT0");
+    fs::create_dir_all(&bat_dir).unwrap();
+
+    fs::write(bat_dir.join("status"), "Not charging\n").unwrap();
+    fs::write(bat_dir.join("capacity"), "81\n").unwrap();
+    fs::write(bat_dir.join("charge_control_end_threshold"), "80\n").unwrap();
+    fs::write(bat_dir.join("charge_full"), "4230000\n").unwrap();
+    fs::write(bat_dir.join("charge_full_design"), "4680000\n").unwrap();
+    fs::write(bat_dir.join("voltage_now"), "16576000\n").unwrap();
+    fs::write(bat_dir.join("current_now"), "171000\n").unwrap();
+
+    let root = SysfsRoot::new(dir.path().join("sys"));
+    let driver = AsusSysfsBatteryDriver::new(root, "/class/power_supply/BAT0", vec![60, 80, 100]);
+
+    let info = driver.get_info().await.expect("Failed to get info");
+    assert_eq!(info.percentage, 81);
+    assert_eq!(info.status, BatteryStatus::NotCharging);
+    assert_eq!(info.charge_limit, Some(80));
+    assert_eq!(info.health_percentage, Some(90)); // 4230000 / 4680000 * 100 = 90.38% -> 90%
+    assert_eq!(info.power_now_microwatts, Some(2834496)); // 16576000 * 171000 / 1000000 = 2834496 uW
+}

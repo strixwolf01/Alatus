@@ -270,71 +270,72 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // 8. Periodic Polling for Live Telemetry (Battery & Fans)
+    let poller_timer = slint::Timer::default();
     {
         let bp_poll = battery_proxy.clone();
         let tp_poll = thermal_proxy.clone();
         let handle_poll = handle.clone();
 
-        tokio::spawn(async move {
-            let mut interval = tokio::time::interval(std::time::Duration::from_secs(2));
-            interval.tick().await;
+        poller_timer.start(
+            slint::TimerMode::Repeated,
+            std::time::Duration::from_millis(1500),
+            move || {
+                let bp = bp_poll.clone();
+                let tp = tp_poll.clone();
+                let handle_inner = handle_poll.clone();
 
-            loop {
-                interval.tick().await;
-                if handle_poll.upgrade().is_none() {
-                    break;
-                }
-
-                if let Some(ref bp) = bp_poll {
-                    if let Ok(info) = bp.get_info().await {
-                        let handle_inner = handle_poll.clone();
-                        let _ = slint::invoke_from_event_loop(move || {
-                            if let Some(ui) = handle_inner.upgrade() {
-                                ui.set_battery_percentage(info.percentage as i32);
-                                ui.set_battery_status(info.status.into());
-                                if let Some(limit) = info.charge_limit {
-                                    ui.set_battery_limit(limit as i32);
+                tokio::spawn(async move {
+                    if let Some(ref bp) = bp {
+                        if let Ok(info) = bp.get_info().await {
+                            let h = handle_inner.clone();
+                            let _ = slint::invoke_from_event_loop(move || {
+                                if let Some(ui) = h.upgrade() {
+                                    ui.set_battery_percentage(info.percentage as i32);
+                                    ui.set_battery_status(info.status.into());
+                                    if let Some(limit) = info.charge_limit {
+                                        ui.set_battery_limit(limit as i32);
+                                    }
+                                    if let Some(health) = info.health_percentage {
+                                        ui.set_battery_health(health as i32);
+                                    }
+                                    if let Some(microwatts) = info.power_now_microwatts {
+                                        let watts = microwatts as f64 / 1_000_000.0;
+                                        ui.set_battery_power(format!("{:.1} W", watts).into());
+                                    }
                                 }
-                                if let Some(health) = info.health_percentage {
-                                    ui.set_battery_health(health as i32);
-                                }
-                                if let Some(microwatts) = info.power_now_microwatts {
-                                    let watts = microwatts as f64 / 1_000_000.0;
-                                    ui.set_battery_power(format!("{:.1} W", watts).into());
-                                }
-                            }
-                        });
-                    }
-                }
-
-                if let Some(ref tp) = tp_poll {
-                    if let Ok(fans) = tp.get_fans().await {
-                        let (cpu_only_text, rpm_subtext, cpu_rpm, gpu_rpm) =
-                            format_fan_telemetry(&fans);
-                        let handle_inner = handle_poll.clone();
-                        let _ = slint::invoke_from_event_loop(move || {
-                            if let Some(ui) = handle_inner.upgrade() {
-                                ui.set_cpu_fan_rpm(cpu_rpm);
-                                ui.set_gpu_fan_rpm(gpu_rpm);
-                                ui.set_fan_cpu_only_text(cpu_only_text.into());
-                                ui.set_fan_rpm_subtext(rpm_subtext.into());
-                            }
-                        });
+                            });
+                        }
                     }
 
-                    if let Ok(current) = tp.get_current_profile().await {
-                        let handle_inner = handle_poll.clone();
-                        let _ = slint::invoke_from_event_loop(move || {
-                            if let Some(ui) = handle_inner.upgrade() {
-                                if ui.get_current_profile() != current.as_str() {
-                                    ui.set_current_profile(current.into());
+                    if let Some(ref tp) = tp {
+                        if let Ok(fans) = tp.get_fans().await {
+                            let (cpu_only_text, rpm_subtext, cpu_rpm, gpu_rpm) =
+                                format_fan_telemetry(&fans);
+                            let h = handle_inner.clone();
+                            let _ = slint::invoke_from_event_loop(move || {
+                                if let Some(ui) = h.upgrade() {
+                                    ui.set_cpu_fan_rpm(cpu_rpm);
+                                    ui.set_gpu_fan_rpm(gpu_rpm);
+                                    ui.set_fan_cpu_only_text(cpu_only_text.into());
+                                    ui.set_fan_rpm_subtext(rpm_subtext.into());
                                 }
-                            }
-                        });
+                            });
+                        }
+
+                        if let Ok(current) = tp.get_current_profile().await {
+                            let h = handle_inner.clone();
+                            let _ = slint::invoke_from_event_loop(move || {
+                                if let Some(ui) = h.upgrade() {
+                                    if ui.get_current_profile() != current.as_str() {
+                                        ui.set_current_profile(current.into());
+                                    }
+                                }
+                            });
+                        }
                     }
-                }
-            }
-        });
+                });
+            },
+        );
     }
 
     main_window.run()?;
@@ -345,7 +346,7 @@ fn format_fan_telemetry(fans: &[alatus_ipc::FanStatusMsg]) -> (String, String, i
     let cpu_rpm = fans.first().map(|f| f.current_rpm as i32).unwrap_or(0);
     let gpu_rpm = fans.get(1).map(|f| f.current_rpm as i32).unwrap_or(0);
 
-    let default_max = 6000;
+    let default_max = 8100;
     let max_rpm_1 = fans.first().and_then(|f| f.max_rpm).unwrap_or(default_max) as u64;
     let max_rpm_2 = fans.get(1).and_then(|f| f.max_rpm).unwrap_or(default_max) as u64;
 

@@ -90,12 +90,17 @@ impl BatteryDriver for AsusSysfsBatteryDriver {
         {
             caps |= BatteryCapabilities::CHARGE_LIMIT_CONFIGURABLE;
         }
-        if self.battery_dir.join("energy_full").exists()
-            && self.battery_dir.join("energy_full_design").exists()
+        if (self.battery_dir.join("energy_full").exists()
+            && self.battery_dir.join("energy_full_design").exists())
+            || (self.battery_dir.join("charge_full").exists()
+                && self.battery_dir.join("charge_full_design").exists())
         {
             caps |= BatteryCapabilities::HEALTH_REPORTING;
         }
-        if self.battery_dir.join("power_now").exists() {
+        if self.battery_dir.join("power_now").exists()
+            || (self.battery_dir.join("voltage_now").exists()
+                && self.battery_dir.join("current_now").exists())
+        {
             caps |= BatteryCapabilities::DISCHARGE_RATE_REPORTING;
         }
         caps
@@ -118,7 +123,7 @@ impl BatteryDriver for AsusSysfsBatteryDriver {
 
         let charge_limit = self.get_charge_limit().await.ok();
         let health_percentage = self.get_health_percentage().await.ok();
-        let power_now = self.read_sysfs_u64("power_now").await.ok();
+        let power_now = self.get_power_now_microwatts().await;
 
         Ok(BatteryInfo {
             percentage: capacity,
@@ -164,22 +169,52 @@ impl BatteryDriver for AsusSysfsBatteryDriver {
     }
 
     async fn get_health_percentage(&self) -> Result<u8, AlatusError> {
-        let energy_full = self.read_sysfs_u64("energy_full").await?;
-        let energy_design = self.read_sysfs_u64("energy_full_design").await?;
-
-        if energy_design == 0 {
+        let (full, design) = if let (Ok(f), Ok(d)) = (
+            self.read_sysfs_u64("energy_full").await,
+            self.read_sysfs_u64("energy_full_design").await,
+        ) {
+            (f, d)
+        } else if let (Ok(f), Ok(d)) = (
+            self.read_sysfs_u64("charge_full").await,
+            self.read_sysfs_u64("charge_full_design").await,
+        ) {
+            (f, d)
+        } else {
             return Err(AlatusError::Sysfs {
-                path: self.battery_dir.join("energy_full_design"),
-                message: "energy_full_design is 0".into(),
+                path: self.battery_dir.clone(),
+                message: "Neither energy_full nor charge_full found".into(),
+            });
+        };
+
+        if design == 0 {
+            return Err(AlatusError::Sysfs {
+                path: self.battery_dir.join("charge_full_design"),
+                message: "Battery design capacity is 0".into(),
             });
         }
 
-        let health = (energy_full as f64 / energy_design as f64 * 100.0).round() as u8;
+        let health = (full as f64 / design as f64 * 100.0).round() as u8;
         Ok(health.min(100))
     }
 
     async fn is_charging(&self) -> Result<bool, AlatusError> {
         let status = self.read_sysfs_string("status").await?;
         Ok(status.eq_ignore_ascii_case("charging"))
+    }
+}
+
+impl AsusSysfsBatteryDriver {
+    async fn get_power_now_microwatts(&self) -> Option<u64> {
+        if let Ok(p) = self.read_sysfs_u64("power_now").await {
+            return Some(p);
+        }
+        // Fallback: P = V * I (voltage_now in uV, current_now in uA -> P in uW)
+        if let (Ok(v), Ok(i)) = (
+            self.read_sysfs_u64("voltage_now").await,
+            self.read_sysfs_u64("current_now").await,
+        ) {
+            return Some(v.saturating_mul(i) / 1_000_000);
+        }
+        None
     }
 }
