@@ -1,0 +1,154 @@
+export component BatteryTab inherits VerticalLayout {
+    in property <int> battery_percentage: 0;
+    in property <string> battery_status: "--";
+    in property <int> battery_limit: 80;
+    in property <int> battery_health: 100;
+    in property <string> battery_power: "-- W";
+
+    callback set_battery_limit(int);
+
+    spacing: 14px;
+
+    Rectangle {
+        border-radius: 12px;
+        background: #141720;
+        border-width: 1px;
+        border-color: #242938;
+
+        VerticalLayout {
+            padding: 20px;
+            spacing: 16px;
+            
+            HorizontalLayout {
+                alignment: space-between;
+                Text {
+                    text: "Battery Health Charging Threshold";
+                    font-size: 16px;
+                    font-weight: 700;
+                    color: #FFFFFF;
+                }
+                Text {
+                    text: root.battery_status + " (" + root.battery_percentage + "%)";
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #00F0FF;
+                }
+            }
+
+            Text {
+                text: "Protect lithium battery lifespan by capping maximum charge level:";
+                font-size: 13px;
+                color: #8A92A6;
+            }
+
+            // Charge Limit Presets
+            HorizontalLayout {
+                spacing: 12px;
+
+                Rectangle {
+                    height: 64px;
+                    border-radius: 8px;
+                    background: root.battery_limit == 60 ? #00F0FF : #1A1F2B;
+                    border-width: 1px;
+                    border-color: root.battery_limit == 60 ? #00F0FF : #2A3042;
+                    TouchArea { clicked => { root.set_battery_limit(60); } }
+                    VerticalLayout {
+                        alignment: center;
+                        Text {
+                            text: "60%";
+                            font-size: 18px;
+                            font-weight: 800;
+                            color: root.battery_limit == 60 ? #000000 : #FFFFFF;
+                            horizontal-alignment: center;
+                        }
+                        Text {
+                            text: "Maximum Lifespan (Desk Plugged)";
+                            font-size: 11px;
+                            color: root.battery_limit == 60 ? #000000 : #8A92A6;
+                            horizontal-alignment: center;
+                        }
+                    }
+                }
+
+                Rectangle {
+                    height: 64px;
+                    border-radius: 8px;
+                    background: root.battery_limit == 80 ? #00F0FF : #1A1F2B;
+                    border-width: 1px;
+                    border-color: root.battery_limit == 80 ? #00F0FF : #2A3042;
+                    TouchArea { clicked => { root.set_battery_limit(80); } }
+                    VerticalLayout {
+                        alignment: center;
+                        Text {
+                            text: "80%";
+                            font-size: 18px;
+                            font-weight: 800;
+                            color: root.battery_limit == 80 ? #000000 : #FFFFFF;
+                            horizontal-alignment: center;
+                        }
+                        Text {
+                            text: "Balanced Care (Recommended)";
+                            font-size: 11px;
+                            color: root.battery_limit == 80 ? #000000 : #8A92A6;
+                            horizontal-alignment: center;
+                        }
+                    }
+                }
+
+                Rectangle {
+                    height: 64px;
+                    border-radius: 8px;
+                    background: root.battery_limit == 100 ? #00F0FF : #1A1F2B;
+                    border-width: 1px;
+                    border-color: root.battery_limit == 100 ? #00F0FF : #2A3042;
+                    TouchArea { clicked => { root.set_battery_limit(100); } }
+                    VerticalLayout {
+                        alignment: center;
+                        Text {
+                            text: "100%";
+                            font-size: 18px;
+                            font-weight: 800;
+                            color: root.battery_limit == 100 ? #000000 : #FFFFFF;
+                            horizontal-alignment: center;
+                        }
+                        Text {
+                            text: "Full Capacity (Travel)";
+                            font-size: 11px;
+                            color: root.battery_limit == 100 ? #000000 : #8A92A6;
+                            horizontal-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            // Battery Health & Diagnostics Stats
+            HorizontalLayout {
+                spacing: 12px;
+                Rectangle {
+                    height: 48px;
+                    border-radius: 8px;
+                    background: #11141D;
+                    HorizontalLayout {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                        alignment: space-between;
+                        Text { text: "Battery Health Condition:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
+                        Text { text: root.battery_health + "% (Healthy)"; font-size: 14px; font-weight: 700; color: #00E676; vertical-alignment: center; }
+                    }
+                }
+                Rectangle {
+                    height: 48px;
+                    border-radius: 8px;
+                    background: #11141D;
+                    HorizontalLayout {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                        alignment: space-between;
+                        Text { text: "Real-time Discharge / Power:"; font-size: 13px; color: #8A92A6; vertical-alignment: center; }
+                        Text { text: root.battery_power; font-size: 14px; font-weight: 700; color: #00F0FF; vertical-alignment: center; }
+                    }
+                }
+            }
+        }
+    }
+}

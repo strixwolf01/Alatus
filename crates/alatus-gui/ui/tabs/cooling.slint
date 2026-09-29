@@ -1,0 +1,190 @@
+export component CoolingTab inherits VerticalLayout {
+    in property <string> current_profile: "Balanced";
+    in property <bool> full_speed_supported: true;
+    in property <bool> is_cpu_only: false;
+    in property <int> cpu_fan_rpm: 0;
+    in property <int> gpu_fan_rpm: 0;
+    in property <string> fan_cpu_only_text: " CPU : 0%/0% ";
+    in property <string> fan_rpm_subtext: "";
+
+    callback set_thermal_profile(string);
+
+    spacing: 14px;
+
+    Rectangle {
+        border-radius: 12px;
+        background: #141720;
+        border-width: 1px;
+        border-color: #242938;
+
+        VerticalLayout {
+            padding: 20px;
+            spacing: 16px;
+
+            HorizontalLayout {
+                alignment: space-between;
+                Text {
+                    text: "Thermal Performance Mode";
+                    font-size: 16px;
+                    font-weight: 700;
+                    color: #FFFFFF;
+                }
+                Text {
+                    text: "Active: " + root.current_profile;
+                    font-size: 14px;
+                    font-weight: 700;
+                    color: root.current_profile == "FullSpeed" ? #FF0055 : #00F0FF;
+                }
+            }
+
+            // 4 Profile Cards Row
+            HorizontalLayout {
+                spacing: 10px;
+
+                Rectangle {
+                    height: 68px;
+                    border-radius: 8px;
+                    background: root.current_profile == "Quiet" ? #00F0FF : #1A1F2B;
+                    border-width: 1px;
+                    border-color: root.current_profile == "Quiet" ? #00F0FF : #2A3042;
+                    TouchArea { clicked => { root.set_thermal_profile("Quiet"); } }
+                    VerticalLayout {
+                        alignment: center;
+                        Text {
+                            text: "Whisper";
+                            font-size: 15px;
+                            font-weight: 700;
+                            color: root.current_profile == "Quiet" ? #000000 : #FFFFFF;
+                            horizontal-alignment: center;
+                        }
+                        Text {
+                            text: "Silent Fan Curve";
+                            font-size: 11px;
+                            color: root.current_profile == "Quiet" ? #000000 : #8A92A6;
+                            horizontal-alignment: center;
+                        }
+                    }
+                }
+
+                Rectangle {
+                    height: 68px;
+                    border-radius: 8px;
+                    background: root.current_profile == "Balanced" ? #00F0FF : #1A1F2B;
+                    border-width: 1px;
+                    border-color: root.current_profile == "Balanced" ? #00F0FF : #2A3042;
+                    TouchArea { clicked => { root.set_thermal_profile("Balanced"); } }
+                    VerticalLayout {
+                        alignment: center;
+                        Text {
+                            text: "Standard";
+                            font-size: 15px;
+                            font-weight: 700;
+                            color: root.current_profile == "Balanced" ? #000000 : #FFFFFF;
+                            horizontal-alignment: center;
+                        }
+                        Text {
+                            text: "Balanced Auto Curve";
+                            font-size: 11px;
+                            color: root.current_profile == "Balanced" ? #000000 : #8A92A6;
+                            horizontal-alignment: center;
+                        }
+                    }
+                }
+
+                Rectangle {
+                    height: 68px;
+                    border-radius: 8px;
+                    background: root.current_profile == "Performance" ? #00F0FF : #1A1F2B;
+                    border-width: 1px;
+                    border-color: root.current_profile == "Performance" ? #00F0FF : #2A3042;
+                    TouchArea { clicked => { root.set_thermal_profile("Performance"); } }
+                    VerticalLayout {
+                        alignment: center;
+                        Text {
+                            text: "Performance";
+                            font-size: 15px;
+                            font-weight: 700;
+                            color: root.current_profile == "Performance" ? #000000 : #FFFFFF;
+                            horizontal-alignment: center;
+                        }
+                        Text {
+                            text: "Max Sustained Boost";
+                            font-size: 11px;
+                            color: root.current_profile == "Performance" ? #000000 : #8A92A6;
+                            horizontal-alignment: center;
+                        }
+                    }
+                }
+
+                if root.full_speed_supported: Rectangle {
+                    height: 68px;
+                    border-radius: 8px;
+                    background: root.current_profile == "FullSpeed" ? #FF0055 : #1A1F2B;
+                    border-width: 1px;
+                    border-color: root.current_profile == "FullSpeed" ? #FF0055 : #2A3042;
+                    TouchArea { clicked => { root.set_thermal_profile("FullSpeed"); } }
+                    VerticalLayout {
+                        alignment: center;
+                        Text {
+                            text: "⚡ Full Speed";
+                            font-size: 15px;
+                            font-weight: 800;
+                            color: root.current_profile == "FullSpeed" ? #FFFFFF : #FF4D7D;
+                            horizontal-alignment: center;
+                        }
+                        Text {
+                            text: "100% Fan Override (8100 RPM)";
+                            font-size: 11px;
+                            color: root.current_profile == "FullSpeed" ? #FFFFFF : #8A92A6;
+                            horizontal-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            // Live Fans Telemetry Display
+            Rectangle {
+                height: 56px;
+                border-radius: 8px;
+                background: #11141D;
+                border-width: 1px;
+                border-color: #1E2330;
+                if root.is_cpu_only: HorizontalLayout {
+                    alignment: center;
+                    spacing: 12px;
+                    Text {
+                        text: root.fan_cpu_only_text;
+                        font-size: 16px;
+                        font-weight: 800;
+                        color: #00F0FF;
+                        vertical-alignment: center;
+                    }
+                    if root.fan_rpm_subtext != "": Text {
+                        text: "(" + root.fan_rpm_subtext + " / 8100 Max RPM)";
+                        font-size: 13px;
+                        font-weight: 600;
+                        color: #8A92A6;
+                        vertical-alignment: center;
+                    }
+                }
+                if !root.is_cpu_only: HorizontalLayout {
+                    alignment: space-around;
+                    Text {
+                        text: "CPU Fan: " + root.cpu_fan_rpm + " RPM";
+                        font-size: 14px;
+                        font-weight: 700;
+                        color: #00F0FF;
+                        vertical-alignment: center;
+                    }
+                    Text {
+                        text: "GPU Fan: " + root.gpu_fan_rpm + " RPM";
+                        font-size: 14px;
+                        font-weight: 700;
+                        color: #00F0FF;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

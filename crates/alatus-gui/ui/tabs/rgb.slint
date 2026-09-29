@@ -1,0 +1,242 @@
+export component RgbTab inherits VerticalLayout {
+    in property <int> lighting_brightness: 3;
+    in property <string> lighting_mode: "Static";
+    in property <color> current_rgb_color: #00F0FF;
+    in property <string> lighting_hex: "#00F0FF";
+    in property <bool> has_multiple_modes: false;
+    in property <bool> supports_mode_breathing: false;
+    in property <bool> supports_mode_rainbow: false;
+    in property <bool> supports_mode_strobe: false;
+
+    callback set_lighting_brightness(int);
+    callback set_lighting_mode(string, int);
+    callback set_lighting_color(int, int, int);
+    callback open_de_color_picker();
+
+    spacing: 14px;
+
+    Rectangle {
+        border-radius: 12px;
+        background: #141720;
+        border-width: 1px;
+        border-color: #242938;
+
+        VerticalLayout {
+            padding: 20px;
+            spacing: 16px;
+
+            HorizontalLayout {
+                alignment: space-between;
+                Text {
+                    text: "ITE5570 LampArray Backlight";
+                    font-size: 16px;
+                    font-weight: 700;
+                    color: #FFFFFF;
+                }
+                Text {
+                    text: "Brightness: " + root.lighting_brightness + " / 3";
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #00F0FF;
+                }
+            }
+
+            // Brightness Level Buttons
+            HorizontalLayout {
+                spacing: 8px;
+                Rectangle {
+                    height: 38px;
+                    border-radius: 6px;
+                    background: root.lighting_brightness == 0 ? #00F0FF : #1A1F2B;
+                    TouchArea { clicked => { root.set_lighting_brightness(0); } }
+                    Text { text: "Off"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_brightness == 0 ? #000 : #FFF; }
+                }
+                Rectangle {
+                    height: 38px;
+                    border-radius: 6px;
+                    background: root.lighting_brightness == 1 ? #00F0FF : #1A1F2B;
+                    TouchArea { clicked => { root.set_lighting_brightness(1); } }
+                    Text { text: "Low (33%)"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_brightness == 1 ? #000 : #FFF; }
+                }
+                Rectangle {
+                    height: 38px;
+                    border-radius: 6px;
+                    background: root.lighting_brightness == 2 ? #00F0FF : #1A1F2B;
+                    TouchArea { clicked => { root.set_lighting_brightness(2); } }
+                    Text { text: "Med (66%)"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_brightness == 2 ? #000 : #FFF; }
+                }
+                Rectangle {
+                    height: 38px;
+                    border-radius: 6px;
+                    background: root.lighting_brightness == 3 ? #00F0FF : #1A1F2B;
+                    TouchArea { clicked => { root.set_lighting_brightness(3); } }
+                    Text { text: "High (100%)"; horizontal-alignment: center; vertical-alignment: center; font-weight: 600; color: root.lighting_brightness == 3 ? #000 : #FFF; }
+                }
+            }
+
+            // Mode Selection (Only shown when hardware supports 2 or more modes)
+            if root.has_multiple_modes: VerticalLayout {
+                spacing: 8px;
+                Text {
+                    text: "Lighting Effect Mode:";
+                    font-size: 13px;
+                    color: #8A92A6;
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    Rectangle {
+                        height: 36px;
+                        border-radius: 6px;
+                        background: root.lighting_mode == "Static" ? #00F0FF : #1A1F2B;
+                        TouchArea { clicked => { root.set_lighting_mode("Static", 1); } }
+                        Text { text: "Static"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_mode == "Static" ? #000 : #FFF; }
+                    }
+                    if root.supports_mode_breathing: Rectangle {
+                        height: 36px;
+                        border-radius: 6px;
+                        background: root.lighting_mode == "Breathing" ? #00F0FF : #1A1F2B;
+                        TouchArea { clicked => { root.set_lighting_mode("Breathing", 1); } }
+                        Text { text: "Breathing"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_mode == "Breathing" ? #000 : #FFF; }
+                    }
+                    if root.supports_mode_rainbow: Rectangle {
+                        height: 36px;
+                        border-radius: 6px;
+                        background: root.lighting_mode == "Rainbow" ? #00F0FF : #1A1F2B;
+                        TouchArea { clicked => { root.set_lighting_mode("Rainbow", 2); } }
+                        Text { text: "Rainbow"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_mode == "Rainbow" ? #000 : #FFF; }
+                    }
+                    if root.supports_mode_strobe: Rectangle {
+                        height: 36px;
+                        border-radius: 6px;
+                        background: root.lighting_mode == "Strobe" ? #00F0FF : #1A1F2B;
+                        TouchArea { clicked => { root.set_lighting_mode("Strobe", 1); } }
+                        Text { text: "Strobe"; horizontal-alignment: center; vertical-alignment: center; color: root.lighting_mode == "Strobe" ? #000 : #FFF; }
+                    }
+                }
+            }
+
+            // Ready Color Palette Header & Live Indicator
+            HorizontalLayout {
+                alignment: space-between;
+                Text {
+                    text: "Preset Color Swatches:";
+                    font-size: 14px;
+                    font-weight: 700;
+                    color: #FFFFFF;
+                    vertical-alignment: center;
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    Rectangle {
+                        width: 18px;
+                        height: 18px;
+                        border-radius: 4px;
+                        background: root.current_rgb_color;
+                        border-width: 1px;
+                        border-color: #4A5568;
+                    }
+                    Text {
+                        text: root.lighting_hex;
+                        font-size: 13px;
+                        font-weight: 700;
+                        color: #00F0FF;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+
+            // 12 Curated Vibrant Swatches (2 rows of 6)
+            VerticalLayout {
+                spacing: 8px;
+
+                // Row 1
+                HorizontalLayout {
+                    spacing: 8px;
+                    Rectangle {
+                        height: 36px; border-radius: 6px; background: #FFFFFF;
+                        TouchArea { clicked => { root.set_lighting_color(255, 255, 255); } }
+                    }
+                    Rectangle {
+                        height: 36px; border-radius: 6px; background: #FFE4B5;
+                        TouchArea { clicked => { root.set_lighting_color(255, 228, 181); } }
+                    }
+                    Rectangle {
+                        height: 36px; border-radius: 6px; background: #FF1744;
+                        TouchArea { clicked => { root.set_lighting_color(255, 23, 68); } }
+                    }
+                    Rectangle {
+                        height: 36px; border-radius: 6px; background: #FF6D00;
+                        TouchArea { clicked => { root.set_lighting_color(255, 109, 0); } }
+                    }
+                    Rectangle {
+                        height: 36px; border-radius: 6px; background: #FFD600;
+                        TouchArea { clicked => { root.set_lighting_color(255, 214, 0); } }
+                    }
+                    Rectangle {
+                        height: 36px; border-radius: 6px; background: #00E676;
+                        TouchArea { clicked => { root.set_lighting_color(0, 230, 118); } }
+                    }
+                }
+
+                // Row 2
+                HorizontalLayout {
+                    spacing: 8px;
+                    Rectangle {
+                        height: 36px; border-radius: 6px; background: #00E5FF;
+                        TouchArea { clicked => { root.set_lighting_color(0, 229, 255); } }
+                    }
+                    Rectangle {
+                        height: 36px; border-radius: 6px; background: #2979FF;
+                        TouchArea { clicked => { root.set_lighting_color(41, 121, 255); } }
+                    }
+                    Rectangle {
+                        height: 36px; border-radius: 6px; background: #3D5AFE;
+                        TouchArea { clicked => { root.set_lighting_color(61, 90, 254); } }
+                    }
+                    Rectangle {
+                        height: 36px; border-radius: 6px; background: #7C4DFF;
+                        TouchArea { clicked => { root.set_lighting_color(124, 77, 255); } }
+                    }
+                    Rectangle {
+                        height: 36px; border-radius: 6px; background: #F50057;
+                        TouchArea { clicked => { root.set_lighting_color(245, 0, 87); } }
+                    }
+                    Rectangle {
+                        height: 36px; border-radius: 6px; background: #FF4081;
+                        TouchArea { clicked => { root.set_lighting_color(255, 64, 129); } }
+                    }
+                }
+            }
+
+            // Desktop Environment Color Picker Button
+            Rectangle {
+                height: 42px;
+                border-radius: 8px;
+                background: #1A1F2B;
+                border-width: 1px;
+                border-color: #2E364A;
+
+                TouchArea {
+                    clicked => { root.open_de_color_picker(); }
+                }
+
+                HorizontalLayout {
+                    alignment: center;
+                    spacing: 10px;
+                    Text {
+                        text: "🎨";
+                        font-size: 16px;
+                        vertical-alignment: center;
+                    }
+                    Text {
+                        text: "Custom Color (Native DE Color Selector)";
+                        font-size: 13px;
+                        font-weight: 600;
+                        color: #FFFFFF;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

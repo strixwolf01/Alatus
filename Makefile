@@ -56,6 +56,10 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/share/applications
 	install -m 644 data/applications/org.alatus.gui.desktop $(DESTDIR)$(PREFIX)/share/applications/
 
+	# Install Udev Rules
+	install -d $(DESTDIR)$(PREFIX)/lib/udev/rules.d
+	install -m 644 data/udev/rules.d/99-alatus.rules $(DESTDIR)$(PREFIX)/lib/udev/rules.d/
+
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/alatusd
 	rm -f $(DESTDIR)$(PREFIX)/bin/alatus-session

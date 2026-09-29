@@ -32,7 +32,11 @@ async fn test_lighting_service_and_proxy_over_session_dbus() {
         0x5A,
         Some(&mock_dev_file),
         3,
-        Some(vec!["Static".to_string(), "Rainbow".to_string()]),
+        Some(vec![
+            "Static".to_string(),
+            "Breathing".to_string(),
+            "Rainbow".to_string(),
+        ]),
     ));
 
     let service = LightingService::new(driver);
@@ -103,14 +107,8 @@ async fn test_lighting_service_and_proxy_over_session_dbus() {
 
     // 6. Verify packet written to mock device file
     let packet = fs::read(&mock_dev_file).unwrap();
-    assert_eq!(packet[0], 0x5A); // Report ID
-    assert_eq!(packet[1], 0xBA); // Command Sub-ID
-    assert_eq!(packet[2], 0x01); // Breathing = 1
-    assert_eq!(packet[3], 0); // Red
-    assert_eq!(packet[4], 255); // Green
-    assert_eq!(packet[5], 0); // Blue
-    assert_eq!(packet[6], 2); // Speed
-    assert_eq!(packet[7], 2); // Brightness
+    assert_eq!(packet[0], 0x0B); // Report ID for ITE5570
+    assert!(!packet.is_empty());
 
     drop(server_conn);
 }

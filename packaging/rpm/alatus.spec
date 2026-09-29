@@ -36,6 +36,8 @@ if [ -d /run/systemd/system ]; then
     systemctl reload dbus.service >/dev/null 2>&1 || :
     systemctl try-restart alatusd.service >/dev/null 2>&1 || :
 fi
+udevadm control --reload-rules >/dev/null 2>&1 || :
+udevadm trigger --subsystem-match=input >/dev/null 2>&1 || :
 systemctl enable --now alatusd.service >/dev/null 2>&1 || :
 systemctl --global enable alatus-session.service >/dev/null 2>&1 || :
 
@@ -50,6 +52,8 @@ if [ $1 -eq 0 ]; then
     if [ -d /run/systemd/system ]; then
         systemctl daemon-reload >/dev/null 2>&1 || :
     fi
+    udevadm control --reload-rules >/dev/null 2>&1 || :
+    udevadm trigger --subsystem-match=input >/dev/null 2>&1 || :
 fi
 
 %files
@@ -63,6 +67,7 @@ fi
 %{_datadir}/polkit-1/actions/org.alatus.policy
 %{_prefix}/lib/systemd/system/alatusd.service
 %{_prefix}/lib/systemd/user/alatus-session.service
+%{_prefix}/lib/udev/rules.d/99-alatus.rules
 %{_datadir}/applications/org.alatus.gui.desktop
 %{_datadir}/icons/hicolor/scalable/apps/alatus-gui.svg
 

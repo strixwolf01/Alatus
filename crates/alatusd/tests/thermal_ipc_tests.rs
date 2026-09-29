@@ -112,13 +112,13 @@ async fn test_thermal_service_and_proxy_over_session_dbus() {
         .expect("set FullSpeed");
     assert_eq!(proxy.get_current_profile().await.unwrap(), "FullSpeed");
     let devs_content = fs::read_to_string(debugfs_dir.join("devs")).unwrap();
-    assert_eq!(devs_content.trim(), "0x00110013 0x1");
+    assert_eq!(devs_content.trim(), "0x00110013 0x3");
 
     // 5. Switch to Quiet
     proxy.set_profile("Quiet".into()).await.expect("set Quiet");
     assert_eq!(proxy.get_current_profile().await.unwrap(), "Quiet");
     let devs_reverted = fs::read_to_string(debugfs_dir.join("devs")).unwrap();
-    assert_eq!(devs_reverted.trim(), "0x00110013 0x0");
+    assert_eq!(devs_reverted.trim(), "0x00110013 0x1");
     let profile_content = fs::read_to_string(acpi_dir.join("platform_profile")).unwrap();
     assert_eq!(profile_content.trim(), "quiet");
 

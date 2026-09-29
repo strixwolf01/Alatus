@@ -1,5 +1,7 @@
 slint::include_modules!();
 
+mod display;
+
 use alatus_ipc::{BatteryProxy, LightingProxy, ThermalProxy};
 use futures_util::StreamExt;
 use std::error::Error;
@@ -112,7 +114,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    // 4. Wire UI Callbacks: Battery Limit
+    // 4. Initial Data Query: Display & OLED
+    let disp_state = display::query_display_state().await;
+    let handle_clone_disp = handle.clone();
+    let _ = slint::invoke_from_event_loop(move || {
+        if let Some(ui) = handle_clone_disp.upgrade() {
+            ui.set_display_output_name(disp_state.output_name.into());
+            ui.set_display_refresh_rate(disp_state.current_refresh_rate as i32);
+            ui.set_oled_dimming_level(disp_state.current_dimming as i32);
+            ui.set_target_mode_active(disp_state.target_mode_active);
+            ui.set_panel_autohide_active(disp_state.panel_autohide);
+            ui.set_panel_transparency_active(disp_state.panel_transparency);
+            ui.set_dpms_pixel_refresh_active(disp_state.dpms_pixel_refresh);
+        }
+    });
+
+    // 5. Wire UI Callbacks: Battery Limit
     if let Some(bp) = battery_proxy.clone() {
         let handle_clone = handle.clone();
         main_window.on_set_battery_limit(move |limit| {
@@ -223,7 +240,104 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
     }
 
-    // 7. Background Signal Monitors for Live Hardware Updates
+    // 7. Wire UI Callbacks: Display & OLED
+    let handle_disp_r = handle.clone();
+    main_window.on_set_display_refresh(move |hz| {
+        let handle_inner = handle_disp_r.clone();
+        tokio::spawn(async move {
+            let output_name = {
+                handle_inner
+                    .upgrade()
+                    .map(|ui| ui.get_display_output_name().to_string())
+                    .unwrap_or_else(|| "eDP-1".into())
+            };
+            if let Ok(()) = display::set_refresh_rate(&output_name, hz as u32).await {
+                let _ = slint::invoke_from_event_loop(move || {
+                    if let Some(ui) = handle_inner.upgrade() {
+                        ui.set_display_refresh_rate(hz);
+                    }
+                });
+            }
+        });
+    });
+
+    let handle_disp_d = handle.clone();
+    main_window.on_set_oled_dimming(move |val| {
+        let handle_inner = handle_disp_d.clone();
+        tokio::spawn(async move {
+            let output_name = {
+                handle_inner
+                    .upgrade()
+                    .map(|ui| ui.get_display_output_name().to_string())
+                    .unwrap_or_else(|| "eDP-1".into())
+            };
+            if let Ok(()) = display::set_oled_dimming(&output_name, val as u32).await {
+                let _ = slint::invoke_from_event_loop(move || {
+                    if let Some(ui) = handle_inner.upgrade() {
+                        ui.set_oled_dimming_level(val);
+                    }
+                });
+            }
+        });
+    });
+
+    let handle_disp_tm = handle.clone();
+    main_window.on_set_target_mode(move |enabled| {
+        let handle_inner = handle_disp_tm.clone();
+        tokio::spawn(async move {
+            if let Ok(()) = display::set_target_mode(enabled).await {
+                let _ = slint::invoke_from_event_loop(move || {
+                    if let Some(ui) = handle_inner.upgrade() {
+                        ui.set_target_mode_active(enabled);
+                    }
+                });
+            }
+        });
+    });
+
+    let handle_disp_ah = handle.clone();
+    main_window.on_set_panel_autohide(move |enabled| {
+        let handle_inner = handle_disp_ah.clone();
+        tokio::spawn(async move {
+            if let Ok(()) = display::set_panel_autohide(enabled).await {
+                let _ = slint::invoke_from_event_loop(move || {
+                    if let Some(ui) = handle_inner.upgrade() {
+                        ui.set_panel_autohide_active(enabled);
+                    }
+                });
+            }
+        });
+    });
+
+    let handle_disp_tr = handle.clone();
+    main_window.on_set_panel_transparency(move |enabled| {
+        let handle_inner = handle_disp_tr.clone();
+        tokio::spawn(async move {
+            if let Ok(()) = display::set_panel_transparency(enabled).await {
+                let _ = slint::invoke_from_event_loop(move || {
+                    if let Some(ui) = handle_inner.upgrade() {
+                        ui.set_panel_transparency_active(enabled);
+                    }
+                });
+            }
+        });
+    });
+
+    let handle_disp_pr = handle.clone();
+    main_window.on_set_dpms_pixel_refresh(move |enabled| {
+        let handle_inner = handle_disp_pr.clone();
+        tokio::spawn(async move {
+            if let Ok(()) = display::set_pixel_refresh_dpms(enabled).await {
+                let _ = slint::invoke_from_event_loop(move || {
+                    if let Some(ui) = handle_inner.upgrade() {
+                        ui.set_dpms_pixel_refresh_active(enabled);
+                    }
+                });
+            }
+        });
+    });
+
+    // 8. Background Signal Monitors for Live Hardware Updates
     if let Some(tp) = thermal_proxy.clone() {
         let handle_t = handle.clone();
         tokio::spawn(async move {

@@ -1,107 +1,227 @@
-//! StatusNotifierItem implementation for Freedesktop system tray.
+//! StatusNotifierItem tray implementation using ksni.
+//! Provides KDE Plasma / FreeDesktop system tray integration with quick switches.
 
-use zbus::interface;
-use zbus::Connection;
+use ksni::menu::*;
+use ksni::{MenuItem, ToolTip, Tray, TrayService};
 
-pub const TRAY_OBJECT_PATH: &str = "/StatusNotifierItem";
-
-pub struct StatusNotifierItemService {
-    current_profile: std::sync::Mutex<String>,
+pub struct AlatusTray {
+    pub current_profile: String,
+    pub current_limit: u32,
+    pub current_refresh: u32,
 }
 
-impl Default for StatusNotifierItemService {
+impl Default for AlatusTray {
     fn default() -> Self {
         Self {
-            current_profile: std::sync::Mutex::new("Balanced".into()),
+            current_profile: "Balanced".to_string(),
+            current_limit: 80,
+            current_refresh: 120,
         }
     }
 }
 
-impl StatusNotifierItemService {
-    pub fn new() -> Self {
-        Self::default()
+impl Tray for AlatusTray {
+    fn id(&self) -> String {
+        "alatus".into()
     }
 
-    pub fn set_profile(&self, profile: &str) {
-        if let Ok(mut p) = self.current_profile.lock() {
-            *p = profile.to_string();
+    fn title(&self) -> String {
+        "Alatus Hardware Suite".into()
+    }
+
+    fn icon_name(&self) -> String {
+        "preferences-system-power".into()
+    }
+
+    fn tool_tip(&self) -> ToolTip {
+        ToolTip {
+            title: "Alatus Hardware Suite".into(),
+            description: format!(
+                "Profile: {}\nBattery Limit: {}%\nRefresh: {}Hz",
+                self.current_profile, self.current_limit, self.current_refresh
+            ),
+            icon_name: "preferences-system-power".into(),
+            icon_pixmap: Vec::new(),
         }
     }
+
+    fn activate(&mut self, _x: i32, _y: i32) {
+        tracing::info!("Tray activated: Spawning alatus-gui...");
+        let _ = std::process::Command::new("alatus-gui").spawn();
+    }
+
+    fn menu(&self) -> Vec<MenuItem<Self>> {
+        vec![
+            MenuItem::Standard(StandardItem {
+                label: "Open Alatus GUI".into(),
+                icon_name: "preferences-system-power".into(),
+                activate: Box::new(|_| {
+                    let _ = std::process::Command::new("alatus-gui").spawn();
+                }),
+                ..Default::default()
+            }),
+            MenuItem::Separator,
+            MenuItem::SubMenu(SubMenu {
+                label: format!("Thermal Profile: {}", self.current_profile),
+                submenu: vec![
+                    MenuItem::Standard(StandardItem {
+                        label: if self.current_profile == "Quiet" {
+                            "● Quiet"
+                        } else {
+                            "  Quiet"
+                        }
+                        .into(),
+                        activate: Box::new(|_| {
+                            let _ = std::process::Command::new("alatus")
+                                .args(["profile", "set", "Quiet"])
+                                .spawn();
+                        }),
+                        ..Default::default()
+                    }),
+                    MenuItem::Standard(StandardItem {
+                        label: if self.current_profile == "Balanced" {
+                            "● Balanced"
+                        } else {
+                            "  Balanced"
+                        }
+                        .into(),
+                        activate: Box::new(|_| {
+                            let _ = std::process::Command::new("alatus")
+                                .args(["profile", "set", "Balanced"])
+                                .spawn();
+                        }),
+                        ..Default::default()
+                    }),
+                    MenuItem::Standard(StandardItem {
+                        label: if self.current_profile == "Performance" {
+                            "● Performance"
+                        } else {
+                            "  Performance"
+                        }
+                        .into(),
+                        activate: Box::new(|_| {
+                            let _ = std::process::Command::new("alatus")
+                                .args(["profile", "set", "Performance"])
+                                .spawn();
+                        }),
+                        ..Default::default()
+                    }),
+                    MenuItem::Standard(StandardItem {
+                        label: if self.current_profile == "FullSpeed"
+                            || self.current_profile == "Full Speed"
+                        {
+                            "● Full Speed"
+                        } else {
+                            "  Full Speed"
+                        }
+                        .into(),
+                        activate: Box::new(|_| {
+                            let _ = std::process::Command::new("alatus")
+                                .args(["profile", "set", "FullSpeed"])
+                                .spawn();
+                        }),
+                        ..Default::default()
+                    }),
+                ],
+                ..Default::default()
+            }),
+            MenuItem::SubMenu(SubMenu {
+                label: format!("Battery Limit: {}%", self.current_limit),
+                submenu: vec![
+                    MenuItem::Standard(StandardItem {
+                        label: if self.current_limit == 60 {
+                            "● 60% (Max Longevity)"
+                        } else {
+                            "  60% (Max Longevity)"
+                        }
+                        .into(),
+                        activate: Box::new(|_| {
+                            let _ = std::process::Command::new("alatus")
+                                .args(["battery", "limit", "60"])
+                                .spawn();
+                        }),
+                        ..Default::default()
+                    }),
+                    MenuItem::Standard(StandardItem {
+                        label: if self.current_limit == 80 {
+                            "● 80% (Balanced Care)"
+                        } else {
+                            "  80% (Balanced Care)"
+                        }
+                        .into(),
+                        activate: Box::new(|_| {
+                            let _ = std::process::Command::new("alatus")
+                                .args(["battery", "limit", "80"])
+                                .spawn();
+                        }),
+                        ..Default::default()
+                    }),
+                    MenuItem::Standard(StandardItem {
+                        label: if self.current_limit == 100 {
+                            "● 100% (Full Capacity)"
+                        } else {
+                            "  100% (Full Capacity)"
+                        }
+                        .into(),
+                        activate: Box::new(|_| {
+                            let _ = std::process::Command::new("alatus")
+                                .args(["battery", "limit", "100"])
+                                .spawn();
+                        }),
+                        ..Default::default()
+                    }),
+                ],
+                ..Default::default()
+            }),
+            MenuItem::SubMenu(SubMenu {
+                label: format!("Display Refresh: {} Hz", self.current_refresh),
+                submenu: vec![
+                    MenuItem::Standard(StandardItem {
+                        label: if self.current_refresh == 60 {
+                            "● 60 Hz (Power Saving)"
+                        } else {
+                            "  60 Hz (Power Saving)"
+                        }
+                        .into(),
+                        activate: Box::new(|_| {
+                            let _ = std::process::Command::new("kscreen-doctor")
+                                .args(["output.eDP-1.mode.2"])
+                                .spawn();
+                        }),
+                        ..Default::default()
+                    }),
+                    MenuItem::Standard(StandardItem {
+                        label: if self.current_refresh == 120 {
+                            "● 120 Hz (High Smoothness)"
+                        } else {
+                            "  120 Hz (High Smoothness)"
+                        }
+                        .into(),
+                        activate: Box::new(|_| {
+                            let _ = std::process::Command::new("kscreen-doctor")
+                                .args(["output.eDP-1.mode.1"])
+                                .spawn();
+                        }),
+                        ..Default::default()
+                    }),
+                ],
+                ..Default::default()
+            }),
+            MenuItem::Separator,
+            MenuItem::Standard(StandardItem {
+                label: "Quit Session Agent".into(),
+                activate: Box::new(|_| {
+                    std::process::exit(0);
+                }),
+                ..Default::default()
+            }),
+        ]
+    }
 }
 
-#[interface(name = "org.kde.StatusNotifierItem")]
-impl StatusNotifierItemService {
-    #[zbus(property)]
-    pub fn category(&self) -> &str {
-        "Hardware"
-    }
-
-    #[zbus(property)]
-    pub fn id(&self) -> &str {
-        "alatus"
-    }
-
-    #[zbus(property)]
-    pub fn title(&self) -> &str {
-        "Alatus Hardware Suite"
-    }
-
-    #[zbus(property)]
-    pub fn status(&self) -> &str {
-        "Active"
-    }
-
-    #[zbus(property)]
-    pub fn icon_name(&self) -> &str {
-        "preferences-system-power"
-    }
-
-    #[zbus(property)]
-    fn icon_theme_path(&self) -> &str {
-        ""
-    }
-
-    #[zbus(property)]
-    fn tool_tip(&self) -> (&str, Vec<(&str, &str)>, &str) {
-        (
-            "preferences-system-power",
-            vec![("Alatus", "ASUS Hardware Control")],
-            "Alatus Active",
-        )
-    }
-
-    async fn activate(&self, _x: i32, _y: i32) -> zbus::fdo::Result<()> {
-        tracing::info!("Tray icon clicked: Attempting to launch alatus-gui...");
-        let _ = tokio::process::Command::new("alatus-gui").spawn();
-        Ok(())
-    }
-
-    async fn secondary_activate(&self, _x: i32, _y: i32) -> zbus::fdo::Result<()> {
-        Ok(())
-    }
-
-    async fn context_menu(&self, _x: i32, _y: i32) -> zbus::fdo::Result<()> {
-        Ok(())
-    }
-}
-
-pub async fn register_tray_watcher(session_conn: &Connection) -> Result<(), zbus::Error> {
-    let watcher_proxy = zbus::Proxy::new(
-        session_conn,
-        "org.kde.StatusNotifierWatcher",
-        "/StatusNotifierWatcher",
-        "org.kde.StatusNotifierWatcher",
-    )
-    .await;
-
-    if let Ok(watcher) = watcher_proxy {
-        let service: &str = session_conn.unique_name().map(|n| n.as_str()).unwrap_or("");
-        let _: Result<(), zbus::Error> =
-            watcher.call("RegisterStatusNotifierItem", &(service)).await;
-        tracing::info!("Registered Alatus with StatusNotifierWatcher");
-    } else {
-        tracing::debug!("StatusNotifierWatcher not present in this session.");
-    }
-
-    Ok(())
+pub fn spawn_tray() -> ksni::Handle<AlatusTray> {
+    let service = TrayService::new(AlatusTray::default());
+    let handle = service.handle();
+    service.spawn();
+    handle
 }

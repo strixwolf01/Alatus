@@ -1,0 +1,418 @@
+import { Slider } from "std-widgets.slint";
+
+export component DisplayTab inherits VerticalLayout {
+    in property <int> display_refresh_rate: 120;
+    in property <int> oled_dimming_level: 100;
+    in property <bool> target_mode_active: false;
+    in property <bool> panel_autohide_active: false;
+    in property <bool> panel_transparency_active: false;
+    in property <bool> dpms_pixel_refresh_active: false;
+    in property <string> display_output_name: "eDP-1";
+
+    callback set_display_refresh(int);
+    callback set_oled_dimming(int);
+    callback set_target_mode(bool);
+    callback set_panel_autohide(bool);
+    callback set_panel_transparency(bool);
+    callback set_dpms_pixel_refresh(bool);
+
+    spacing: 14px;
+
+    // Panel 1: Screen Refresh Rate & Mode
+    Rectangle {
+        border-radius: 12px;
+        background: #141720;
+        border-width: 1px;
+        border-color: #242938;
+
+        VerticalLayout {
+            padding: 18px;
+            spacing: 14px;
+
+            HorizontalLayout {
+                alignment: space-between;
+                VerticalLayout {
+                    spacing: 4px;
+                    Text {
+                        text: "Display Refresh Rate";
+                        font-size: 15px;
+                        font-weight: 700;
+                        color: #FFFFFF;
+                    }
+                    Text {
+                        text: "KDE Plasma Wayland mode selection (" + root.display_output_name + ")";
+                        font-size: 11px;
+                        color: #8A92A6;
+                    }
+                }
+
+                Rectangle {
+                    height: 28px;
+                    border-radius: 6px;
+                    background: #1D2333;
+                    HorizontalLayout {
+                        padding-left: 10px;
+                        padding-right: 10px;
+                        Text {
+                            text: "Current: " + root.display_refresh_rate + " Hz";
+                            font-size: 12px;
+                            font-weight: 700;
+                            color: #00F0FF;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            HorizontalLayout {
+                spacing: 12px;
+
+                // 60 Hz button
+                Rectangle {
+                    height: 48px;
+                    border-radius: 8px;
+                    background: root.display_refresh_rate == 60 ? #1B2B38 : #12151D;
+                    border-width: root.display_refresh_rate == 60 ? 2px : 1px;
+                    border-color: root.display_refresh_rate == 60 ? #00F0FF : #242938;
+                    TouchArea { clicked => { root.set_display_refresh(60); } }
+
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 2px;
+                        Text {
+                            text: "60 Hz";
+                            font-size: 14px;
+                            font-weight: 700;
+                            color: root.display_refresh_rate == 60 ? #00F0FF : #FFFFFF;
+                            horizontal-alignment: center;
+                        }
+                        Text {
+                            text: "Maximum Battery Life";
+                            font-size: 10px;
+                            color: #8A92A6;
+                            horizontal-alignment: center;
+                        }
+                    }
+                }
+
+                // 120 Hz button
+                Rectangle {
+                    height: 48px;
+                    border-radius: 8px;
+                    background: root.display_refresh_rate == 120 ? #1B2B38 : #12151D;
+                    border-width: root.display_refresh_rate == 120 ? 2px : 1px;
+                    border-color: root.display_refresh_rate == 120 ? #00F0FF : #242938;
+                    TouchArea { clicked => { root.set_display_refresh(120); } }
+
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 2px;
+                        Text {
+                            text: "120 Hz";
+                            font-size: 14px;
+                            font-weight: 700;
+                            color: root.display_refresh_rate == 120 ? #00F0FF : #FFFFFF;
+                            horizontal-alignment: center;
+                        }
+                        Text {
+                            text: "Ultra Smooth Motion (Native OLED)";
+                            font-size: 10px;
+                            color: #8A92A6;
+                            horizontal-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Panel 2: OLED DC Dimming & Target Mode
+    HorizontalLayout {
+        spacing: 12px;
+
+        // OLED DC Dimming
+        Rectangle {
+            border-radius: 12px;
+            background: #141720;
+            border-width: 1px;
+            border-color: #242938;
+
+            VerticalLayout {
+                padding: 16px;
+                spacing: 12px;
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    VerticalLayout {
+                        spacing: 2px;
+                        Text {
+                            text: "OLED DC Dimming";
+                            font-size: 14px;
+                            font-weight: 700;
+                            color: #FFFFFF;
+                        }
+                        Text {
+                            text: "Eliminates low-brightness PWM flicker";
+                            font-size: 11px;
+                            color: #8A92A6;
+                        }
+                    }
+                    Text {
+                        text: root.oled_dimming_level + "%";
+                        font-size: 14px;
+                        font-weight: 700;
+                        color: #00F0FF;
+                        vertical-alignment: center;
+                    }
+                }
+
+                Slider {
+                    minimum: 10;
+                    maximum: 100;
+                    value: root.oled_dimming_level;
+                    changed(val) => {
+                        root.set_oled_dimming(Math.round(val));
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 8px;
+                    Rectangle {
+                        height: 30px;
+                        border-radius: 6px;
+                        background: #1A1F2C;
+                        TouchArea { clicked => { root.set_oled_dimming(40); } }
+                        Text { text: "40%"; font-size: 11px; font-weight: 600; color: #FFFFFF; horizontal-alignment: center; vertical-alignment: center; }
+                    }
+                    Rectangle {
+                        height: 30px;
+                        border-radius: 6px;
+                        background: #1A1F2C;
+                        TouchArea { clicked => { root.set_oled_dimming(60); } }
+                        Text { text: "60%"; font-size: 11px; font-weight: 600; color: #FFFFFF; horizontal-alignment: center; vertical-alignment: center; }
+                    }
+                    Rectangle {
+                        height: 30px;
+                        border-radius: 6px;
+                        background: #1A1F2C;
+                        TouchArea { clicked => { root.set_oled_dimming(80); } }
+                        Text { text: "80%"; font-size: 11px; font-weight: 600; color: #FFFFFF; horizontal-alignment: center; vertical-alignment: center; }
+                    }
+                    Rectangle {
+                        height: 30px;
+                        border-radius: 6px;
+                        background: #1A1F2C;
+                        TouchArea { clicked => { root.set_oled_dimming(100); } }
+                        Text { text: "100%"; font-size: 11px; font-weight: 600; color: #00E676; horizontal-alignment: center; vertical-alignment: center; }
+                    }
+                }
+            }
+        }
+
+        // Target Mode (Dim Inactive Windows)
+        Rectangle {
+            border-radius: 12px;
+            background: #141720;
+            border-width: 1px;
+            border-color: #242938;
+
+            VerticalLayout {
+                padding: 16px;
+                spacing: 12px;
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    VerticalLayout {
+                        spacing: 2px;
+                        Text {
+                            text: "Target Mode";
+                            font-size: 14px;
+                            font-weight: 700;
+                            color: #FFFFFF;
+                        }
+                        Text {
+                            text: "KWin Dim Inactive effect";
+                            font-size: 11px;
+                            color: #8A92A6;
+                        }
+                    }
+
+                    Rectangle {
+                        width: 56px;
+                        height: 26px;
+                        border-radius: 13px;
+                        background: root.target_mode_active ? #00F0FF : #2A3142;
+                        TouchArea { clicked => { root.set_target_mode(!root.target_mode_active); } }
+                        Rectangle {
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 10px;
+                            background: #FFFFFF;
+                            x: root.target_mode_active ? 32px : 4px;
+                            y: 3px;
+                        }
+                    }
+                }
+
+                Text {
+                    text: "Automatically dims all non-focused desktop windows, saving OLED power and highlighting your active workflow.";
+                    font-size: 11px;
+                    color: #718096;
+                }
+
+                Rectangle {
+                    height: 32px;
+                    border-radius: 6px;
+                    background: root.target_mode_active ? #172D3A : #11141D;
+                    border-width: 1px;
+                    border-color: root.target_mode_active ? #00F0FF : #242938;
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        padding-right: 12px;
+                        alignment: space-between;
+                        Text { text: "Status:"; font-size: 11px; color: #8A92A6; vertical-alignment: center; }
+                        Text {
+                            text: root.target_mode_active ? "ACTIVE (Dimmed Inactive)" : "DISABLED";
+                            font-size: 11px;
+                            font-weight: 700;
+                            color: root.target_mode_active ? #00F0FF : #8A92A6;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Panel 3: OLED Care (Panel Autohide, Transparency, Pixel Refresh)
+    Rectangle {
+        border-radius: 12px;
+        background: #141720;
+        border-width: 1px;
+        border-color: #242938;
+
+        VerticalLayout {
+            padding: 16px;
+            spacing: 12px;
+
+            Text {
+                text: "OLED Care & Burn-in Prevention";
+                font-size: 14px;
+                font-weight: 700;
+                color: #FFFFFF;
+            }
+
+            HorizontalLayout {
+                spacing: 12px;
+
+                // Feature 1: Panel Autohide
+                Rectangle {
+                    border-radius: 8px;
+                    background: #11141D;
+                    border-width: 1px;
+                    border-color: root.panel_autohide_active ? #00F0FF : #1E2330;
+                    VerticalLayout {
+                        padding: 12px;
+                        spacing: 8px;
+                        HorizontalLayout {
+                            alignment: space-between;
+                            Text { text: "Panel Autohide"; font-size: 13px; font-weight: 600; color: #FFFFFF; }
+                            Rectangle {
+                                width: 44px;
+                                height: 22px;
+                                border-radius: 11px;
+                                background: root.panel_autohide_active ? #00E676 : #2A3142;
+                                TouchArea { clicked => { root.set_panel_autohide(!root.panel_autohide_active); } }
+                                Rectangle {
+                                    width: 16px;
+                                    height: 16px;
+                                    border-radius: 8px;
+                                    background: #FFFFFF;
+                                    x: root.panel_autohide_active ? 24px : 4px;
+                                    y: 3px;
+                                }
+                            }
+                        }
+                        Text {
+                            text: "Hides Plasma panel when not hovered to prevent taskbar burn-in.";
+                            font-size: 10px;
+                            color: #718096;
+                        }
+                    }
+                }
+
+                // Feature 2: Panel Transparency
+                Rectangle {
+                    border-radius: 8px;
+                    background: #11141D;
+                    border-width: 1px;
+                    border-color: root.panel_transparency_active ? #00F0FF : #1E2330;
+                    VerticalLayout {
+                        padding: 12px;
+                        spacing: 8px;
+                        HorizontalLayout {
+                            alignment: space-between;
+                            Text { text: "Panel Transparency"; font-size: 13px; font-weight: 600; color: #FFFFFF; }
+                            Rectangle {
+                                width: 44px;
+                                height: 22px;
+                                border-radius: 11px;
+                                background: root.panel_transparency_active ? #00E676 : #2A3142;
+                                TouchArea { clicked => { root.set_panel_transparency(!root.panel_transparency_active); } }
+                                Rectangle {
+                                    width: 16px;
+                                    height: 16px;
+                                    border-radius: 8px;
+                                    background: #FFFFFF;
+                                    x: root.panel_transparency_active ? 24px : 4px;
+                                    y: 3px;
+                                }
+                            }
+                        }
+                        Text {
+                            text: "Renders Plasma taskbar translucent to soften static contrast.";
+                            font-size: 10px;
+                            color: #718096;
+                        }
+                    }
+                }
+
+                // Feature 3: Pixel Refresh / DPMS
+                Rectangle {
+                    border-radius: 8px;
+                    background: #11141D;
+                    border-width: 1px;
+                    border-color: root.dpms_pixel_refresh_active ? #00F0FF : #1E2330;
+                    VerticalLayout {
+                        padding: 12px;
+                        spacing: 8px;
+                        HorizontalLayout {
+                            alignment: space-between;
+                            Text { text: "Pixel Refresh Timeout"; font-size: 13px; font-weight: 600; color: #FFFFFF; }
+                            Rectangle {
+                                width: 44px;
+                                height: 22px;
+                                border-radius: 11px;
+                                background: root.dpms_pixel_refresh_active ? #00E676 : #2A3142;
+                                TouchArea { clicked => { root.set_dpms_pixel_refresh(!root.dpms_pixel_refresh_active); } }
+                                Rectangle {
+                                    width: 16px;
+                                    height: 16px;
+                                    border-radius: 8px;
+                                    background: #FFFFFF;
+                                    x: root.dpms_pixel_refresh_active ? 24px : 4px;
+                                    y: 3px;
+                                }
+                            }
+                        }
+                        Text {
+                            text: "Sets screen sleep timeout to 5 min (300s) on AC and Battery.";
+                            font-size: 10px;
+                            color: #718096;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

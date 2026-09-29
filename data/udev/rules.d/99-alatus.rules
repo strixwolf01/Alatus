@@ -1,0 +1,2 @@
+# Alatus Hardware Suite - Touchpad access for user session edge gestures
+ACTION=="add|change", KERNEL=="event*", SUBSYSTEM=="input", ENV{ID_INPUT_TOUCHPAD}=="1", TAG+="uaccess"

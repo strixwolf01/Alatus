@@ -1,0 +1,268 @@
+export component DashboardTab inherits VerticalLayout {
+    in property <int> battery_percentage: 0;
+    in property <string> battery_status: "--";
+    in property <int> battery_limit: 80;
+    in property <int> battery_health: 100;
+    in property <string> battery_power: "-- W";
+
+    in property <string> current_profile: "Balanced";
+    in property <bool> full_speed_supported: true;
+    in property <string> fan_cpu_only_text: " CPU : 0%/0% ";
+    in property <string> fan_rpm_subtext: "";
+
+    in property <string> lighting_mode: "Static";
+    in property <color> current_rgb_color: #00F0FF;
+    in property <string> lighting_hex: "#00F0FF";
+    in property <int> lighting_brightness: 3;
+
+    callback set_thermal_profile(string);
+    callback set_battery_limit(int);
+
+    spacing: 14px;
+
+    // 3 Executive KPI Cards Row
+    HorizontalLayout {
+        spacing: 12px;
+
+        // KPI 1: Battery Vital Card
+        Rectangle {
+            border-radius: 10px;
+            background: #141720;
+            border-width: 1px;
+            border-color: #242938;
+            VerticalLayout {
+                padding: 16px;
+                spacing: 8px;
+                HorizontalLayout {
+                    alignment: space-between;
+                    Text { text: "BATTERY"; font-size: 11px; font-weight: 700; color: #8A92A6; }
+                    Text { text: root.battery_status; font-size: 11px; font-weight: 600; color: #00E676; }
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    Text {
+                        text: root.battery_percentage + "%";
+                        font-size: 26px;
+                        font-weight: 800;
+                        color: #FFFFFF;
+                    }
+                    Text {
+                        text: "Limit: " + root.battery_limit + "%";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #00F0FF;
+                        vertical-alignment: center;
+                    }
+                }
+                Text {
+                    text: "Health: " + root.battery_health + "%  •  Draw: " + root.battery_power;
+                    font-size: 11px;
+                    color: #718096;
+                }
+            }
+        }
+
+        // KPI 2: Thermal & Fan Vital Card
+        Rectangle {
+            border-radius: 10px;
+            background: #141720;
+            border-width: 1px;
+            border-color: #242938;
+            VerticalLayout {
+                padding: 16px;
+                spacing: 8px;
+                HorizontalLayout {
+                    alignment: space-between;
+                    Text { text: "THERMAL & FANS"; font-size: 11px; font-weight: 700; color: #8A92A6; }
+                    Text {
+                        text: root.current_profile;
+                        font-size: 11px;
+                        font-weight: 700;
+                        color: root.current_profile == "FullSpeed" ? #FF0055 : #00F0FF;
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 6px;
+                    Text {
+                        text: root.fan_cpu_only_text;
+                        font-size: 20px;
+                        font-weight: 800;
+                        color: #00F0FF;
+                    }
+                }
+                Text {
+                    text: root.fan_rpm_subtext != "" ? root.fan_rpm_subtext + " (Max 8100 RPM)" : "Fans Active";
+                    font-size: 11px;
+                    color: #718096;
+                }
+            }
+        }
+
+        // KPI 3: RGB Lighting Vital Card
+        Rectangle {
+            border-radius: 10px;
+            background: #141720;
+            border-width: 1px;
+            border-color: #242938;
+            VerticalLayout {
+                padding: 16px;
+                spacing: 8px;
+                HorizontalLayout {
+                    alignment: space-between;
+                    Text { text: "AURA LIGHTING"; font-size: 11px; font-weight: 700; color: #8A92A6; }
+                    Text { text: root.lighting_mode; font-size: 11px; font-weight: 600; color: #7C4DFF; }
+                }
+                HorizontalLayout {
+                    spacing: 10px;
+                    Rectangle {
+                        width: 26px;
+                        height: 26px;
+                        border-radius: 6px;
+                        background: root.current_rgb_color;
+                        border-width: 1px;
+                        border-color: #383E50;
+                    }
+                    Text {
+                        text: root.lighting_hex;
+                        font-size: 18px;
+                        font-weight: 800;
+                        color: #FFFFFF;
+                        vertical-alignment: center;
+                    }
+                }
+                Text {
+                    text: "Brightness: Level " + root.lighting_brightness + " / 3";
+                    font-size: 11px;
+                    color: #718096;
+                }
+            }
+        }
+    }
+
+    // Quick Actions Panel
+    Rectangle {
+        border-radius: 10px;
+        background: #141720;
+        border-width: 1px;
+        border-color: #242938;
+        VerticalLayout {
+            padding: 16px;
+            spacing: 14px;
+
+            Text {
+                text: "Quick Controls";
+                font-size: 14px;
+                font-weight: 700;
+                color: #FFFFFF;
+            }
+
+            // Fast Thermal Mode Switcher
+            HorizontalLayout {
+                spacing: 8px;
+                Rectangle {
+                    height: 38px;
+                    border-radius: 6px;
+                    background: root.current_profile == "Quiet" ? #00F0FF : #1B202C;
+                    TouchArea { clicked => { root.set_thermal_profile("Quiet"); } }
+                    Text {
+                        text: "Whisper (Silent)";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: root.current_profile == "Quiet" ? #000 : #FFF;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                Rectangle {
+                    height: 38px;
+                    border-radius: 6px;
+                    background: root.current_profile == "Balanced" ? #00F0FF : #1B202C;
+                    TouchArea { clicked => { root.set_thermal_profile("Balanced"); } }
+                    Text {
+                        text: "Balanced (Auto)";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: root.current_profile == "Balanced" ? #000 : #FFF;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                Rectangle {
+                    height: 38px;
+                    border-radius: 6px;
+                    background: root.current_profile == "Performance" ? #00F0FF : #1B202C;
+                    TouchArea { clicked => { root.set_thermal_profile("Performance"); } }
+                    Text {
+                        text: "Performance";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: root.current_profile == "Performance" ? #000 : #FFF;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                if root.full_speed_supported: Rectangle {
+                    height: 38px;
+                    border-radius: 6px;
+                    background: root.current_profile == "FullSpeed" ? #FF0055 : #1B202C;
+                    TouchArea { clicked => { root.set_thermal_profile("FullSpeed"); } }
+                    Text {
+                        text: "⚡ Full Speed (100%)";
+                        font-size: 12px;
+                        font-weight: 700;
+                        color: root.current_profile == "FullSpeed" ? #FFF : #FF4D7D;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+
+            // Fast Battery Limit Switcher
+            HorizontalLayout {
+                spacing: 8px;
+                Rectangle {
+                    height: 36px;
+                    border-radius: 6px;
+                    background: root.battery_limit == 60 ? #00E676 : #1B202C;
+                    TouchArea { clicked => { root.set_battery_limit(60); } }
+                    Text {
+                        text: "Cap 60% (Max Lifespan)";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: root.battery_limit == 60 ? #000 : #FFF;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                Rectangle {
+                    height: 36px;
+                    border-radius: 6px;
+                    background: root.battery_limit == 80 ? #00E676 : #1B202C;
+                    TouchArea { clicked => { root.set_battery_limit(80); } }
+                    Text {
+                        text: "Cap 80% (Balanced)";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: root.battery_limit == 80 ? #000 : #FFF;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                Rectangle {
+                    height: 36px;
+                    border-radius: 6px;
+                    background: root.battery_limit == 100 ? #00E676 : #1B202C;
+                    TouchArea { clicked => { root.set_battery_limit(100); } }
+                    Text {
+                        text: "Cap 100% (Full Trip)";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: root.battery_limit == 100 ? #000 : #FFF;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}
