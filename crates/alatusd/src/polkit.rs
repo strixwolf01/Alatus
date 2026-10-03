@@ -15,10 +15,17 @@ pub async fn check_authorization(
         None => return Err(zbus::fdo::Error::Failed("Missing message sender".into())),
     };
 
-    // If caller is root (UID 0), allow directly
-    if let Ok(creds) = conn.peer_credentials().await {
-        if creds.unix_user_id() == Some(0) {
-            return Ok(());
+    // Query the actual caller's UID via org.freedesktop.DBus.GetConnectionUnixUser
+    let dbus_proxy = zbus::fdo::DBusProxy::new(conn)
+        .await
+        .map_err(|e| zbus::fdo::Error::Failed(format!("Failed to connect to D-Bus daemon: {e}")))?;
+
+    if let Ok(bus_name) = sender.try_into() {
+        if let Ok(uid) = dbus_proxy.get_connection_unix_user(bus_name).await {
+            // If the actual client process is running as root (UID 0), bypass polkit
+            if uid == 0 {
+                return Ok(());
+            }
         }
     }
 
@@ -37,19 +44,10 @@ pub async fn check_authorization(
         "/org/freedesktop/PolicyKit1/Authority",
         "org.freedesktop.PolicyKit1.Authority",
     )
-    .await;
+    .await
+    .map_err(|e| zbus::fdo::Error::Failed(format!("PolicyKit authority unavailable: {e}")))?;
 
-    let proxy = match authority_proxy {
-        Ok(p) => p,
-        Err(e) => {
-            tracing::warn!(
-                "Failed to connect to PolicyKit1 authority: {e}. Checking credentials fallback."
-            );
-            return Ok(());
-        }
-    };
-
-    let reply: Result<(bool, bool, HashMap<String, String>), zbus::Error> = proxy
+    let reply: Result<(bool, bool, HashMap<String, String>), zbus::Error> = authority_proxy
         .call(
             "CheckAuthorization",
             &(subject, action_id, details, flags, cancellation_id),
@@ -67,8 +65,9 @@ pub async fn check_authorization(
             }
         }
         Err(e) => {
-            tracing::warn!("Polkit CheckAuthorization call failed ({e}). Fallback permitted.");
-            Ok(())
+            Err(zbus::fdo::Error::Failed(format!(
+                "Polkit CheckAuthorization call failed: {e}"
+            )))
         }
     }
 }

@@ -28,12 +28,19 @@ install:
 
 	# Install Machine Profiles
 	install -d $(DESTDIR)/etc/alatus
+	install -d $(DESTDIR)/var/lib/alatus
 	install -d $(DESTDIR)$(PREFIX)/share/alatus/profiles
 	install -m 644 data/profiles/*.toml $(DESTDIR)$(PREFIX)/share/alatus/profiles/
 
 	# Install Icons
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps
 	install -m 644 data/icons/alatus-gui.svg $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/alatus-gui.svg
+	for sz in 16 32 48 64 128 256 512; do \
+		install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/$${sz}x$${sz}/apps ; \
+		install -m 644 data/icons/alatus-gui-$${sz}.png $(DESTDIR)$(PREFIX)/share/icons/hicolor/$${sz}x$${sz}/apps/alatus-gui.png ; \
+	done
+	install -d $(DESTDIR)$(PREFIX)/share/pixmaps
+	install -m 644 data/icons/alatus-gui.png $(DESTDIR)$(PREFIX)/share/pixmaps/alatus-gui.png
 	install -d $(DESTDIR)$(PREFIX)/share/alatus/icons/modes
 	install -m 644 data/icons/modes/*.svg $(DESTDIR)$(PREFIX)/share/alatus/icons/modes/
 
@@ -55,10 +62,11 @@ install:
 	# Install Desktop Entry
 	install -d $(DESTDIR)$(PREFIX)/share/applications
 	install -m 644 data/applications/org.alatus.gui.desktop $(DESTDIR)$(PREFIX)/share/applications/
+	install -m 644 data/applications/alatus-gui.desktop $(DESTDIR)$(PREFIX)/share/applications/
 
 	# Install Udev Rules
 	install -d $(DESTDIR)$(PREFIX)/lib/udev/rules.d
-	install -m 644 data/udev/rules.d/99-alatus.rules $(DESTDIR)$(PREFIX)/lib/udev/rules.d/
+	install -m 644 data/udev/rules.d/70-alatus.rules $(DESTDIR)$(PREFIX)/lib/udev/rules.d/
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/alatusd

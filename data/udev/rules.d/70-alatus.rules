@@ -1,0 +1,10 @@
+# Alatus Hardware Suite - Input access for user session gestures & keyboard idle timeout
+# Must run before 73-seat-late.rules so uaccess builtin applies ACLs
+ACTION=="add|change", KERNEL=="event*", SUBSYSTEM=="input", ENV{ID_INPUT_TOUCHPAD}=="1", TAG+="uaccess", MODE="0666"
+ACTION=="add|change", KERNEL=="event*", SUBSYSTEM=="input", ENV{ID_INPUT_KEYBOARD}=="1", TAG+="uaccess", MODE="0666"
+ACTION=="add|change", KERNEL=="event*", SUBSYSTEM=="input", ENV{ID_INPUT_MOUSE}=="1", TAG+="uaccess", MODE="0666"
+ACTION=="add|change", KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="*Touchpad*", TAG+="uaccess", MODE="0666"
+ACTION=="add|change", KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="*touchpad*", TAG+="uaccess", MODE="0666"
+ACTION=="add|change", KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="*Keyboard*", TAG+="uaccess", MODE="0666"
+ACTION=="add|change", KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="*keyboard*", TAG+="uaccess", MODE="0666"
+ACTION=="add|change", KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="*Asus WMI*", TAG+="uaccess", MODE="0666"

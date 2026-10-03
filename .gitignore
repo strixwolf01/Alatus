@@ -24,3 +24,7 @@ Thumbs.db
 /scratch/
 .agents/
 skills-lock.json
+
+# Documentation and maintenance scripts
+docs/
+scripts/

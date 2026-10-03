@@ -7,7 +7,7 @@ PartOf=graphical-session.target
 [Service]
 Type=simple
 ExecStart=/usr/bin/alatus-session
-Restart=always
+Restart=on-failure
 RestartSec=2s
 
 [Install]

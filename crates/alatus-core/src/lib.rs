@@ -3,6 +3,7 @@ pub mod capabilities;
 pub mod error;
 pub mod hotkey;
 pub mod lighting;
+pub mod settings;
 pub mod thermal;
 
 pub use battery::{BatteryDriver, BatteryInfo, BatteryStatus};
@@ -10,4 +11,5 @@ pub use capabilities::{BatteryCapabilities, LightingCapabilities, ThermalCapabil
 pub use error::AlatusError;
 pub use hotkey::{HotkeyAction, HotkeyDriver, HotkeyEvent};
 pub use lighting::{LightingDriver, LightingEffect, LightingMode, RgbColor};
+pub use settings::AlatusSettings;
 pub use thermal::{FanStatus, ThermalDriver, ThermalProfileMode};

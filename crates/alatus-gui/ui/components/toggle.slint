@@ -18,8 +18,10 @@ export component ToggleSwitch inherits Rectangle {
         height: 18px;
         border-radius: 9px;
         background: #FFFFFF;
-        x: root.checked ? 22px : 3px;
-        y: 2px;
+        x: root.checked ? (parent.width - self.width - 3px) : 3px;
+        y: (parent.height - self.height) / 2;
+        drop-shadow-blur: 2px;
+        drop-shadow-color: #00000040;
         animate x { duration: 150ms; easing: ease-out; }
     }
 

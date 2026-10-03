@@ -31,6 +31,30 @@ fn test_hotkey_action_mapping() {
         HotkeyAction::FanModeToggle
     );
 
+    // 482 is ASUS WMI hotkey event code (Fn+F on Vivobook S / Zenbook OLED)
+    assert_eq!(
+        AsusWmiHotkeyDriver::map_key(482),
+        HotkeyAction::FanModeToggle
+    );
+
+    // 148, 190, 203, 582 are OEM Fan toggles
+    assert_eq!(
+        AsusWmiHotkeyDriver::map_key(148),
+        HotkeyAction::FanModeToggle
+    );
+    assert_eq!(
+        AsusWmiHotkeyDriver::map_key(190),
+        HotkeyAction::FanModeToggle
+    );
+    assert_eq!(
+        AsusWmiHotkeyDriver::map_key(203),
+        HotkeyAction::FanModeToggle
+    );
+    assert_eq!(
+        AsusWmiHotkeyDriver::map_key(582),
+        HotkeyAction::FanModeToggle
+    );
+
     // 187 is KEY_F17 (Alternate Fan toggle)
     assert_eq!(
         AsusWmiHotkeyDriver::map_key(187),

@@ -5,8 +5,8 @@ use evdev::{AbsoluteAxisCode, Device, EventSummary, KeyCode};
 use std::time::Duration;
 use tokio::sync::watch;
 
-const EDGE_PERCENT: f64 = 0.05;
-const STEP_THRESHOLD: i32 = 250;
+const EDGE_PERCENT: f64 = 0.08;
+const STEP_THRESHOLD: i32 = 180;
 
 #[zbus::proxy(
     interface = "org.kde.Solid.PowerManagement.Actions.BrightnessControl",
@@ -72,8 +72,24 @@ async fn run_action(program: &str, args: &[&str]) {
         .await;
 }
 
+async fn change_volume(up: bool) {
+    let arg = if up { "+5%" } else { "-5%" };
+    let status = tokio::process::Command::new("pactl")
+        .args(["set-sink-volume", "@DEFAULT_SINK@", arg])
+        .status()
+        .await;
+    if status.is_err() || !status.unwrap().success() {
+        let wp_arg = if up { "5%+" } else { "5%-" };
+        let _ = tokio::process::Command::new("wpctl")
+            .args(["set-volume", "@DEFAULT_AUDIO_SINK@", wp_arg])
+            .status()
+            .await;
+    }
+}
+
 pub fn find_touchpad() -> Option<Device> {
-    for (_, device) in evdev::enumerate() {
+    // 1. Try standard evdev enumerate
+    for (path, device) in evdev::enumerate() {
         let name = device.name().unwrap_or_default().to_lowercase();
         if !name.contains("touchpad") && !name.contains("touch") {
             continue;
@@ -84,10 +100,42 @@ pub fn find_touchpad() -> Option<Device> {
             let has_y = axes.contains(AbsoluteAxisCode::ABS_Y)
                 || axes.contains(AbsoluteAxisCode::ABS_MT_POSITION_Y);
             if has_x && has_y {
+                tracing::info!("Found touchpad device at {}: {}", path.display(), name);
                 return Some(device);
             }
         }
     }
+
+    // 2. Direct sysfs scanning fallback (gives actionable log if permission denied)
+    if let Ok(entries) = std::fs::read_dir("/sys/class/input") {
+        for entry in entries.flatten() {
+            let fname = entry.file_name().to_string_lossy().to_string();
+            if fname.starts_with("event") {
+                let name_file = entry.path().join("device/name");
+                if let Ok(name) = std::fs::read_to_string(name_file) {
+                    let n = name.to_lowercase();
+                    if n.contains("touchpad") || n.contains("touch") {
+                        let dev_path = format!("/dev/input/{}", fname);
+                        match Device::open(&dev_path) {
+                            Ok(dev) => {
+                                tracing::info!("Opened touchpad device at {}: {}", dev_path, name.trim());
+                                return Some(dev);
+                            }
+                            Err(e) => {
+                                tracing::warn!(
+                                    "Identified touchpad at {} ({}) but open failed: {}. Check permissions/udev.",
+                                    dev_path,
+                                    name.trim(),
+                                    e
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     None
 }
 
@@ -185,7 +233,11 @@ pub async fn run_gestures_listener(mut shutdown: watch::Receiver<bool>) {
             match event.destructure() {
                 EventSummary::Key(_, KeyCode::BTN_TOUCH, val) => {
                     if val == 1 {
-                        state = GestureState::Classifying { x: None, y: None };
+                        if alatus_core::settings::AlatusSettings::load().touchpad_gestures_active {
+                            state = GestureState::Classifying { x: None, y: None };
+                        } else {
+                            state = GestureState::Idle;
+                        }
                     } else {
                         state = GestureState::Idle;
                     }
@@ -226,21 +278,7 @@ pub async fn run_gestures_listener(mut shutdown: watch::Receiver<bool>) {
                                 let dy = val - *last_y;
                                 if dy.abs() >= STEP_THRESHOLD {
                                     *last_y = val;
-                                    run_action("pactl", &["set-sink-mute", "@DEFAULT_SINK@", "0"])
-                                        .await;
-                                    if dy < 0 {
-                                        run_action(
-                                            "pactl",
-                                            &["set-sink-volume", "@DEFAULT_SINK@", "+5%"],
-                                        )
-                                        .await;
-                                    } else {
-                                        run_action(
-                                            "pactl",
-                                            &["set-sink-volume", "@DEFAULT_SINK@", "-5%"],
-                                        )
-                                        .await;
-                                    }
+                                    change_volume(dy < 0).await;
                                 }
                             }
                             GestureState::RightEdge { last_y } => {

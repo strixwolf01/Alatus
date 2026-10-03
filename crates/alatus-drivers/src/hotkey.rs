@@ -44,6 +44,11 @@ impl AsusWmiHotkeyDriver {
             return Some(path.clone());
         }
 
+        let asus_wmi_by_path = self.sysfs_root.resolve("/dev/input/by-path/platform-asus-nb-wmi-event");
+        if asus_wmi_by_path.exists() {
+            return Some(asus_wmi_by_path);
+        }
+
         let input_class_dir = self.sysfs_root.resolve("/sys/class/input");
         if !input_class_dir.exists() {
             let rel = self.sysfs_root.resolve("/class/input");
@@ -75,9 +80,10 @@ impl AsusWmiHotkeyDriver {
                 .ok();
 
             if let Some(content) = name_content {
-                if content
-                    .to_lowercase()
-                    .contains(&self.device_name.to_lowercase())
+                let lower = content.to_lowercase();
+                if lower.contains(&self.device_name.to_lowercase())
+                    || lower.contains("asus wmi hotkeys")
+                    || lower.contains("asus-nb-wmi")
                 {
                     let dev_path = PathBuf::from(format!("/dev/input/{file_name}"));
                     return Some(self.sysfs_root.resolve(dev_path));
@@ -89,15 +95,29 @@ impl AsusWmiHotkeyDriver {
     }
 
     pub fn map_key(code: u16) -> HotkeyAction {
-        match Key::new(code) {
-            Key::KEY_PROG3 | Key::KEY_F17 => HotkeyAction::FanModeToggle,
-            Key::KEY_MICMUTE => HotkeyAction::MicMuteToggle,
-            Key::KEY_TOUCHPAD_TOGGLE | Key::KEY_F21 => HotkeyAction::TouchpadToggle,
-            Key::KEY_KBDILLUMTOGGLE | Key::KEY_KBDILLUMUP => HotkeyAction::AuraModeToggle,
-            Key::KEY_BRIGHTNESSUP => HotkeyAction::BrightnessUp,
-            Key::KEY_BRIGHTNESSDOWN => HotkeyAction::BrightnessDown,
-            Key::KEY_SLEEP => HotkeyAction::Sleep,
-            _ => HotkeyAction::Custom(code as u32),
+        // Known ASUS WMI and OEM scancodes:
+        // 148 = KEY_PROG1 (Fn+F on Zenbook/ROG variants)
+        // 187 = KEY_F17 (Fn+F on standard Linux Asus WMI)
+        // 190 = KEY_F20 (Fn+F alternate mapping)
+        // 202 = KEY_PROG3 (Fn+F fan mode toggle)
+        // 203 = KEY_PROG4 (Fn+F alternate toggle)
+        // 482 = ASUS WMI hotkey event code (Fn+F on Vivobook S / Zenbook OLED)
+        // 582 = ASUS notification / fan hotkey
+        match code {
+            148 | 187 | 190 | 202 | 203 | 482 | 582 => HotkeyAction::FanModeToggle,
+            248 => HotkeyAction::MicMuteToggle,
+            530 => HotkeyAction::TouchpadToggle,
+            228 => HotkeyAction::AuraModeToggle,
+            _ => match Key::new(code) {
+                Key::KEY_PROG3 | Key::KEY_F17 => HotkeyAction::FanModeToggle,
+                Key::KEY_MICMUTE => HotkeyAction::MicMuteToggle,
+                Key::KEY_TOUCHPAD_TOGGLE | Key::KEY_F21 => HotkeyAction::TouchpadToggle,
+                Key::KEY_KBDILLUMTOGGLE | Key::KEY_KBDILLUMUP => HotkeyAction::AuraModeToggle,
+                Key::KEY_BRIGHTNESSUP => HotkeyAction::BrightnessUp,
+                Key::KEY_BRIGHTNESSDOWN => HotkeyAction::BrightnessDown,
+                Key::KEY_SLEEP => HotkeyAction::Sleep,
+                _ => HotkeyAction::Custom(code as u32),
+            },
         }
     }
 
@@ -137,19 +157,25 @@ impl HotkeyDriver for AsusWmiHotkeyDriver {
         let stream = self.ensure_stream().await?;
 
         loop {
-            let ev = stream.next_event().await.map_err(|e| AlatusError::Io {
-                path: PathBuf::from("/dev/input"),
-                source: e,
-            })?;
-
-            // Only trigger on key press (value == 1)
-            if ev.event_type() == EventType::KEY && ev.value() == 1 {
-                let code = ev.code();
-                let action = Self::map_key(code);
-                return Ok(HotkeyEvent {
-                    action,
-                    raw_code: code as u32,
-                });
+            match stream.next_event().await {
+                Ok(ev) => {
+                    // Only trigger on key press (value == 1)
+                    if ev.event_type() == EventType::KEY && ev.value() == 1 {
+                        let code = ev.code();
+                        let action = Self::map_key(code);
+                        return Ok(HotkeyEvent {
+                            action,
+                            raw_code: code as u32,
+                        });
+                    }
+                }
+                Err(e) => {
+                    self.stream = None;
+                    return Err(AlatusError::Io {
+                        path: PathBuf::from("/dev/input"),
+                        source: e,
+                    });
+                }
             }
         }
     }

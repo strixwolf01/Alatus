@@ -1,49 +1,50 @@
 import { GroupCard, SectionHeader } from "../components/card.slint";
+import { ToggleSwitch } from "../components/toggle.slint";
 
 export component GesturesTab inherits VerticalLayout {
     in property <color> accent_color: #3B82F6;
+    in-out property <bool> touchpad_gestures_active: true;
+    callback toggle_touchpad_gestures(bool);
 
     spacing: 16px;
+    alignment: start;
 
-    // Overview Card
+    // Overview Card with Master Toggle
     GroupCard {
         VerticalLayout {
             padding: 20px;
-            spacing: 10px;
+            spacing: 12px;
 
             HorizontalLayout {
                 alignment: space-between;
-                Text {
-                    text: "Touchpad Edge Gestures";
-                    font-size: 16px;
-                    font-weight: 700;
-                    color: #FFFFFF;
+                VerticalLayout {
+                    spacing: 4px;
+                    alignment: center;
+                    Text {
+                        text: "Touchpad Edge Gestures";
+                        font-size: 16px;
+                        font-weight: 700;
+                        color: #FFFFFF;
+                    }
+                    Text {
+                        text: "Hardware-level edge touch gesture listener running in alatus-session. Operates on the outer 5% touchpad borders with built-in palm rejection.";
+                        font-size: 12px;
+                        color: #8C929E;
+                        wrap: word-wrap;
+                    }
                 }
-                Rectangle {
-                    height: 26px;
-                    border-radius: 6px;
-                    background: #00E67620;
-                    border-width: 1px;
-                    border-color: #00E67650;
-                    HorizontalLayout {
-                        padding-left: 10px;
-                        padding-right: 10px;
-                        Text {
-                            text: "● ACTIVE (evdev kernel stream)";
-                            font-size: 11px;
-                            font-weight: 700;
-                            color: #00E676;
-                            vertical-alignment: center;
+
+                HorizontalLayout {
+                    alignment: center;
+                    ToggleSwitch {
+                        checked: root.touchpad_gestures_active;
+                        accent_color: root.accent_color;
+                        toggled(val) => {
+                            root.touchpad_gestures_active = val;
+                            root.toggle_touchpad_gestures(val);
                         }
                     }
                 }
-            }
-
-            Text {
-                text: "Hardware-level edge touch gesture listener running in alatus-session. Operates on the outer 5% touchpad borders with built-in palm rejection.";
-                font-size: 12px;
-                color: #8C929E;
-                wrap: word-wrap;
             }
         }
     }
@@ -51,6 +52,7 @@ export component GesturesTab inherits VerticalLayout {
     // 3 Configured Edge Gesture Cards (Vertical Stack to fit any window width cleanly)
     VerticalLayout {
         spacing: 12px;
+        opacity: root.touchpad_gestures_active ? 1.0 : 0.35;
 
         // Card 1: Left Edge (Volume)
         GroupCard {

@@ -24,7 +24,9 @@ RestrictNamespaces=true
 RestrictSUIDSGID=true
 
 # Read-write paths required for hardware sysfs & config
-ReadWritePaths=/sys -/sys/kernel/debug -/etc/alatus
+ReadWritePaths=/sys -/sys/kernel/debug -/etc/alatus -/var/lib/alatus -/run/alatus
+StateDirectory=alatus
+RuntimeDirectory=alatus
 
 # Device isolation
 DevicePolicy=closed

@@ -206,15 +206,28 @@ impl BatteryDriver for AsusSysfsBatteryDriver {
 impl AsusSysfsBatteryDriver {
     async fn get_power_now_microwatts(&self) -> Option<u64> {
         if let Ok(p) = self.read_sysfs_u64("power_now").await {
-            return Some(p);
+            if p > 0 {
+                return Some(p);
+            }
         }
         // Fallback: P = V * I (voltage_now in uV, current_now in uA -> P in uW)
-        if let (Ok(v), Ok(i)) = (
-            self.read_sysfs_u64("voltage_now").await,
-            self.read_sysfs_u64("current_now").await,
-        ) {
-            return Some(v.saturating_mul(i) / 1_000_000);
+        // Note: current_now is negative on many systems when discharging!
+        if let Ok(v) = self.read_sysfs_u64("voltage_now").await {
+            let current_abs = if let Ok(s) = self.read_sysfs_string("current_now").await {
+                let trimmed = s.trim();
+                trimmed
+                    .parse::<i64>()
+                    .map(|i| i.unsigned_abs())
+                    .ok()
+                    .or_else(|| trimmed.parse::<u64>().ok())
+            } else {
+                None
+            };
+
+            if let Some(i) = current_abs {
+                return Some(v.saturating_mul(i) / 1_000_000);
+            }
         }
-        None
+        Some(0)
     }
 }

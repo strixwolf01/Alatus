@@ -8,7 +8,8 @@ import { SystemTab } from "tabs/system.slint";
 import { ScrollView } from "std-widgets.slint";
 
 export component MainWindow inherits Window {
-    title: "Alatus - ASUS Hardware Control Suite";
+    title: "Alatus";
+    icon: @image-url("../../../data/icons/alatus-gui.png");
     min-width: 900px;
     min-height: 640px;
     preferred-width: 960px;
@@ -30,26 +31,49 @@ export component MainWindow inherits Window {
     callback set_panel_transparency(bool);
     callback set_dpms_pixel_refresh(bool);
     callback set_kbd_idle_mode(string);
-    callback set_kbd_idle_timeout(int);
+    callback set_kbd_idle_timeout_ac(int);
+    callback set_kbd_idle_timeout_bat(int);
+    callback toggle_sync_accent_color(bool);
+    callback set_auto_refresh(bool);
+    callback toggle_stay_in_tray(bool);
+    callback toggle_start_on_boot(bool);
+    callback toggle_touchpad_gestures(bool);
+    callback reveal_serial();
+    callback hide_serial();
 
     // State properties
     in-out property <int> active_tab: 0; // 0: Dashboard, 1: Battery, 2: Cooling, 3: Aura RGB, 4: Display, 5: Gestures, 6: System
     in-out property <bool> is_kde: true;
     in-out property <color> accent_color: #3B82F6;
+    in-out property <bool> sync_accent_color: false;
+    in-out property <bool> auto_refresh_active: true;
+    in-out property <bool> stay_in_tray: true;
+    in-out property <bool> start_on_boot: true;
+    in-out property <bool> touchpad_gestures_active: true;
+
+    // RAM Telemetry properties
+    in-out property <string> ram_usage_text: "0%";
+    in-out property <string> ram_usage_detail: "-- / --";
 
     // Real DMI and hardware strings
-    in-out property <string> device_model: "ASUS Vivobook S 15 OLED (S5506MA)";
-    in-out property <string> board_name: "S5506MA";
-    in-out property <string> bios_version: "S5506MA.318";
-    in-out property <string> kernel_version: "Linux x86_64";
-    in-out property <string> device_serial: "S3N0KD006297137";
+    in-out property <string> device_model: "Laptop Device";
+    in-out property <string> board_name: "Motherboard";
+    in-out property <string> bios_version: "--";
+    in-out property <string> kernel_version: "Linux";
+    in-out property <string> device_serial: "[ Hidden ]";
+    in-out property <bool> serial_revealed: false;
+    in-out property <string> cpu_model: "Processor";
+    in-out property <string> memory_total: "-- GB";
+    in-out property <string> fan_driver_info: "ASUS ACPI / Platform Profile";
 
     // Keyboard Backlight Idle Mode
     in-out property <string> kbd_idle_mode: "always_on";
-    in-out property <int> kbd_idle_timeout_min: 1;
+    in-out property <int> kbd_idle_timeout_ac_min: 1;
+    in-out property <int> kbd_idle_timeout_bat_min: 1;
 
     // Display & Gesture properties
     in-out property <int> display_refresh_rate: 120;
+    in-out property <string> screen_type: "OLED";
     in-out property <int> oled_dimming_level: 100;
     in-out property <bool> target_mode_active: false;
     in-out property <bool> panel_autohide_active: false;
@@ -112,14 +136,6 @@ export component MainWindow inherits Window {
                     alignment: space-between;
 
                     HorizontalLayout {
-                        spacing: 8px;
-                        Text {
-                            text: "▲";
-                            font-size: 18px;
-                            font-weight: 900;
-                            color: root.accent_color;
-                            vertical-alignment: center;
-                        }
                         Text {
                             text: "Alatus";
                             font-size: 15px;
@@ -127,14 +143,6 @@ export component MainWindow inherits Window {
                             color: #FFFFFF;
                             vertical-alignment: center;
                         }
-                    }
-
-                    Rectangle {
-                        width: 8px;
-                        height: 8px;
-                        border-radius: 4px;
-                        background: #00E676;
-                        y: 8px;
                     }
                 }
 
@@ -149,18 +157,28 @@ export component MainWindow inherits Window {
                     Rectangle {
                         height: 38px;
                         border-radius: 8px;
-                        background: root.active_tab == 0 ? #2A2D35 : (item0_touch.has-hover ? #1F2128 : transparent);
+                        background: root.active_tab == 0 ? root.accent_color.with_alpha(0.18) : (item0_touch.has-hover ? #1F2128 : transparent);
+                        border-width: root.active_tab == 0 ? 1px : 0px;
+                        border-color: root.accent_color.with_alpha(0.4);
+                        if root.active_tab == 0: Rectangle {
+                            x: 0px;
+                            y: 10px;
+                            width: 3px;
+                            height: 18px;
+                            border-radius: 1.5px;
+                            background: root.accent_color;
+                        }
                         HorizontalLayout {
                             padding-left: 12px;
                             padding-right: 12px;
                             spacing: 12px;
                             alignment: start;
-                            Text { text: "🏠"; font-size: 13px; vertical-alignment: center; }
+                            Text { text: "🏠"; font-size: 16px; width: 22px; horizontal-alignment: center; vertical-alignment: center; }
                             Text {
                                 text: "Home";
                                 font-size: 13px;
-                                font-weight: root.active_tab == 0 ? 600 : 500;
-                                color: root.active_tab == 0 ? #FFFFFF : #9CA3AF;
+                                font-weight: root.active_tab == 0 ? 700 : 500;
+                                color: root.active_tab == 0 ? root.accent_color : #9CA3AF;
                                 vertical-alignment: center;
                             }
                         }
@@ -171,18 +189,28 @@ export component MainWindow inherits Window {
                     Rectangle {
                         height: 38px;
                         border-radius: 8px;
-                        background: root.active_tab == 1 ? #2A2D35 : (item1_touch.has-hover ? #1F2128 : transparent);
+                        background: root.active_tab == 1 ? root.accent_color.with_alpha(0.18) : (item1_touch.has-hover ? #1F2128 : transparent);
+                        border-width: root.active_tab == 1 ? 1px : 0px;
+                        border-color: root.accent_color.with_alpha(0.4);
+                        if root.active_tab == 1: Rectangle {
+                            x: 0px;
+                            y: 10px;
+                            width: 3px;
+                            height: 18px;
+                            border-radius: 1.5px;
+                            background: root.accent_color;
+                        }
                         HorizontalLayout {
                             padding-left: 12px;
                             padding-right: 12px;
                             spacing: 12px;
                             alignment: start;
-                            Text { text: "🔋"; font-size: 13px; vertical-alignment: center; }
+                            Text { text: "🔋"; font-size: 16px; width: 22px; horizontal-alignment: center; vertical-alignment: center; }
                             Text {
                                 text: "Battery";
                                 font-size: 13px;
-                                font-weight: root.active_tab == 1 ? 600 : 500;
-                                color: root.active_tab == 1 ? #FFFFFF : #9CA3AF;
+                                font-weight: root.active_tab == 1 ? 700 : 500;
+                                color: root.active_tab == 1 ? root.accent_color : #9CA3AF;
                                 vertical-alignment: center;
                             }
                         }
@@ -193,18 +221,28 @@ export component MainWindow inherits Window {
                     Rectangle {
                         height: 38px;
                         border-radius: 8px;
-                        background: root.active_tab == 2 ? #2A2D35 : (item2_touch.has-hover ? #1F2128 : transparent);
+                        background: root.active_tab == 2 ? root.accent_color.with_alpha(0.18) : (item2_touch.has-hover ? #1F2128 : transparent);
+                        border-width: root.active_tab == 2 ? 1px : 0px;
+                        border-color: root.accent_color.with_alpha(0.4);
+                        if root.active_tab == 2: Rectangle {
+                            x: 0px;
+                            y: 10px;
+                            width: 3px;
+                            height: 18px;
+                            border-radius: 1.5px;
+                            background: root.accent_color;
+                        }
                         HorizontalLayout {
                             padding-left: 12px;
                             padding-right: 12px;
                             spacing: 12px;
                             alignment: start;
-                            Text { text: "❄️"; font-size: 13px; vertical-alignment: center; }
+                            Text { text: "❄️"; font-size: 16px; width: 22px; horizontal-alignment: center; vertical-alignment: center; }
                             Text {
                                 text: "Cooling";
                                 font-size: 13px;
-                                font-weight: root.active_tab == 2 ? 600 : 500;
-                                color: root.active_tab == 2 ? #FFFFFF : #9CA3AF;
+                                font-weight: root.active_tab == 2 ? 700 : 500;
+                                color: root.active_tab == 2 ? root.accent_color : #9CA3AF;
                                 vertical-alignment: center;
                             }
                         }
@@ -215,18 +253,28 @@ export component MainWindow inherits Window {
                     Rectangle {
                         height: 38px;
                         border-radius: 8px;
-                        background: root.active_tab == 3 ? #2A2D35 : (item3_touch.has-hover ? #1F2128 : transparent);
+                        background: root.active_tab == 3 ? root.accent_color.with_alpha(0.18) : (item3_touch.has-hover ? #1F2128 : transparent);
+                        border-width: root.active_tab == 3 ? 1px : 0px;
+                        border-color: root.accent_color.with_alpha(0.4);
+                        if root.active_tab == 3: Rectangle {
+                            x: 0px;
+                            y: 10px;
+                            width: 3px;
+                            height: 18px;
+                            border-radius: 1.5px;
+                            background: root.accent_color;
+                        }
                         HorizontalLayout {
                             padding-left: 12px;
                             padding-right: 12px;
                             spacing: 12px;
                             alignment: start;
-                            Text { text: "💡"; font-size: 13px; vertical-alignment: center; }
+                            Text { text: "💡"; font-size: 16px; width: 22px; horizontal-alignment: center; vertical-alignment: center; }
                             Text {
                                 text: "Aura RGB";
                                 font-size: 13px;
-                                font-weight: root.active_tab == 3 ? 600 : 500;
-                                color: root.active_tab == 3 ? #FFFFFF : #9CA3AF;
+                                font-weight: root.active_tab == 3 ? 700 : 500;
+                                color: root.active_tab == 3 ? root.accent_color : #9CA3AF;
                                 vertical-alignment: center;
                             }
                         }
@@ -237,18 +285,28 @@ export component MainWindow inherits Window {
                     if root.is_kde: Rectangle {
                         height: 38px;
                         border-radius: 8px;
-                        background: root.active_tab == 4 ? #2A2D35 : (item4_touch.has-hover ? #1F2128 : transparent);
+                        background: root.active_tab == 4 ? root.accent_color.with_alpha(0.18) : (item4_touch.has-hover ? #1F2128 : transparent);
+                        border-width: root.active_tab == 4 ? 1px : 0px;
+                        border-color: root.accent_color.with_alpha(0.4);
+                        if root.active_tab == 4: Rectangle {
+                            x: 0px;
+                            y: 10px;
+                            width: 3px;
+                            height: 18px;
+                            border-radius: 1.5px;
+                            background: root.accent_color;
+                        }
                         HorizontalLayout {
                             padding-left: 12px;
                             padding-right: 12px;
                             spacing: 12px;
                             alignment: start;
-                            Text { text: "🖥️"; font-size: 13px; vertical-alignment: center; }
+                            Text { text: "🖥️"; font-size: 16px; width: 22px; horizontal-alignment: center; vertical-alignment: center; }
                             Text {
                                 text: "Display";
                                 font-size: 13px;
-                                font-weight: root.active_tab == 4 ? 600 : 500;
-                                color: root.active_tab == 4 ? #FFFFFF : #9CA3AF;
+                                font-weight: root.active_tab == 4 ? 700 : 500;
+                                color: root.active_tab == 4 ? root.accent_color : #9CA3AF;
                                 vertical-alignment: center;
                             }
                         }
@@ -259,18 +317,28 @@ export component MainWindow inherits Window {
                     if root.is_kde: Rectangle {
                         height: 38px;
                         border-radius: 8px;
-                        background: root.active_tab == 5 ? #2A2D35 : (item5_touch.has-hover ? #1F2128 : transparent);
+                        background: root.active_tab == 5 ? root.accent_color.with_alpha(0.18) : (item5_touch.has-hover ? #1F2128 : transparent);
+                        border-width: root.active_tab == 5 ? 1px : 0px;
+                        border-color: root.accent_color.with_alpha(0.4);
+                        if root.active_tab == 5: Rectangle {
+                            x: 0px;
+                            y: 10px;
+                            width: 3px;
+                            height: 18px;
+                            border-radius: 1.5px;
+                            background: root.accent_color;
+                        }
                         HorizontalLayout {
                             padding-left: 12px;
                             padding-right: 12px;
                             spacing: 12px;
                             alignment: start;
-                            Text { text: "👆"; font-size: 13px; vertical-alignment: center; }
+                            Text { text: "👆"; font-size: 16px; width: 22px; horizontal-alignment: center; vertical-alignment: center; }
                             Text {
                                 text: "Touchpad";
                                 font-size: 13px;
-                                font-weight: root.active_tab == 5 ? 600 : 500;
-                                color: root.active_tab == 5 ? #FFFFFF : #9CA3AF;
+                                font-weight: root.active_tab == 5 ? 700 : 500;
+                                color: root.active_tab == 5 ? root.accent_color : #9CA3AF;
                                 vertical-alignment: center;
                             }
                         }
@@ -281,18 +349,28 @@ export component MainWindow inherits Window {
                     Rectangle {
                         height: 38px;
                         border-radius: 8px;
-                        background: root.active_tab == 6 ? #2A2D35 : (item6_touch.has-hover ? #1F2128 : transparent);
+                        background: root.active_tab == 6 ? root.accent_color.with_alpha(0.18) : (item6_touch.has-hover ? #1F2128 : transparent);
+                        border-width: root.active_tab == 6 ? 1px : 0px;
+                        border-color: root.accent_color.with_alpha(0.4);
+                        if root.active_tab == 6: Rectangle {
+                            x: 0px;
+                            y: 10px;
+                            width: 3px;
+                            height: 18px;
+                            border-radius: 1.5px;
+                            background: root.accent_color;
+                        }
                         HorizontalLayout {
                             padding-left: 12px;
                             padding-right: 12px;
                             spacing: 12px;
                             alignment: start;
-                            Text { text: "⚙️"; font-size: 13px; vertical-alignment: center; }
+                            Text { text: "⚙️"; font-size: 16px; width: 22px; horizontal-alignment: center; vertical-alignment: center; }
                             Text {
                                 text: "System";
                                 font-size: 13px;
-                                font-weight: root.active_tab == 6 ? 600 : 500;
-                                color: root.active_tab == 6 ? #FFFFFF : #9CA3AF;
+                                font-weight: root.active_tab == 6 ? 700 : 500;
+                                color: root.active_tab == 6 ? root.accent_color : #9CA3AF;
                                 vertical-alignment: center;
                             }
                         }
@@ -317,7 +395,7 @@ export component MainWindow inherits Window {
                         Text { text: "⚡"; font-size: 11px; vertical-alignment: center; }
                         Text { text: "Alatus Suite"; font-size: 11px; color: #8C929E; vertical-alignment: center; }
                     }
-                    Text { text: "v0.1.0"; font-size: 11px; color: #5A6070; vertical-alignment: center; }
+                    Text { text: "v2.0.0"; font-size: 11px; color: #5A6070; vertical-alignment: center; }
                 }
             }
         }
@@ -362,40 +440,17 @@ export component MainWindow inherits Window {
                         vertical-alignment: center;
                     }
 
-                    // Right Active Profile Badge
-                    Rectangle {
-                        width: 100px;
-                        height: 24px;
-                        y: 12px;
-                        border-radius: 4px;
-                        background: #23262F;
-                        HorizontalLayout {
-                            alignment: center;
-                            spacing: 6px;
-                            Rectangle {
-                                width: 6px;
-                                height: 6px;
-                                border-radius: 3px;
-                                background: root.current_profile == "FullSpeed" ? #FF0055 : root.accent_color;
-                                y: 9px;
-                            }
-                            Text {
-                                text: root.current_profile;
-                                font-size: 11px;
-                                font-weight: 700;
-                                color: #FFFFFF;
-                                vertical-alignment: center;
-                            }
-                        }
-                    }
+                    // Right spacer matching left spacer for centered title
+                    Rectangle { width: 100px; }
                 }
             }
 
             // Scrollable Tab View Content
             ScrollView {
                 VerticalLayout {
-                    padding: 24px;
                     alignment: start;
+                    padding: 24px;
+                    spacing: 16px;
 
                     if root.active_tab == 0: DashboardTab {
                         battery_percentage: root.battery_percentage;
@@ -417,6 +472,13 @@ export component MainWindow inherits Window {
                         bios_version: root.bios_version;
                         kernel_version: root.kernel_version;
                         device_serial: root.device_serial;
+                        serial_revealed: root.serial_revealed;
+                        screen_type: root.screen_type;
+                        display_refresh_rate: root.display_refresh_rate;
+                        ram_usage_text: root.ram_usage_text;
+                        ram_usage_detail: root.ram_usage_detail;
+                        reveal_serial => { root.reveal_serial(); }
+                        hide_serial => { root.hide_serial(); }
                         set_thermal_profile(p) => { root.set_thermal_profile(p); }
                         set_battery_limit(l) => { root.set_battery_limit(l); }
                     }
@@ -453,14 +515,18 @@ export component MainWindow inherits Window {
                         supports_mode_rainbow: root.supports_mode_rainbow;
                         supports_mode_strobe: root.supports_mode_strobe;
                         accent_color: root.accent_color;
+                        sync_accent_color: root.sync_accent_color;
                         kbd_idle_mode: root.kbd_idle_mode;
-                        kbd_idle_timeout_min: root.kbd_idle_timeout_min;
+                        kbd_idle_timeout_ac_min: root.kbd_idle_timeout_ac_min;
+                        kbd_idle_timeout_bat_min: root.kbd_idle_timeout_bat_min;
                         set_lighting_brightness(b) => { root.set_lighting_brightness(b); }
                         set_lighting_mode(m, s) => { root.set_lighting_mode(m, s); }
                         set_lighting_color(r, g, b) => { root.set_lighting_color(r, g, b); }
                         open_de_color_picker => { root.open_de_color_picker(); }
                         set_kbd_idle_mode(m) => { root.set_kbd_idle_mode(m); }
-                        set_kbd_idle_timeout(t) => { root.set_kbd_idle_timeout(t); }
+                        set_kbd_idle_timeout_ac(t) => { root.set_kbd_idle_timeout_ac(t); }
+                        set_kbd_idle_timeout_bat(t) => { root.set_kbd_idle_timeout_bat(t); }
+                        toggle_sync_accent_color(v) => { root.toggle_sync_accent_color(v); }
                     }
 
                     if root.active_tab == 4 && root.is_kde: DisplayTab {
@@ -472,16 +538,20 @@ export component MainWindow inherits Window {
                         dpms_pixel_refresh_active: root.dpms_pixel_refresh_active;
                         display_output_name: root.display_output_name;
                         accent_color: root.accent_color;
+                        auto_refresh_active: root.auto_refresh_active;
                         set_display_refresh(hz) => { root.set_display_refresh(hz); }
                         set_oled_dimming(val) => { root.set_oled_dimming(val); }
                         set_target_mode(en) => { root.set_target_mode(en); }
                         set_panel_autohide(en) => { root.set_panel_autohide(en); }
                         set_panel_transparency(en) => { root.set_panel_transparency(en); }
                         set_dpms_pixel_refresh(en) => { root.set_dpms_pixel_refresh(en); }
+                        set_auto_refresh(v) => { root.set_auto_refresh(v); }
                     }
 
                     if root.active_tab == 5 && root.is_kde: GesturesTab {
                         accent_color: root.accent_color;
+                        touchpad_gestures_active: root.touchpad_gestures_active;
+                        toggle_touchpad_gestures(v) => { root.toggle_touchpad_gestures(v); }
                     }
 
                     if root.active_tab == 6: SystemTab {
@@ -490,6 +560,16 @@ export component MainWindow inherits Window {
                         bios_version: root.bios_version;
                         kernel_version: root.kernel_version;
                         device_serial: root.device_serial;
+                        serial_revealed: root.serial_revealed;
+                        reveal_serial => { root.reveal_serial(); }
+                        cpu_model: root.cpu_model;
+                        memory_total: root.memory_total;
+                        fan_driver_info: root.fan_driver_info;
+                        stay_in_tray: root.stay_in_tray;
+                        start_on_boot: root.start_on_boot;
+                        accent_color: root.accent_color;
+                        toggle_stay_in_tray(v) => { root.toggle_stay_in_tray(v); }
+                        toggle_start_on_boot(v) => { root.toggle_start_on_boot(v); }
                     }
                 }
             }

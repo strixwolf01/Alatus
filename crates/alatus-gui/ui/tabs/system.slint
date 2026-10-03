@@ -1,117 +1,119 @@
 import { GroupCard, SectionHeader } from "../components/card.slint";
+import { ToggleSwitch } from "../components/toggle.slint";
 
 export component SystemTab inherits VerticalLayout {
-    in property <string> device_model: "ASUS Vivobook S 15 OLED (S5506MA)";
-    in property <string> board_name: "S5506MA";
-    in property <string> bios_version: "S5506MA.318";
-    in property <string> kernel_version: "Linux x86_64";
-    in property <string> device_serial: "S3N0KD006297137";
+    in property <string> device_model: "Laptop Device";
+    in property <string> board_name: "Motherboard";
+    in property <string> bios_version: "--";
+    in property <string> kernel_version: "Linux";
+    in property <string> device_serial: "[ Hidden ]";
+    in property <bool> serial_revealed: false;
+    in property <string> cpu_model: "Processor";
+    in property <string> memory_total: "-- GB";
+    in property <string> fan_driver_info: "ASUS ACPI / Platform Profile";
+
+    in property <bool> stay_in_tray: true;
+    in property <bool> start_on_boot: true;
+    in property <color> accent_color: #3B82F6;
+
+    callback toggle_stay_in_tray(bool);
+    callback toggle_start_on_boot(bool);
+    callback reveal_serial();
 
     spacing: 16px;
+    alignment: start;
 
+    // Card 1: Application Behavior & Session Preferences
     GroupCard {
         VerticalLayout {
             padding: 20px;
-            spacing: 16px;
+            spacing: 14px;
 
             SectionHeader {
-                title: "Hardware & Daemon Diagnostics";
-                subtitle: "Low-level Linux kernel interfaces and driver subsystem status.";
+                title: "Application Preferences";
+                subtitle: "Configure background daemon, tray lifecycle, and startup behavior.";
             }
 
-            VerticalLayout {
-                spacing: 10px;
+            // Toggle 1: Stay in tray
+            Rectangle {
+                height: 52px;
+                border-radius: 8px;
+                background: #23262E;
+                border-width: 1px;
+                border-color: #2D3038;
 
-                Rectangle {
-                    height: 44px;
-                    border-radius: 6px;
-                    background: #23262E;
-                    border-width: 1px;
-                    border-color: #2D3038;
-                    HorizontalLayout {
-                        padding-left: 16px;
-                        padding-right: 16px;
-                        alignment: space-between;
-                        Text { text: "Device Model:"; font-size: 12px; color: #8C929E; vertical-alignment: center; }
-                        Text { text: root.device_model; font-size: 13px; font-weight: 700; color: #FFFFFF; vertical-alignment: center; }
+                HorizontalLayout {
+                    padding-left: 16px;
+                    padding-right: 16px;
+                    alignment: space-between;
+
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 2px;
+                        Text {
+                            text: "Stay in System Tray";
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #FFFFFF;
+                        }
+                        Text {
+                            text: "Keep Alatus active in the system tray when the window is closed.";
+                            font-size: 11px;
+                            color: #8C929E;
+                        }
+                    }
+
+                    VerticalLayout {
+                        alignment: center;
+                        ToggleSwitch {
+                            checked: root.stay_in_tray;
+                            accent_color: root.accent_color;
+                            toggled(val) => { root.toggle_stay_in_tray(val); }
+                        }
                     }
                 }
+            }
 
-                Rectangle {
-                    height: 44px;
-                    border-radius: 6px;
-                    background: #23262E;
-                    border-width: 1px;
-                    border-color: #2D3038;
-                    HorizontalLayout {
-                        padding-left: 16px;
-                        padding-right: 16px;
-                        alignment: space-between;
-                        Text { text: "Mainboard & Firmware:"; font-size: 12px; color: #8C929E; vertical-alignment: center; }
-                        Text { text: root.board_name + " • BIOS " + root.bios_version; font-size: 12px; font-weight: 600; color: #00F0FF; vertical-alignment: center; }
+            // Toggle 2: Start on startup
+            Rectangle {
+                height: 52px;
+                border-radius: 8px;
+                background: #23262E;
+                border-width: 1px;
+                border-color: #2D3038;
+
+                HorizontalLayout {
+                    padding-left: 16px;
+                    padding-right: 16px;
+                    alignment: space-between;
+
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 2px;
+                        Text {
+                            text: "Start on System Startup";
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #FFFFFF;
+                        }
+                        Text {
+                            text: "Launch the Alatus session agent and background hardware services on login.";
+                            font-size: 11px;
+                            color: #8C929E;
+                        }
                     }
-                }
 
-                Rectangle {
-                    height: 44px;
-                    border-radius: 6px;
-                    background: #23262E;
-                    border-width: 1px;
-                    border-color: #2D3038;
-                    HorizontalLayout {
-                        padding-left: 16px;
-                        padding-right: 16px;
-                        alignment: space-between;
-                        Text { text: "Thermal Driver & ACPI Path:"; font-size: 12px; color: #8C929E; vertical-alignment: center; }
-                        Text { text: "/sys/firmware/acpi/platform_profile (asus-nb-wmi)"; font-size: 12px; font-weight: 600; color: #00F0FF; vertical-alignment: center; }
-                    }
-                }
-
-                Rectangle {
-                    height: 44px;
-                    border-radius: 6px;
-                    background: #23262E;
-                    border-width: 1px;
-                    border-color: #2D3038;
-                    HorizontalLayout {
-                        padding-left: 16px;
-                        padding-right: 16px;
-                        alignment: space-between;
-                        Text { text: "Fan Calibration (Dual Active):"; font-size: 12px; color: #8C929E; vertical-alignment: center; }
-                        Text { text: "Max 8100 RPM calibrated"; font-size: 13px; font-weight: 700; color: #00E676; vertical-alignment: center; }
-                    }
-                }
-
-                Rectangle {
-                    height: 44px;
-                    border-radius: 6px;
-                    background: #23262E;
-                    border-width: 1px;
-                    border-color: #2D3038;
-                    HorizontalLayout {
-                        padding-left: 16px;
-                        padding-right: 16px;
-                        alignment: space-between;
-                        Text { text: "D-Bus Daemon Architecture:"; font-size: 12px; color: #8C929E; vertical-alignment: center; }
-                        Text { text: "org.alatus.Daemon (Root System Bus • Polkit)"; font-size: 12px; font-weight: 700; color: #00E676; vertical-alignment: center; }
-                    }
-                }
-
-                Rectangle {
-                    height: 44px;
-                    border-radius: 6px;
-                    background: #23262E;
-                    border-width: 1px;
-                    border-color: #2D3038;
-                    HorizontalLayout {
-                        padding-left: 16px;
-                        padding-right: 16px;
-                        alignment: space-between;
-                        Text { text: "User Session Service:"; font-size: 12px; color: #8C929E; vertical-alignment: center; }
-                        Text { text: "alatus-session (StatusNotifierItem Tray • Gestures)"; font-size: 12px; font-weight: 600; color: #FFFFFF; vertical-alignment: center; }
+                    VerticalLayout {
+                        alignment: center;
+                        ToggleSwitch {
+                            checked: root.start_on_boot;
+                            accent_color: root.accent_color;
+                            toggled(val) => { root.toggle_start_on_boot(val); }
+                        }
                     }
                 }
             }
         }
     }
 }
+

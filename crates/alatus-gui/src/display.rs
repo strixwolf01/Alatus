@@ -328,21 +328,85 @@ fn read_power_idle_time() -> Option<u32> {
 }
 
 pub fn get_kde_accent_color() -> Option<(u8, u8, u8)> {
-    let home = std::env::var("HOME").ok()?;
-    let path = std::path::Path::new(&home).join(".config/kdeglobals");
-    let content = std::fs::read_to_string(path).ok()?;
-    for line in content.lines() {
-        let trimmed = line.trim();
-        if trimmed.starts_with("AccentColor=") {
-            let val = trimmed.trim_start_matches("AccentColor=").trim();
-            let parts: Vec<&str> = val.split(',').collect();
-            if parts.len() >= 3 {
-                let r = parts[0].trim().parse::<u8>().ok()?;
-                let g = parts[1].trim().parse::<u8>().ok()?;
-                let b = parts[2].trim().parse::<u8>().ok()?;
-                return Some((r, g, b));
+    // 1. KDE kdeglobals (instant file read, <0.1ms)
+    if let Ok(home) = std::env::var("HOME") {
+        let path = std::path::Path::new(&home).join(".config/kdeglobals");
+        if let Ok(content) = std::fs::read_to_string(path) {
+            let mut general_accent = None;
+            let mut selection_bg = None;
+            let mut in_general = false;
+            let mut in_selection = false;
+
+            for line in content.lines() {
+                let trimmed = line.trim();
+                if trimmed.starts_with('[') {
+                    in_general = trimmed.eq_ignore_ascii_case("[General]");
+                    in_selection = trimmed.eq_ignore_ascii_case("[Colors:Selection]");
+                    continue;
+                }
+
+                if in_general && trimmed.starts_with("AccentColor=") {
+                    let val = trimmed.trim_start_matches("AccentColor=").trim();
+                    if let Some(rgb) = parse_comma_rgb(val) {
+                        general_accent = Some(rgb);
+                    }
+                } else if in_selection && trimmed.starts_with("BackgroundNormal=") {
+                    let val = trimmed.trim_start_matches("BackgroundNormal=").trim();
+                    if let Some(rgb) = parse_comma_rgb(val) {
+                        selection_bg = Some(rgb);
+                    }
+                }
+            }
+
+            if let Some(rgb) = general_accent.or(selection_bg) {
+                return Some(rgb);
             }
         }
+    }
+
+    // 2. Try FreeDesktop Portal
+    if let Ok(output) = std::process::Command::new("busctl")
+        .args([
+            "--user",
+            "call",
+            "org.freedesktop.portal.Desktop",
+            "/org/freedesktop/portal/desktop",
+            "org.freedesktop.portal.Settings",
+            "Read",
+            "ss",
+            "org.freedesktop.appearance",
+            "accent-color",
+        ])
+        .output()
+    {
+        if output.status.success() {
+            let out_str = String::from_utf8_lossy(&output.stdout);
+            if let Some(start) = out_str.find("(ddd)") {
+                let rest = &out_str[start + 5..];
+                let nums: Vec<f64> = rest
+                    .split_whitespace()
+                    .filter_map(|s| s.parse::<f64>().ok())
+                    .collect();
+                if nums.len() >= 3 {
+                    let r = (nums[0] * 255.0).round().clamp(0.0, 255.0) as u8;
+                    let g = (nums[1] * 255.0).round().clamp(0.0, 255.0) as u8;
+                    let b = (nums[2] * 255.0).round().clamp(0.0, 255.0) as u8;
+                    return Some((r, g, b));
+                }
+            }
+        }
+    }
+
+    None
+}
+
+fn parse_comma_rgb(val: &str) -> Option<(u8, u8, u8)> {
+    let parts: Vec<&str> = val.split(',').collect();
+    if parts.len() >= 3 {
+        let r = parts[0].trim().parse::<u8>().ok()?;
+        let g = parts[1].trim().parse::<u8>().ok()?;
+        let b = parts[2].trim().parse::<u8>().ok()?;
+        return Some((r, g, b));
     }
     None
 }
@@ -350,33 +414,54 @@ pub fn get_kde_accent_color() -> Option<(u8, u8, u8)> {
 #[derive(Debug, Clone)]
 pub struct KeyboardIdleConfig {
     pub mode: String, // "always_on", "battery_ac", "battery_only"
-    pub timeout_min: u32,
+    pub timeout_ac_min: u32,
+    pub timeout_bat_min: u32,
 }
 
 pub fn read_keyboard_idle_config() -> KeyboardIdleConfig {
+    let settings = alatus_core::settings::AlatusSettings::load();
     let idle_ac = read_powerdevil_u32("AC", "DimKeyboard", "idleTime").unwrap_or(0);
     let idle_bat = read_powerdevil_u32("Battery", "DimKeyboard", "idleTime").unwrap_or(0);
 
-    let (mode, secs) = if idle_ac > 0 && idle_bat > 0 {
-        ("battery_ac", idle_bat)
+    let mode = if !settings.kbd_idle_mode.is_empty() {
+        settings.kbd_idle_mode.clone()
+    } else if idle_ac > 0 && idle_bat > 0 {
+        "battery_ac".to_string()
     } else if idle_bat > 0 {
-        ("battery_only", idle_bat)
+        "battery_only".to_string()
     } else {
-        ("always_on", 60)
+        "always_on".to_string()
     };
 
-    let timeout_min = (secs / 60).max(1);
+    let ac_min = if settings.kbd_idle_timeout_ac_min > 0 {
+        settings.kbd_idle_timeout_ac_min
+    } else if idle_ac > 0 {
+        (idle_ac / 60).max(1)
+    } else {
+        1
+    };
+
+    let bat_min = if settings.kbd_idle_timeout_bat_min > 0 {
+        settings.kbd_idle_timeout_bat_min
+    } else if idle_bat > 0 {
+        (idle_bat / 60).max(1)
+    } else {
+        1
+    };
+
     KeyboardIdleConfig {
-        mode: mode.to_string(),
-        timeout_min,
+        mode,
+        timeout_ac_min: ac_min,
+        timeout_bat_min: bat_min,
     }
 }
 
-pub async fn set_keyboard_idle_config(mode: &str, timeout_min: u32) -> Result<(), String> {
-    let secs = (timeout_min * 60).to_string();
+pub async fn set_keyboard_idle_config(mode: &str, timeout_ac_min: u32, timeout_bat_min: u32) -> Result<(), String> {
+    let ac_secs = (timeout_ac_min * 60).to_string();
+    let bat_secs = (timeout_bat_min * 60).to_string();
     let (ac_time, bat_time) = match mode {
-        "battery_ac" => (secs.as_str(), secs.as_str()),
-        "battery_only" => ("0", secs.as_str()),
+        "battery_ac" => (ac_secs.as_str(), ac_secs.as_str()),
+        "battery_only" => ("0", bat_secs.as_str()),
         _ => ("0", "0"),
     };
 
@@ -394,6 +479,18 @@ pub async fn set_keyboard_idle_config(mode: &str, timeout_min: u32) -> Result<()
                 time,
             ])
             .status();
+    }
+
+    // Trigger reparseConfiguration on KDE Solid PowerManagement if running
+    if let Ok(conn) = zbus::Connection::session().await {
+        if let Ok(proxy) = zbus::Proxy::new(
+            &conn,
+            "org.kde.Solid.PowerManagement",
+            "/org/kde/Solid/PowerManagement",
+            "org.kde.Solid.PowerManagement",
+        ).await {
+            let _: Result<(), zbus::Error> = proxy.call("reparseConfiguration", &()).await;
+        }
     }
 
     Ok(())
@@ -417,5 +514,98 @@ fn read_powerdevil_u32(profile: &str, group: &str, key: &str) -> Option<u32> {
         .ok()?;
     let s = String::from_utf8_lossy(&output.stdout).trim().to_string();
     s.parse::<u32>().ok()
+}
+
+pub fn is_ac_connected() -> bool {
+    // 1. Scan /sys/class/power_supply for any non-Battery power source (Mains, USB, UCSI, AC)
+    if let Ok(entries) = std::fs::read_dir("/sys/class/power_supply") {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let type_path = path.join("type");
+            if let Ok(t) = std::fs::read_to_string(type_path) {
+                let trimmed = t.trim();
+                if !trimmed.eq_ignore_ascii_case("battery") {
+                    let online_path = path.join("online");
+                    if let Ok(val) = std::fs::read_to_string(online_path) {
+                        if val.trim() == "1" {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Battery status check: if not Discharging, AC power is definitely connected
+    if let Ok(status) = std::fs::read_to_string("/sys/class/power_supply/BAT0/status") {
+        let s = status.trim();
+        if !s.eq_ignore_ascii_case("discharging") {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    true
+}
+
+pub fn get_on_ac_command() -> String {
+    let search_paths = [
+        "temp/on ac.txt",
+        "/usr/share/alatus/on ac.txt",
+        "/usr/share/alatus/on-ac.txt",
+        "/etc/alatus/on ac.txt",
+        "/etc/alatus/on-ac.txt",
+    ];
+    for p in search_paths {
+        if let Ok(content) = std::fs::read_to_string(p) {
+            let trimmed = content.trim();
+            if !trimmed.is_empty() {
+                return trimmed.to_string();
+            }
+        }
+    }
+    if let Ok(home) = std::env::var("HOME") {
+        for name in &["on-ac.txt", "on ac.txt", "on-ac.sh"] {
+            let p = std::path::Path::new(&home).join(format!(".config/alatus/{name}"));
+            if let Ok(content) = std::fs::read_to_string(p) {
+                let trimmed = content.trim();
+                if !trimmed.is_empty() {
+                    return trimmed.to_string();
+                }
+            }
+        }
+    }
+    "kscreen-doctor output.eDP-1.mode.1".to_string()
+}
+
+pub fn get_on_bat_command() -> String {
+    let search_paths = [
+        "temp/on bat.txt",
+        "/usr/share/alatus/on bat.txt",
+        "/usr/share/alatus/on-bat.txt",
+        "/etc/alatus/on bat.txt",
+        "/etc/alatus/on-bat.txt",
+    ];
+    for p in search_paths {
+        if let Ok(content) = std::fs::read_to_string(p) {
+            let trimmed = content.trim();
+            if !trimmed.is_empty() {
+                return trimmed.to_string();
+            }
+        }
+    }
+    if let Ok(home) = std::env::var("HOME") {
+        for name in &["on-bat.txt", "on bat.txt", "on-bat.sh"] {
+            let p = std::path::Path::new(&home).join(format!(".config/alatus/{name}"));
+            if let Ok(content) = std::fs::read_to_string(p) {
+                let trimmed = content.trim();
+                if !trimmed.is_empty() {
+                    return trimmed.to_string();
+                }
+            }
+        }
+    }
+    "kscreen-doctor output.eDP-1.mode.2".to_string()
 }
 

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Alatus
+GenericName=ASUS Hardware Suite
+Comment=Control battery charging, thermal profiles, and RGB lighting on ASUS laptops
+Exec=alatus-gui
+Icon=alatus-gui
+Terminal=false
+Type=Application
+Categories=Settings;HardwareSettings;System;
+Keywords=asus;battery;fan;thermal;rgb;lighting;
+StartupNotify=true
+StartupWMClass=alatus-gui

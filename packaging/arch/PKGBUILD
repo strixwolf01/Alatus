@@ -1,6 +1,6 @@
 # Maintainer: StrixWolf <strixwolf@example.com>
 pkgname=alatus-git
-pkgver=0.1.0
+pkgver=2.0.0
 pkgrel=1
 pkgdesc="Linux hardware control suite for ASUS laptops written in Rust"
 arch=('x86_64')

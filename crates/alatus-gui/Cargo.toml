@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 alatus-core = { path = "../alatus-core" }
 alatus-ipc = { path = "../alatus-ipc" }
+alatus-profile = { path = "../alatus-profile" }
 futures-util = "0.3"
 slint = "1.9"
 tokio = { version = "1.38", features = ["full"] }

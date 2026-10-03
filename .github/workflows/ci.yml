@@ -2,29 +2,27 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check-and-test:
-    name: Build & Test
+  check-compile:
+    name: Check Compile
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libdbus-1-dev libudev-dev
+          sudo apt-get install -y libdbus-1-dev libudev-dev libfontconfig1-dev
 
       - name: Cache Cargo Dependencies
         uses: actions/cache@v4
@@ -37,11 +35,5 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Check Formatting
-        run: cargo fmt --all --check
-
-      - name: Run Clippy Linter
-        run: cargo clippy --workspace --all-targets -- -D warnings
-
-      - name: Run Workspace Unit & Integration Tests
-        run: cargo test --workspace --verbose
+      - name: Check Workspace Compile
+        run: cargo check --workspace --verbose

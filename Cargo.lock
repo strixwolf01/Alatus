@@ -156,7 +156,7 @@ dependencies = [
 
 [[package]]
 name = "alatus-cli"
-version = "0.1.0"
+version = "2.0.0"
 dependencies = [
  "alatus-core",
  "alatus-ipc",
@@ -167,17 +167,18 @@ dependencies = [
 
 [[package]]
 name = "alatus-core"
-version = "0.1.0"
+version = "2.0.0"
 dependencies = [
  "async-trait",
  "bitflags 2.13.2",
  "serde",
+ "serde_json",
  "thiserror 2.0.21",
 ]
 
 [[package]]
 name = "alatus-drivers"
-version = "0.1.0"
+version = "2.0.0"
 dependencies = [
  "alatus-core",
  "async-trait",
@@ -190,10 +191,11 @@ dependencies = [
 
 [[package]]
 name = "alatus-gui"
-version = "0.1.0"
+version = "2.0.0"
 dependencies = [
  "alatus-core",
  "alatus-ipc",
+ "alatus-profile",
  "futures-util",
  "serde",
  "serde_json",
@@ -207,7 +209,7 @@ dependencies = [
 
 [[package]]
 name = "alatus-ipc"
-version = "0.1.0"
+version = "2.0.0"
 dependencies = [
  "alatus-core",
  "serde",
@@ -217,7 +219,7 @@ dependencies = [
 
 [[package]]
 name = "alatus-profile"
-version = "0.1.0"
+version = "2.0.0"
 dependencies = [
  "alatus-core",
  "serde",
@@ -229,7 +231,7 @@ dependencies = [
 
 [[package]]
 name = "alatus-registry"
-version = "0.1.0"
+version = "2.0.0"
 dependencies = [
  "alatus-core",
  "alatus-drivers",
@@ -240,13 +242,15 @@ dependencies = [
 
 [[package]]
 name = "alatus-session"
-version = "0.1.0"
+version = "2.0.0"
 dependencies = [
  "alatus-core",
  "alatus-ipc",
  "evdev 0.13.2",
  "futures-util",
  "ksni 0.2.2",
+ "serde",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -255,13 +259,14 @@ dependencies = [
 
 [[package]]
 name = "alatusd"
-version = "0.1.0"
+version = "2.0.0"
 dependencies = [
  "alatus-core",
  "alatus-drivers",
  "alatus-ipc",
  "alatus-profile",
  "alatus-registry",
+ "serde_json",
  "tempfile",
  "tokio",
  "tracing",

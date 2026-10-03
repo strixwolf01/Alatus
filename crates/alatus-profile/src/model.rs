@@ -13,7 +13,9 @@ pub struct ProfileMetadata {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DmiMatch {
     pub sys_vendor: Option<String>,
+    #[serde(default)]
     pub product_name: Vec<String>,
+    #[serde(default)]
     pub board_name: Vec<String>,
 }
 

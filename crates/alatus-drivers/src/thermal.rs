@@ -23,6 +23,7 @@ pub struct AsusHybridThermalDriver {
     hwmon_dir: Option<PathBuf>,
     can_full_speed: AtomicBool,
     is_full_speed_active: AtomicBool,
+    active_profile: std::sync::RwLock<ThermalProfileMode>,
     is_cpu_only: bool,
     max_fan_rpm: u32,
 }
@@ -71,6 +72,7 @@ impl AsusHybridThermalDriver {
             hwmon_dir,
             can_full_speed: AtomicBool::new(can_full_speed),
             is_full_speed_active: AtomicBool::new(false),
+            active_profile: std::sync::RwLock::new(ThermalProfileMode::Balanced),
             is_cpu_only: is_cpu_only.unwrap_or(true),
             max_fan_rpm: max_fan_rpm.unwrap_or(6000),
         }
@@ -188,55 +190,62 @@ impl ThermalDriver for AsusHybridThermalDriver {
     }
 
     async fn get_current_profile(&self) -> Result<ThermalProfileMode, AlatusError> {
-        // 1. Try reading live hardware state from DebugFS ctrl_param FIRST
+        if self.is_full_speed_active.load(Ordering::SeqCst) {
+            return Ok(ThermalProfileMode::FullSpeed);
+        }
+
+        // 1. Primary: Standard ACPI platform_profile if supported
+        if self.platform_profile_path.exists() {
+            if let Ok(content) = fs::read_to_string(&self.platform_profile_path).await {
+                let m = match content.trim().to_lowercase().as_str() {
+                    "quiet" => Some(ThermalProfileMode::Quiet),
+                    "balanced" => Some(ThermalProfileMode::Balanced),
+                    "performance" => Some(ThermalProfileMode::Performance),
+                    _ => None,
+                };
+                if let Some(mode) = m {
+                    *self.active_profile.write().unwrap() = mode;
+                    return Ok(mode);
+                }
+            }
+        }
+
+        // 2. Secondary: DebugFS devs evaluation if platform_profile not present
         if let Some(ref devs_path) = self.debugfs_devs_path {
             let base = devs_path.parent().unwrap_or(devs_path);
             let dev_id_path = base.join("dev_id");
-            let ctrl_param_path = base.join("ctrl_param");
 
-            if dev_id_path.exists() && ctrl_param_path.exists() {
+            if dev_id_path.exists() {
                 let reg_str = format!("{:#x}\n", self.debugfs_fan_register);
                 if fs::write(&dev_id_path, &reg_str).await.is_ok() {
-                    if let Ok(content) = fs::read_to_string(&ctrl_param_path).await {
-                        let trimmed = content.trim();
-                        let mode = match trimmed {
-                            "0x00000000" | "0" => Some(ThermalProfileMode::Balanced),
-                            "0x00000001" | "1" => Some(ThermalProfileMode::Quiet),
-                            "0x00000002" | "2" => Some(ThermalProfileMode::Performance),
-                            "0x00000003" | "3" => Some(ThermalProfileMode::FullSpeed),
-                            _ => None,
-                        };
-                        if let Some(m) = mode {
-                            self.is_full_speed_active
-                                .store(m == ThermalProfileMode::FullSpeed, Ordering::SeqCst);
-                            return Ok(m);
+                    if let Ok(content) = fs::read_to_string(devs_path).await {
+                        // Output format is DEVS(0x...): 0x...
+                        if let Some(val_str) = content.split(':').nth(1) {
+                            let clean = val_str.trim().trim_start_matches("0x");
+                            if let Ok(val) = u32::from_str_radix(clean, 16) {
+                                let mode_raw = val & 0xFF;
+                                let mode = match mode_raw {
+                                    0 => Some(ThermalProfileMode::Balanced),
+                                    1 => Some(ThermalProfileMode::Quiet),
+                                    2 => Some(ThermalProfileMode::Performance),
+                                    3 => Some(ThermalProfileMode::FullSpeed),
+                                    _ => None,
+                                };
+                                if let Some(m) = mode {
+                                    self.is_full_speed_active
+                                        .store(m == ThermalProfileMode::FullSpeed, Ordering::SeqCst);
+                                    *self.active_profile.write().unwrap() = m;
+                                    return Ok(m);
+                                }
+                            }
                         }
                     }
                 }
             }
         }
 
-        if self.is_full_speed_active.load(Ordering::SeqCst) {
-            return Ok(ThermalProfileMode::FullSpeed);
-        }
-
-        // 2. Fall back to standard platform_profile
-        let content = fs::read_to_string(&self.platform_profile_path)
-            .await
-            .map_err(|e| AlatusError::Sysfs {
-                path: self.platform_profile_path.clone(),
-                message: format!("Failed to read platform_profile: {e}"),
-            })?;
-
-        match content.trim().to_lowercase().as_str() {
-            "quiet" => Ok(ThermalProfileMode::Quiet),
-            "balanced" => Ok(ThermalProfileMode::Balanced),
-            "performance" => Ok(ThermalProfileMode::Performance),
-            other => Err(AlatusError::Sysfs {
-                path: self.platform_profile_path.clone(),
-                message: format!("Unknown platform profile string: '{other}'"),
-            }),
-        }
+        // 3. Fall back to remembered active profile
+        Ok(*self.active_profile.read().unwrap())
     }
 
     async fn set_profile(&self, mode: ThermalProfileMode) -> Result<(), AlatusError> {
@@ -292,6 +301,7 @@ impl ThermalDriver for AsusHybridThermalDriver {
             self.is_full_speed_active.store(false, Ordering::SeqCst);
         }
 
+        *self.active_profile.write().unwrap() = mode;
         tracing::info!("Set thermal profile to {:?}", mode);
         Ok(())
     }

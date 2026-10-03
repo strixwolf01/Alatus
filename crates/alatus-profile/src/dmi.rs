@@ -75,7 +75,7 @@ sysfs_path = "/sys/class/power_supply/BAT0"
 driver = "asus-hybrid-thermal"
 platform_profile_path = "/sys/firmware/acpi/platform_profile"
 debugfs_devs_path = "/sys/kernel/debug/asus-nb-wmi/devs"
-debugfs_fan_register = 0x00110013
+debugfs_fan_register = 0x00110019
 supports_full_speed = true
 fan_count = 2
 
@@ -114,10 +114,13 @@ impl ProfileResolver {
     }
 
     pub fn resolve(&self, dmi: &DmiInfo) -> Result<Profile, AlatusError> {
-        for dir in &self.search_dirs {
+        let mut matched_profiles: Vec<(Profile, (usize, usize), PathBuf)> = Vec::new();
+
+        for (dir_idx, dir) in self.search_dirs.iter().enumerate() {
             if !dir.exists() {
                 continue;
             }
+            let dir_priority = self.search_dirs.len().saturating_sub(dir_idx);
 
             if let Ok(entries) = fs::read_dir(dir) {
                 for entry in entries.flatten() {
@@ -130,18 +133,29 @@ impl ProfileResolver {
                                     dmi.product_name.as_deref(),
                                     dmi.board_name.as_deref(),
                                 ) {
-                                    tracing::info!(
-                                        "Resolved machine profile from {}: {}",
-                                        path.display(),
-                                        profile.metadata.name
-                                    );
-                                    return Ok(profile);
+                                    let mut score = 0;
+                                    if !profile.dmi_match.product_name.is_empty() {
+                                        score += 2;
+                                    }
+                                    if !profile.dmi_match.board_name.is_empty() {
+                                        score += 2;
+                                    }
+                                    matched_profiles.push((profile, (score, dir_priority), path));
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+
+        if let Some((best_profile, _, path)) = matched_profiles.into_iter().max_by_key(|(_, score, _)| *score) {
+            tracing::info!(
+                "Resolved machine profile from {}: {}",
+                path.display(),
+                best_profile.metadata.name
+            );
+            return Ok(best_profile);
         }
 
         // Fallback to embedded default profile if matched

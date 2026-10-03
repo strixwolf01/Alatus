@@ -48,6 +48,7 @@ impl BatteryService {
             .await
             .map_err(|e| zbus::fdo::Error::Failed(e.to_string()))?;
 
+        crate::state::save_daemon_battery_limit(limit);
         Self::limit_changed(&ctxt, limit).await?;
         Ok(())
     }

@@ -57,6 +57,7 @@ impl ThermalService {
             .map_err(|e| zbus::fdo::Error::Failed(e.to_string()))?;
 
         let mode_str = parsed_mode.to_string();
+        crate::state::save_daemon_thermal_profile(&mode_str);
         Self::profile_changed(&ctxt, &mode_str).await?;
         Ok(())
     }

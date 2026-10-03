@@ -11,6 +11,7 @@ export component DisplayTab inherits VerticalLayout {
     in property <bool> dpms_pixel_refresh_active: false;
     in property <string> display_output_name: "eDP-1";
     in property <color> accent_color: #3B82F6;
+    in-out property <bool> auto_refresh_active: true;
 
     callback set_display_refresh(int);
     callback set_oled_dimming(int);
@@ -18,52 +19,60 @@ export component DisplayTab inherits VerticalLayout {
     callback set_panel_autohide(bool);
     callback set_panel_transparency(bool);
     callback set_dpms_pixel_refresh(bool);
+    callback set_auto_refresh(bool);
 
     spacing: 16px;
+    alignment: start;
 
     // Section 1: OLED Flicker-Free Dimming
     VerticalLayout {
         spacing: 6px;
 
-        SectionHeader {
-            title: "OLED Flicker-Free Dimming";
-            subtitle: "Reduces OLED flickering at low brightness. For best results, set system brightness above 60% and use this slider to adjust perceived brightness.";
-        }
-
         GroupCard {
-            HorizontalLayout {
-                padding: 14px;
-                alignment: space-between;
-                VerticalLayout {
-                    alignment: center;
-                    Text {
-                        text: "Dimming Level";
-                        font-size: 13px;
-                        font-weight: 600;
-                        color: #FFFFFF;
-                    }
+            VerticalLayout {
+                padding: 16px;
+                spacing: 12px;
+
+                SectionHeader {
+                    title: "OLED Flicker-Free Dimming";
+                    subtitle: "Reduces OLED flickering at low brightness. For best results, set system brightness above 60% and use this slider to adjust perceived brightness.";
                 }
 
+                Rectangle { height: 1px; background: #2D3038; }
+
                 HorizontalLayout {
-                    spacing: 12px;
-                    alignment: end;
-                    Slider {
-                        width: 220px;
-                        minimum: 10;
-                        maximum: 100;
-                        value: root.oled_dimming_level;
-                        changed(val) => {
-                            root.set_oled_dimming(Math.round(val));
+                    alignment: space-between;
+                    VerticalLayout {
+                        alignment: center;
+                        Text {
+                            text: "Dimming Level";
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #FFFFFF;
                         }
                     }
-                    Text {
-                        text: root.oled_dimming_level + "%";
-                        font-size: 13px;
-                        font-weight: 700;
-                        color: #FFFFFF;
-                        vertical-alignment: center;
-                        min-width: 42px;
-                        horizontal-alignment: right;
+
+                    HorizontalLayout {
+                        spacing: 12px;
+                        alignment: end;
+                        Slider {
+                            width: 220px;
+                            minimum: 10;
+                            maximum: 100;
+                            value: root.oled_dimming_level;
+                            changed(val) => {
+                                root.set_oled_dimming(Math.round(val));
+                            }
+                        }
+                        Text {
+                            text: root.oled_dimming_level + "%";
+                            font-size: 13px;
+                            font-weight: 700;
+                            color: #FFFFFF;
+                            vertical-alignment: center;
+                            min-width: 42px;
+                            horizontal-alignment: right;
+                        }
                     }
                 }
             }
@@ -74,58 +83,21 @@ export component DisplayTab inherits VerticalLayout {
         }
     }
 
-    // Section 2: Target Mode (Dim Inactive)
+    // Section 2: OLED Care
     VerticalLayout {
         spacing: 6px;
-
-        SectionHeader {
-            title: "Target Mode (Dim Inactive)";
-            subtitle: "Dims inactive windows while the focused window stays at full brightness. Reduces OLED power consumption during focused work.";
-        }
-
-        GroupCard {
-            HorizontalLayout {
-                padding: 14px;
-                alignment: space-between;
-                VerticalLayout {
-                    spacing: 3px;
-                    Text {
-                        text: "Enable Target Mode";
-                        font-size: 13px;
-                        font-weight: 600;
-                        color: #FFFFFF;
-                    }
-                    Text {
-                        text: "Activates the KWin Dim Inactive compositor effect.";
-                        font-size: 11px;
-                        color: #8C929E;
-                    }
-                }
-
-                ToggleSwitch {
-                    checked: root.target_mode_active;
-                    accent_color: root.accent_color;
-                    toggled(checked) => {
-                        root.set_target_mode(checked);
-                    }
-                }
-            }
-        }
-    }
-
-    // Section 3: OLED Care
-    VerticalLayout {
-        spacing: 6px;
-
-        SectionHeader {
-            title: "Alatus OLED Care";
-            subtitle: "Alatus OLED Care includes a set of optimization settings that's proven to protect your OLED display and maximize display lifespan.";
-        }
 
         GroupCard {
             VerticalLayout {
-                padding: 14px;
+                padding: 16px;
                 spacing: 12px;
+
+                SectionHeader {
+                    title: "Alatus OLED Care";
+                    subtitle: "Alatus OLED Care includes a set of optimization settings that's proven to protect your OLED display and maximize display lifespan.";
+                }
+
+                Rectangle { height: 1px; background: #2D3038; }
 
                 // Row 1: Pixel Refresh
                 HorizontalLayout {
@@ -156,58 +128,29 @@ export component DisplayTab inherits VerticalLayout {
 
                 Rectangle { height: 1px; background: #2D3038; }
 
-                // Row 2: Auto-hide KDE Panel
+                // Row 2: Target Mode (Dim Inactive)
                 HorizontalLayout {
                     alignment: space-between;
                     VerticalLayout {
                         spacing: 3px;
                         Text {
-                            text: "Auto-hide KDE Panel";
+                            text: "Target Mode (Dim Inactive)";
                             font-size: 13px;
                             font-weight: 600;
                             color: #FFFFFF;
                         }
                         Text {
-                            text: "Automatically hides the KDE panel to reduce static elements on the OLED display.";
+                            text: "Dims inactive windows to reduce OLED burn-in and power consumption.";
                             font-size: 11px;
                             color: #8C929E;
                         }
                     }
 
                     ToggleSwitch {
-                        checked: root.panel_autohide_active;
+                        checked: root.target_mode_active;
                         accent_color: root.accent_color;
                         toggled(checked) => {
-                            root.set_panel_autohide(checked);
-                        }
-                    }
-                }
-
-                Rectangle { height: 1px; background: #2D3038; }
-
-                // Row 3: Panel Transparency Effect
-                HorizontalLayout {
-                    alignment: space-between;
-                    VerticalLayout {
-                        spacing: 3px;
-                        Text {
-                            text: "Panel Transparency Effect";
-                            font-size: 13px;
-                            font-weight: 600;
-                            color: #FFFFFF;
-                        }
-                        Text {
-                            text: "Enables KDE panel transparency to reduce OLED burn-in.";
-                            font-size: 11px;
-                            color: #8C929E;
-                        }
-                    }
-
-                    ToggleSwitch {
-                        checked: root.panel_transparency_active;
-                        accent_color: root.accent_color;
-                        toggled(checked) => {
-                            root.set_panel_transparency(checked);
+                            root.set_target_mode(checked);
                         }
                     }
                 }
@@ -220,24 +163,26 @@ export component DisplayTab inherits VerticalLayout {
     }
 
     // Section 4: Display Refresh Rate
-    VerticalLayout {
-        spacing: 6px;
+    GroupCard {
+        VerticalLayout {
+            padding: 16px;
+            spacing: 12px;
 
-        SectionHeader {
-            title: "Display Refresh Rate (" + root.display_output_name + ")";
-            subtitle: "Select the display refresh rate for smooth scrolling or battery preservation.";
-        }
+            SectionHeader {
+                title: "Display Refresh Rate (" + root.display_output_name + ")";
+                subtitle: "Select the display refresh rate for smooth scrolling or battery preservation.";
+            }
 
-        GroupCard {
+            Rectangle { height: 1px; background: #2D3038; }
+
             HorizontalLayout {
-                padding: 12px;
                 spacing: 12px;
 
                 // 60 Hz Pill
                 Rectangle {
                     height: 40px;
                     border-radius: 8px;
-                    background: root.display_refresh_rate == 60 ? root.accent_color.with_alpha(0.2) : #1B1D23;
+                    background: root.display_refresh_rate == 60 ? root.accent_color.with_alpha(0.2) : #23262E;
                     border-width: root.display_refresh_rate == 60 ? 2px : 1px;
                     border-color: root.display_refresh_rate == 60 ? root.accent_color : #2D3038;
                     TouchArea { clicked => { root.set_display_refresh(60); } }
@@ -265,7 +210,7 @@ export component DisplayTab inherits VerticalLayout {
                 Rectangle {
                     height: 40px;
                     border-radius: 8px;
-                    background: root.display_refresh_rate == 120 ? root.accent_color.with_alpha(0.2) : #1B1D23;
+                    background: root.display_refresh_rate == 120 ? root.accent_color.with_alpha(0.2) : #23262E;
                     border-width: root.display_refresh_rate == 120 ? 2px : 1px;
                     border-color: root.display_refresh_rate == 120 ? root.accent_color : #2D3038;
                     TouchArea { clicked => { root.set_display_refresh(120); } }
@@ -285,6 +230,66 @@ export component DisplayTab inherits VerticalLayout {
                             font-size: 11px;
                             color: #8C929E;
                             vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            Rectangle { height: 1px; background: #2D3038; }
+
+            // Dynamic AC / Battery Auto Refresh Switcher
+            Rectangle {
+                height: 48px;
+                border-radius: 8px;
+                background: root.auto_refresh_active ? root.accent_color.with_alpha(0.12) : #23262E;
+                border-width: root.auto_refresh_active ? 2px : 1px;
+                border-color: root.auto_refresh_active ? root.accent_color : #2D3038;
+
+                HorizontalLayout {
+                    padding-left: 12px;
+                    padding-right: 12px;
+                    alignment: space-between;
+
+                    HorizontalLayout {
+                        spacing: 10px;
+                        VerticalLayout {
+                            alignment: center;
+                            Rectangle {
+                                width: 24px;
+                                height: 24px;
+                                border-radius: 6px;
+                                background: root.accent_color;
+                                border-width: 1px;
+                                border-color: #FFFFFF40;
+                                Text { text: "⚡"; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; }
+                            }
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 2px;
+                            Text {
+                                text: "Dynamic Auto Refresh Rate (AC / Battery)";
+                                font-size: 13px;
+                                font-weight: 600;
+                                color: #FFFFFF;
+                            }
+                            Text {
+                                text: "Automatically switch: 120Hz on charger (on ac) • 60Hz on battery (on bat).";
+                                font-size: 11px;
+                                color: #8C929E;
+                            }
+                        }
+                    }
+
+                    VerticalLayout {
+                        alignment: center;
+                        ToggleSwitch {
+                            checked: root.auto_refresh_active;
+                            accent_color: root.accent_color;
+                            toggled(val) => {
+                                root.auto_refresh_active = val;
+                                root.set_auto_refresh(val);
+                            }
                         }
                     }
                 }

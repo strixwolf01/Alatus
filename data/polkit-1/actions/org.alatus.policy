@@ -35,4 +35,24 @@
       <allow_active>yes</allow_active>
     </defaults>
   </action>
+
+  <action id="org.alatus.read-system-info">
+    <description>Read ASUS device serial number and hardware diagnostics</description>
+    <message>Authentication is required to query sensitive device hardware identifiers</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+
+  <action id="io.strixwolf.alatus.read-serial">
+    <description>Read ASUS device serial number</description>
+    <message>Authentication is required to read device serial number</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
 </policyconfig>

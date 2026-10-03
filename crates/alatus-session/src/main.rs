@@ -1,5 +1,6 @@
 mod gestures;
 mod notifier;
+mod power;
 mod tray;
 
 use alatus_ipc::{BatteryProxy, LightingProxy, ThermalProxy};
@@ -12,7 +13,7 @@ use zbus::Connection;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     tracing_subscriber::fmt::init();
-    tracing::info!("Starting alatus-session user agent v0.1.0...");
+    tracing::info!("Starting alatus-session user agent v{}...", env!("CARGO_PKG_VERSION"));
 
     // 1. Connect to session bus for notifications and desktop features
     let session_conn = match Connection::session().await {
@@ -40,6 +41,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let notifier = Arc::new(DesktopNotifier::new(session_conn.clone()));
+
+    // 4b. Validate and restore all saved user hardware/desktop settings
+    power::apply_saved_settings_if_needed(&system_conn, &notifier).await;
 
     // 5. Monitor Thermal Profile changes
     let thermal_proxy = match ThermalProxy::new(&system_conn).await {
@@ -141,30 +145,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    if let Some(proxy) = lighting_proxy {
-        let notifier_clone = notifier.clone();
-        tokio::spawn(async move {
-            if let Ok(mut stream) = proxy.receive_state_changed().await {
-                tracing::info!("Listening for lighting state signals...");
-                while let Some(signal) = stream.next().await {
-                    if let Ok(args) = signal.args() {
-                        tracing::info!("Lighting state changed: mode={}", args.state.mode);
-                        let _ = notifier_clone
-                            .notify(
-                                "Keyboard Backlight",
-                                &format!(
-                                    "Mode: {} (Brightness: {}/3)",
-                                    args.state.mode, args.state.brightness
-                                ),
-                                "keyboard-brightness",
-                                1500,
-                            )
-                            .await;
-                    }
-                }
-            }
-        });
-    }
+    // 7. Lighting proxy reference for power/accent monitor (no OSD/notification on backlight changes)
+
+    // 8. Spawn Power & Auto Refresh Rate Monitor
+    let shutdown_rx_power = shutdown_tx.subscribe();
+    tokio::spawn(power::run_power_listener(
+        notifier.clone(),
+        shutdown_rx_power,
+        lighting_proxy.clone(),
+    ));
 
     tracing::info!("alatus-session is active and running.");
     let mut sigterm = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;

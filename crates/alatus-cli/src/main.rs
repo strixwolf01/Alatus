@@ -6,7 +6,7 @@ use zbus::Connection;
 #[derive(Parser)]
 #[command(
     name = "alatus",
-    about = "Linux hardware control suite for ASUS laptops",
+    about = "Modern Linux hardware control suite for laptops and portable devices",
     version
 )]
 struct Cli {
@@ -109,7 +109,7 @@ async fn handle_battery(conn: &Connection, action: BatteryAction) -> Result<(), 
     match action {
         BatteryAction::Status => {
             let info = proxy.get_info().await?;
-            println!("--- ASUS Battery Telemetry ---");
+            println!("--- Battery Telemetry ---");
             println!("  State of Charge : {}%", info.percentage);
             println!("  Status          : {}", info.status);
             if let Some(limit) = info.charge_limit {
@@ -145,7 +145,7 @@ async fn handle_thermal(conn: &Connection, action: ThermalAction) -> Result<(), 
             let fans = proxy.get_fans().await?;
             let is_cpu_only = proxy.is_cpu_only().await.unwrap_or(true);
 
-            println!("--- ASUS Thermal & Cooling Status ---");
+            println!("--- Thermal & Cooling Status ---");
             println!("  Current Profile    : {}", current);
             println!("  Available Profiles : {}", available.join(", "));
 
@@ -189,7 +189,7 @@ async fn handle_lighting(conn: &Connection, action: LightingAction) -> Result<()
     match action {
         LightingAction::Status => {
             let state = proxy.get_state().await?;
-            println!("--- ASUS Keyboard RGB Lighting ---");
+            println!("--- Keyboard RGB Lighting ---");
             if state.supported_modes.len() > 1 {
                 println!("  Mode            : {}", state.mode);
                 println!("  Supported Modes : {}", state.supported_modes.join(", "));

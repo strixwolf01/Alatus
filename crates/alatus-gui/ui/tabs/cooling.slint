@@ -13,6 +13,7 @@ export component CoolingTab inherits VerticalLayout {
     callback set_thermal_profile(string);
 
     spacing: 16px;
+    alignment: start;
 
     GroupCard {
         VerticalLayout {
@@ -48,6 +49,8 @@ export component CoolingTab inherits VerticalLayout {
 
                 // Whisper / Quiet
                 Rectangle {
+                    horizontal-stretch: 1;
+                    min-width: 80px;
                     height: 70px;
                     border-radius: 8px;
                     background: root.current_profile == "Quiet" ? root.accent_color.with_alpha(0.2) : #23262E;
@@ -57,24 +60,29 @@ export component CoolingTab inherits VerticalLayout {
                     VerticalLayout {
                         alignment: center;
                         spacing: 2px;
+                        padding-left: 4px;
+                        padding-right: 4px;
                         Text {
                             text: "Whisper";
-                            font-size: 15px;
+                            font-size: 14px;
                             font-weight: 700;
                             color: root.current_profile == "Quiet" ? root.accent_color : #FFFFFF;
                             horizontal-alignment: center;
                         }
                         Text {
                             text: "Silent Fan Curve";
-                            font-size: 11px;
+                            font-size: 10px;
                             color: #8C929E;
                             horizontal-alignment: center;
+                            wrap: word-wrap;
                         }
                     }
                 }
 
                 // Standard / Balanced
                 Rectangle {
+                    horizontal-stretch: 1;
+                    min-width: 80px;
                     height: 70px;
                     border-radius: 8px;
                     background: root.current_profile == "Balanced" ? root.accent_color.with_alpha(0.2) : #23262E;
@@ -84,24 +92,29 @@ export component CoolingTab inherits VerticalLayout {
                     VerticalLayout {
                         alignment: center;
                         spacing: 2px;
+                        padding-left: 4px;
+                        padding-right: 4px;
                         Text {
                             text: "Standard";
-                            font-size: 15px;
+                            font-size: 14px;
                             font-weight: 700;
                             color: root.current_profile == "Balanced" ? root.accent_color : #FFFFFF;
                             horizontal-alignment: center;
                         }
                         Text {
-                            text: "Balanced Auto Curve";
-                            font-size: 11px;
+                            text: "Balanced Auto";
+                            font-size: 10px;
                             color: #8C929E;
                             horizontal-alignment: center;
+                            wrap: word-wrap;
                         }
                     }
                 }
 
                 // Performance
                 Rectangle {
+                    horizontal-stretch: 1;
+                    min-width: 80px;
                     height: 70px;
                     border-radius: 8px;
                     background: root.current_profile == "Performance" ? root.accent_color.with_alpha(0.2) : #23262E;
@@ -111,24 +124,29 @@ export component CoolingTab inherits VerticalLayout {
                     VerticalLayout {
                         alignment: center;
                         spacing: 2px;
+                        padding-left: 4px;
+                        padding-right: 4px;
                         Text {
                             text: "Performance";
-                            font-size: 15px;
+                            font-size: 14px;
                             font-weight: 700;
                             color: root.current_profile == "Performance" ? root.accent_color : #FFFFFF;
                             horizontal-alignment: center;
                         }
                         Text {
-                            text: "Max Sustained Boost";
-                            font-size: 11px;
+                            text: "Max Sustained";
+                            font-size: 10px;
                             color: #8C929E;
                             horizontal-alignment: center;
+                            wrap: word-wrap;
                         }
                     }
                 }
 
                 // Full Speed
                 if root.full_speed_supported: Rectangle {
+                    horizontal-stretch: 1;
+                    min-width: 80px;
                     height: 70px;
                     border-radius: 8px;
                     background: root.current_profile == "FullSpeed" ? #FF005525 : #23262E;
@@ -138,64 +156,78 @@ export component CoolingTab inherits VerticalLayout {
                     VerticalLayout {
                         alignment: center;
                         spacing: 2px;
+                        padding-left: 4px;
+                        padding-right: 4px;
                         Text {
                             text: "⚡ Full Speed";
-                            font-size: 15px;
+                            font-size: 14px;
                             font-weight: 800;
                             color: root.current_profile == "FullSpeed" ? #FF0055 : #FF6688;
                             horizontal-alignment: center;
                         }
                         Text {
                             text: "100% Fan Override";
-                            font-size: 11px;
+                            font-size: 10px;
                             color: #8C929E;
                             horizontal-alignment: center;
+                            wrap: word-wrap;
                         }
                     }
                 }
             }
 
-            // Live Fans Telemetry Display
+            // Fn+F Hardware Shortcut Description
             Rectangle {
-                height: 56px;
                 border-radius: 8px;
-                background: #23262E;
+                background: #1C1E24;
                 border-width: 1px;
                 border-color: #2D3038;
-                if root.is_cpu_only: HorizontalLayout {
-                    alignment: center;
-                    spacing: 12px;
-                    Text {
-                        text: root.fan_cpu_only_text;
-                        font-size: 15px;
-                        font-weight: 800;
-                        color: #00F0FF;
-                        vertical-alignment: center;
-                    }
-                    if root.fan_rpm_subtext != "": Text {
-                        text: "(" + root.fan_rpm_subtext + " • Max 8100 RPM)";
-                        font-size: 12px;
-                        color: #8C929E;
-                        vertical-alignment: center;
-                    }
-                }
 
-                if !root.is_cpu_only: HorizontalLayout {
-                    padding-left: 20px;
-                    padding-right: 20px;
-                    alignment: space-between;
-                    HorizontalLayout {
-                        spacing: 8px;
-                        Text { text: "CPU Fan:"; font-size: 13px; color: #8C929E; vertical-alignment: center; }
-                        Text { text: root.cpu_fan_rpm + " RPM"; font-size: 14px; font-weight: 700; color: #00F0FF; vertical-alignment: center; }
+                HorizontalLayout {
+                    padding-left: 14px;
+                    padding-right: 14px;
+                    padding-top: 12px;
+                    padding-bottom: 12px;
+                    spacing: 12px;
+
+                    Rectangle {
+                        width: 52px;
+                        height: 28px;
+                        border-radius: 6px;
+                        background: root.accent_color.with_alpha(0.18);
+                        border-width: 1px;
+                        border-color: root.accent_color.with_alpha(0.5);
+
+                        Text {
+                            text: "Fn + F";
+                            font-size: 11px;
+                            font-weight: 700;
+                            color: root.accent_color;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
                     }
-                    HorizontalLayout {
-                        spacing: 8px;
-                        Text { text: "GPU Fan:"; font-size: 13px; color: #8C929E; vertical-alignment: center; }
-                        Text { text: root.gpu_fan_rpm + " RPM"; font-size: 14px; font-weight: 700; color: #00F0FF; vertical-alignment: center; }
+
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        alignment: center;
+                        spacing: 2px;
+                        Text {
+                            text: "Hardware Thermal Shortcut (Fn + F)";
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #FFFFFF;
+                        }
+                        Text {
+                            text: "Press Fn + F at any time to dynamically cycle through ASUS thermal modes: Whisper → Standard → Performance → Full Speed.";
+                            font-size: 11px;
+                            color: #8C929E;
+                            wrap: word-wrap;
+                        }
                     }
                 }
             }
         }
     }
 }
+
